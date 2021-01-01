@@ -1,6 +1,7 @@
 \documentclass[twocolumn]{article}
 \usepackage{amsmath}
 \usepackage{algorithmic}
+\usepackage{url}
 
 \author{caveman}
 \title{sequential memory-hard key derivation \\
@@ -18,43 +19,55 @@ encryption algorithm that's used later on.  therefore, this \emph{relative
 entropy bits} measure is guaranteed to be true when the encryption
 algorithm that's used with \emph{ciphart} is also the same one that's used
 to encrypt the data afterwards.
+
+my reference implementation is available here: 
+\url{https://github.com/Al-Caveman/ciphart}
 \end{abstract}
 
 \tableofcontents
-
-\section{intro}
-first i'll describe the ciphart algorithm, then i will tell you why it's
-memory hard, and how it offers better measurable security.
 
 \section{ciphart}
 
 \begin{tabular}{lll}
     \textbf{input:}  & $b$ & number of entropy bits to be added.\\
-            & $k$ & initial key.\\
-            & $f$ & encryption function.\\
-            & $m_i$ & memory pad, at least $32$ bytes.\\
+            & $m_t$ & memory pad of $t^{th}$ task, at least $32$ bytes.\\
+            &       & initialised to some constant value.\\
+            &       & $m_t[0:16]$ means first $16$ bytes.\\
+            &       & $m_t[-16:]$ means last $16$ bytes.\\
             & $R$ & number of rounds per task.\\
+            & $e$ & encryption function.\\
+            & $k$ & initial key.\\
     \textbf{output:} & $\hat k$ & better key.\\
 \end{tabular}
 \begin{algorithmic}[1]
-    \STATE define $P,T$ such that $PTR - 2^b$ is smallest positive number,
-    and that $T$ is an even number.
-    \FOR{$p=1$ to $P$}
-        \FOR{$t=1$ to $T$ in steps of $2$}
+    \STATE define $P$ and $T$ such that $PTR - 2^b$ is smallest positive
+    number, $P \ge 2$, $T$ is an even number.
+    \STATE $x \leftarrow 0$ is a $16$ bytes wide variable.
+    \FOR{$p=1, 2, \ldots, P$}
+        \FOR{$t=1,3, \ldots, T-1$, in steps of $2$}
             \STATE $a \leftarrow t$
             \STATE $b \leftarrow t+1$
-            \FOR{$r=1$ to $2R$}
-                \STATE $n \leftarrow p ^\frown t ^\frown r$
-                \STATE $m_a \leftarrow f(m_b, k, n)$
+            \FOR{$r=1, 2, \ldots, 2R$}
+                \STATE $n \leftarrow (p, t, r)$
+                \STATE $m_a \leftarrow e(m_b, k, n)$
                 \STATE $\hat a \leftarrow a$
                 \STATE $a \leftarrow b$
                 \STATE $b \leftarrow \hat a$
             \ENDFOR
+            \STATE $x \leftarrow x \oplus m_a[-16:]$
+            \STATE $x \leftarrow x \oplus m_b[-16:]$
+        \ENDFOR
+        \FOR{$t=1, 2, \ldots, T$}
+            \STATE $m_t[0:16] \leftarrow m_t[0:16] \oplus x$
         \ENDFOR
     \ENDFOR
+    \RETURN $\hat k \leftarrow hash(m_1, m_2, \ldots, m_T)$
 \end{algorithmic}
 
+\section{parallelism}
 \section{sequential-memory hardness}
-\section{better security interpretation}
+\section{security interpretation}
+\section{comparison}
+\section{summary}
 
 \end{document}
