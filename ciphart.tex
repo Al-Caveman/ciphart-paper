@@ -28,7 +28,7 @@ memory hard, and how it offers better measurable security.
 
 \begin{tabular}{lll}
     \textbf{input:}  & &\\
-             & $e$ & number of entropy bits to be added.\\
+             & $b$ & number of entropy bits to be added.\\
              & $k$ & initial key.\\
              & $f$ & encryption function.\\
              & $m_i$ & memory pad.\\
@@ -38,7 +38,7 @@ memory hard, and how it offers better measurable security.
 \end{tabular}
 
 \begin{algorithmic}
-    \STATE define $p,t,r$ such that $ptr - 2^e$ is smallest positive
+    \STATE define $P,T,R$ such that $PTR - 2^b$ is smallest positive
     number.
     \FOR{$p=0$ to $p=P$}
         \FOR{$t=0$ to $t=T$}
