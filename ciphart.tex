@@ -1,7 +1,10 @@
 \documentclass{article}
+\usepackage{amsmath}
+\usepackage{algorithmic}
+
 \author{caveman}
-\title{sequential memory-hard key derivation with better measurable
-security}
+\title{a sequential memory-hard key derivation function with better
+measurable security}
 \begin{document}
 \maketitle
 \begin{abstract}
@@ -16,4 +19,34 @@ entropy bits} measure is guaranteed to be true when the encryption
 algorithm that's used with \emph{ciphart} is also the same one that's used
 to encrypt the data afterwards.
 \end{abstract}
+
+\section{intro}
+first i'll describe the ciphart algorithm, then i will tell you why it's
+memory hard, and how it offers better measurable security.
+
+\section{ciphart}
+
+\begin{tabular}{lll}
+    \textbf{input:}  & &\\
+             & $e$ & number of entropy bits to be added.\\
+             & $k$ & initial key.\\
+             & $f$ & encryption function.\\
+             & $m_i$ & memory pad.\\
+    \textbf{output:} & &\\
+             & $\hat k$ & better key.\\
+    \textbf{steps:}  & &\\
+\end{tabular}
+
+\begin{algorithmic}
+    \STATE define $p,t,r$ such that $ptr - 2^e$ is smallest positive
+    number.
+    \FOR{$p=0$ to $p=P$}
+        \FOR{$t=0$ to $t=T$}
+            \FOR{$r=0$ to $r=R$}
+                \STATE $n \leftarrow p \oplus t \oplus r$
+            \ENDFOR
+        \ENDFOR
+    \ENDFOR
+\end{algorithmic}
+
 \end{document}
