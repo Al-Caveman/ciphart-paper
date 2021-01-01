@@ -1,10 +1,10 @@
-\documentclass{article}
+\documentclass[twocolumn]{article}
 \usepackage{amsmath}
 \usepackage{algorithmic}
 
 \author{caveman}
-\title{a sequential memory-hard key derivation function with better
-measurable security}
+\title{sequential memory-hard key derivation \\
+with better measurable security}
 \begin{document}
 \maketitle
 \begin{abstract}
@@ -20,6 +20,8 @@ algorithm that's used with \emph{ciphart} is also the same one that's used
 to encrypt the data afterwards.
 \end{abstract}
 
+\tableofcontents
+
 \section{intro}
 first i'll describe the ciphart algorithm, then i will tell you why it's
 memory hard, and how it offers better measurable security.
@@ -27,26 +29,32 @@ memory hard, and how it offers better measurable security.
 \section{ciphart}
 
 \begin{tabular}{lll}
-    \textbf{input:}  & &\\
-             & $b$ & number of entropy bits to be added.\\
-             & $k$ & initial key.\\
-             & $f$ & encryption function.\\
-             & $m_i$ & memory pad.\\
-    \textbf{output:} & &\\
-             & $\hat k$ & better key.\\
-    \textbf{steps:}  & &\\
+    \textbf{input:}  & $b$ & number of entropy bits to be added.\\
+            & $k$ & initial key.\\
+            & $f$ & encryption function.\\
+            & $m_i$ & memory pad, at least $32$ bytes.\\
+            & $R$ & number of rounds per task.\\
+    \textbf{output:} & $\hat k$ & better key.\\
 \end{tabular}
-
-\begin{algorithmic}
-    \STATE define $P,T,R$ such that $PTR - 2^b$ is smallest positive
-    number.
-    \FOR{$p=0$ to $p=P$}
-        \FOR{$t=0$ to $t=T$}
-            \FOR{$r=0$ to $r=R$}
-                \STATE $n \leftarrow p \oplus t \oplus r$
+\begin{algorithmic}[1]
+    \STATE define $P,T$ such that $PTR - 2^b$ is smallest positive number,
+    and that $T$ is an even number.
+    \FOR{$p=1$ to $P$}
+        \FOR{$t=1$ to $T$ in steps of $2$}
+            \STATE $a \leftarrow t$
+            \STATE $b \leftarrow t+1$
+            \FOR{$r=1$ to $2R$}
+                \STATE $n \leftarrow p ^\frown t ^\frown r$
+                \STATE $m_a \leftarrow f(m_b, k, n)$
+                \STATE $\hat a \leftarrow a$
+                \STATE $a \leftarrow b$
+                \STATE $b \leftarrow \hat a$
             \ENDFOR
         \ENDFOR
     \ENDFOR
 \end{algorithmic}
+
+\section{sequential-memory hardness}
+\section{better security interpretation}
 
 \end{document}
