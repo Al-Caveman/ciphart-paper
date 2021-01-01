@@ -1,14 +1,22 @@
-\documentclass[twocolumn]{article}
+\documentclass{article}
+\usepackage[a4paper, total={7in, 8in}]{geometry}
+\usepackage{multicol}
 \usepackage{amsmath}
+\usepackage{mathtools}
 \usepackage{algorithmic}
+\DeclareMathOperator{\enc}{enc}
+\DeclareMathOperator{\maxf}{max}
+\DeclareMathOperator{\nonce}{nonce}
+\DeclareMathOperator{\hash}{hash}
 \usepackage{url}
+\renewcommand{\contentsname}{content}
 
 \author{caveman}
-\title{sequential memory-hard key derivation \\
-with better measurable security}
+\title{key derivation with easier measurable security}
 \begin{document}
+\begin{multicols}{2}
 \maketitle
-\begin{abstract}
+
 hi --- i propose \emph{ciphart}, a sequential memory-hard key derivation
 function that has a security gain that's measurable more objectively and
 more conveniently than anything in class known to date.
@@ -20,49 +28,70 @@ entropy bits} measure is guaranteed to be true when the encryption
 algorithm that's used with \emph{ciphart} is also the same one that's used
 to encrypt the data afterwards.
 
-my reference implementation is available here: 
-\url{https://github.com/Al-Caveman/ciphart}
-\end{abstract}
+my reference implementation is available
+here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
 
 \tableofcontents
+\vfill\null
+\columnbreak
 
 \section{ciphart}
+\noindent\textbf{parameters:}
 
-\begin{tabular}{lll}
-    \textbf{input:}  & $b$ & number of entropy bits to be added.\\
-            & $m_t$ & memory pad of $t^{th}$ task, at least $32$ bytes.\\
-            &       & initialised to some constant value.\\
-            &       & $m_t[0:16]$ means first $16$ bytes.\\
-            &       & $m_t[-16:]$ means last $16$ bytes.\\
-            & $R$ & number of rounds per task.\\
-            & $e$ & encryption function.\\
-            & $k$ & initial key.\\
-    \textbf{output:} & $\hat k$ & better key.\\
+\begin{tabular}{lp{18em}}
+    $M$   & each task's size, at least $32$ bytes.\\
+    $W$   & total memory in multiples of $2M$.\\
+    $R$ & number of rounds per task.\\
+    $B$ & added security in relative entropy bits.\\
+    $\enc$ & encryption function.\\
+    $k$ & initial key.\\
 \end{tabular}
+
+\noindent\textbf{input:}
+
+\begin{tabular}{lp{18em}}
+    $T$ & $\leftarrow W/M$\\
+    $P$ & $\leftarrow \maxf(2, \lceil2^B / (TR)\rceil)$\\
+    $x$ & $\leftarrow 0$, a $16$ bytes wide variable.\\
+    $m_t$ & for any task $t \in \{1,2,\ldots,T\}$, $m_t$ is $M$-bytes memory
+    for $t^{th}$ task to work on.  $m_t[0:16]$ means first $16$ bytes.
+    $m_t[-16:]$ means last $16$ bytes.\\
+    $\nonce$ & a variable with enough bytes to store nonces in.\\
+    $\hash$ & a function to compress $W$ bytes into desired key length.\\
+\end{tabular}
+
+\noindent\textbf{output:}
+
+\begin{tabular}{lp{18em}}
+$\hat k$ & better key, with $B$, or more, \emph{relative entropy bits}.
+specifically, with $\log_2(PTR) \ge B$ bits.\\
+\end{tabular}
+
+\noindent\textbf{steps:}
+
 \begin{algorithmic}[1]
-    \STATE define $P$ and $T$ such that $PTR - 2^b$ is smallest positive
-    number, $P \ge 2$, $T$ is an even number.
-    \STATE $x \leftarrow 0$ is a $16$ bytes wide variable.
     \FOR{$p=1, 2, \ldots, P$}
         \FOR{$t=1,3, \ldots, T-1$, in steps of $2$}
-            \STATE $a \leftarrow t$
-            \STATE $b \leftarrow t+1$
+            \STATE $i \leftarrow t$
+            \STATE $j \leftarrow t+1$
             \FOR{$r=1, 2, \ldots, 2R$}
-                \STATE $n \leftarrow (p, t, r)$
-                \STATE $m_a \leftarrow e(m_b, k, n)$
-                \STATE $\hat a \leftarrow a$
-                \STATE $a \leftarrow b$
-                \STATE $b \leftarrow \hat a$
+                \STATE $\nonce \leftarrow (p, t, r)$
+                \STATE $m_i \leftarrow \enc(m_j, \nonce, k)$
+                \STATE $\hat i \leftarrow i$
+                \STATE $i \leftarrow j$
+                \STATE $j \leftarrow \hat i$
             \ENDFOR
-            \STATE $x \leftarrow x \oplus m_a[-16:]$
-            \STATE $x \leftarrow x \oplus m_b[-16:]$
+            \STATE $x \leftarrow x \oplus m_i[-16:]$
+            \STATE $x \leftarrow x \oplus m_j[-16:]$
         \ENDFOR
         \FOR{$t=1, 2, \ldots, T$}
             \STATE $m_t[0:16] \leftarrow m_t[0:16] \oplus x$
         \ENDFOR
     \ENDFOR
-    \RETURN $\hat k \leftarrow hash(m_1, m_2, \ldots, m_T)$
+    \RETURN $\hat k \leftarrow \hash(m_1, m_2, \ldots, m_T)$
 \end{algorithmic}
+\vfill\null
+\columnbreak
 
 \section{parallelism}
 \section{sequential-memory hardness}
@@ -70,4 +99,5 @@ my reference implementation is available here:
 \section{comparison}
 \section{summary}
 
+\end{multicols}
 \end{document}
