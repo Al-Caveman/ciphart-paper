@@ -38,8 +38,8 @@ here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
 \noindent\textbf{parameters:}
 
 \begin{tabular}{lp{18em}}
-    $M$   & each task's size, at least $32$ bytes.\\
-    $W$   & total memory in multiples of $2M$.\\
+    $M$ & each task's size, at least $32$ bytes.\\
+    $W$ & total memory in multiples of $2M$.\\
     $R$ & number of rounds per task.\\
     $B$ & added security in \emph{relative entropy bits}.\\
     $\enc$ & encryption function.\\
@@ -93,8 +93,93 @@ specifically, with $\log_2(PTR) \ge B$ bits.\\
 \columnbreak
 
 \section{parallelism}
+iterations inside the \texttt{for} loop, in step $2$, are independent of
+one another, so we can distribute them happily across different threads to
+achieve maximum cpu utilisation.
+
+exception is in steps $12$ and $13$, where a mutex might be required as the
+xor assignment there is not necessarily atomic.  but this is not a real
+problem since the real expensive part is in step $7$, which overshadows the
+overhead of the mutexes.
+
+plus, even if one has an ultra-fancy hardware where step $7$ is so
+lightweight that it effectively competes with the mutexes needed for steps
+$12$ and $13$, then one can simply increase number of rounds $R$ until the
+correct order is restored.
+
 \section{sequential-memory hardness}
+all of the tasks solved in the first pad, i.e. when $p=1$, can be normally
+computed sequentially with just, say, $2M$ bytes memory.
+
+sequential-memory hardness is introduced for later pads, $p \ge 2$, as the
+$x$ variable gets applied to tasks' memory workspaces $m_1, m_2, \ldots,
+m_T$, which causes every task's memory in pad $p$ to depend on every task's
+last $16$ bytes of the previous pads $p-1, p-2, \ldots, 1$.
+
+\subsection{example}
+say that we've got a total memory of $W = 10 \times 2M$ bytes, which
+basically means we have $10$ pairs of tasks (or $T=20$ tasks) in a pad.
+
+also say that we've got $B$ large enough that caused us to need $5$ pads,
+i.e $P=\maxf(2, \lceil 2^B / (TR)\rceil)=5$.
+
+for simplicity, let's say $R=1$.  also, say that the adversary has enough
+memory to keep track of $x$ values across the different pads.  since each
+$x$ is only $16$ bytes, and since we've got $5$ pads, this means that the
+adversary has managed $16\times 5$ bytes to not worry about losing $x$es
+across the pads.
+
+\textbf{the question of this example is:} how many times will the function
+$\enc$ be called if we wanted to complete the ciphart algorithm with just
+$W=2M$ bytes for the pad instead of $W+10 \times 2M$ bytes?
+
+\begin{enumerate}
+    \item in the first pad, $p=1$, $\enc$ will be called $20$ times.  by
+    the end of it, we will $x$ populated with all xor-ed data from all the
+    $20$ tasks, and end up having the content of the two tasks, say
+    $m_{19}$ and $m_{20}$.  but we won't have the content of the other
+    tasks, since we said we have only $2M$ bytes pad size limitation in
+    this example.
+    \item in the second pad, $p=2$, we will be able to start working on
+    tasks $t=19$ and $t=20$ since we already have their memory content
+    $m_{19}$ and $m_{20}$ as well as the xor-ed data $x$.  so with these
+    two tasks, life is easy.  but what about other tasks, say:
+        \begin{enumerate}
+            \item tasks $t=1$ and $t=2$?  we already have $x$, but we lack
+            their memory content from the previous pad.  so we've got to
+            repeat that.  meaning $\enc$ will be called $2$ times from the
+            previous pad, and then $2$ times for the current pad $p=2$.
+            totalling $4$ calls.  \item tasks $t=3$ and $t=4$?  same as
+            before, $4$.  this repeats to the rest of task pairs (except
+            the lucky tasks $t=19$ and $t=20$).
+        \end{enumerate}
+        meaning, we've got $20-2$ unlucky tasks, each of which will result
+        in calling $\enc$ two times in order to solve pad $p=2$ and obtain
+        its xor-data $x$.
+
+        in total, the second pad will call $\enc$ function $2 + (20-2)
+        \times 2 = 38$ times.
+    \item in the third pad, $p=3$, the same will repeat, except for calling
+    $\enc$ one more time with the unlucky tasks.  i.e. $2 + (20-2) \times 3
+    = 56$.
+    \item in the forth pad, $p=4$, $2 + (20-2) \times 4 = 74$ times.
+    \item in the fifth pad, $p=5$, $2 + (20-2) \times 5 = 92$ times.
+\end{enumerate}
+
+in total, a $W=2M$ bytes implementation would end up calling $\enc$ $20 +
+38 + 56 + 74 + 92 = 280$ times.  \textbf{correction:}  i think it will be
+$20\times 5 + (20-2) \times 5 = 190$.
+
+a $W=10 \times 2M$ bytes implementation will call $\enc$ $20 \times 5 =
+100$ times instead.
+
+so.. is ciphart really hard?  it is not.  increase in calculation is linear
+(not exponential).  this is a failure.  there needs to be an algorithmic
+change.
+
 \section{security interpretation}
+it sucks.  don't use it yet.  i'm thinking how to fix this garbage.
+
 \section{comparison}
 \section{summary}
 
