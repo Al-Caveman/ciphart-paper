@@ -1,71 +1,76 @@
-\documentclass{article}
-\usepackage[a4paper, total={7in, 8in}]{geometry}
-\usepackage{multicol}
+\documentclass[twocolumn]{article}
+\usepackage[margin=.7in]{geometry}
+\usepackage{xhfill}
 \usepackage{url}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage[linesnumbered,vlined]{algorithm2e}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{enc}
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
 \renewcommand{\contentsname}{content}
-
-\author{caveman}
-\title{key derivation with easier measurable security}
 \begin{document}
-\begin{multicols}{2}
-\maketitle
 
-hi --- i propose \emph{ciphart}, a memory-hard key derivation function that
-has a security gain that's measurable more objectively and more
-conveniently than anything in class known to date.
+\begin{center}
+\Huge
+\noindent\xrfill[.5ex]{2pt}ciphart\xrfill[.5ex]{2pt}\\
+\LARGE
+key derivation with easier measurable security\\
+\normalsize
+caveman\\
+\today\\
+\rule{1\columnwidth}{2pt}
+\end{center}
+
+i propose \emph{ciphart} --- a memory-hard key derivation function with a
+security gain that's measurable more objectively and more conveniently than
+anything in class known to date, while maintaining a memory-hardness
+identical to
+argon2d\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}.
 
 to nail this goal, \emph{ciphart}'s security gain is measured in the unit
 of \emph{relative entropy bits}.  relative to what?  relative to the
-encryption algorithm that's used later on.  therefore, this \emph{relative
-entropy bits} measure is guaranteed to be true when the encryption
-algorithm that's used with \emph{ciphart} is also the same one that's used
-to encrypt the data afterwards.
+encryption algorithm that's used later on.
+
+therefore, this measure is guaranteed to hold irrespective of adversary's
+hardware, for as long as the encryption algorithm that's used with
+\emph{ciphart} is also the same one that's used to encrypt the data
+afterwards.
 
 my reference implementation is available
 here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
 
-\tableofcontents
-\vfill\null
-\columnbreak
-
 \section{ciphart}
-\noindent\textbf{parameters:}
-
+\subsection{users' parameters}
 \begin{tabular}{lp{18em}}
-    $W$ & each task's size, at least $32$ bytes.\\
-    $M$ & total memory in multiples of $2W$.\\
+    $M$ & total memory in multiples of $2 \times 64$ bytes.\\
+    $S$ & maximum number of tasks per lane segment.\\
     $R$ & number of rounds per task.\\
     $B$ & added security in \emph{relative entropy bits}.\\
+    $L$ & number of lanes for concurrency.\\
     $\enc$ & encryption function.\\
-    $k$ & initial key.\\
+    $p$ & passphrase.\\
 \end{tabular}
 
-\noindent\textbf{input:}
-
+\subsection{algorithm's parameters}
 \begin{tabular}{lp{18em}}
     $T$ & $\gets M/W$\\
-    $P$ & $\gets \maxf(2, \lceil2^B / (TR)\rceil)$\\
-    $m_{l,s,t}$ & memory for $t^{th}$ task, in $s^{th}$ segment, in
-    $l^{th}$ lane to work on.\\
-    $n$ & $\gets 0$, a variable with enough bytes to store nonces in.
-    $n[0]$ means first $64$ bits.  $n[1]$ means second $64$ bits.\\
+    $m_{l,s,t}$ & $64$ bytes memory for $t^{th}$ task, in $s^{th}$ segment,
+    in $l^{th}$ lane to work on.\\
+    $n$ & $\gets 0$, a variable with at least $64$ bits to store nonces
+    in.\\
 \end{tabular}
 
-\noindent\textbf{output:}
-
+\subsection{algorithm's output}
 \begin{tabular}{lp{18em}}
-$\hat k$ & better key, with $B$, or more, \emph{relative entropy bits}.\\
+$k$ & key with $B$, or more, \emph{relative entropy bits}.\\
 \end{tabular}
 
-\noindent\textbf{steps:}
+\subsection{algorithm's steps}
+shown in algorithm \ref{alg_ciphart}.
 
-\begin{algorithm}[H]
+\begin{algorithm}[tbh]
+\SetAlgorithmName{algorithm}
 \While{true}{
     \For{$s=1, 2, \ldots, S$}{
         \For{$l=1, 2, \ldots, L$}{
@@ -76,34 +81,33 @@ $\hat k$ & better key, with $B$, or more, \emph{relative entropy bits}.\\
                     }{
                         $m_{l,s,t} \gets \enc(m_{l,s,t-1}, n, k)$\;
                     }
-                    $n[1] \gets n[1] + 1$\;
+                    $n \gets n + 1$\;
                     $k \gets f(m_{l,s,t}[-64:], p, l, s, t)$\;
                 }
             }
         }
-        \If{$\log_2\left(n[0] \times SLTR + n[1]\right) \ge B$}{
+        \If{$\log_2 n \ge B$}{
             \textbf{go to step} 15\;
         }
     }
-    $n[0] \gets n[0] + 1$\;
 }
 \While{true}{
-    $n[0] \gets n[0] + 1$\;
     \For{$l=1, 2, \ldots, L$}{
-        \If{$\len(\hat k) \ge K$}{
-            \Return $\hat k[0:K]$
+        \If{$\len(k) \ge K$}{
+            \Return $k[0:K]$
         }
-        $\hat k \gets \hat k \mathbin\Vert \enc(m_{l,S,T}[1], n, k)$\;
-        $n[1] \gets n[1] + 1$\;
+        $n \gets n + 1$\;
+        $k \gets k \mathbin\Vert \enc(m_{l,S,T}[1], n, k)$\;
     }
 }
+\caption{ciphart version 6}
+\label{alg_ciphart}
 \end{algorithm}
 
 \section{parallelism}
-\section{hardness with smaller memory}
+\section{memory-hardness}
 \section{security interpretation}
 \section{comparison}
 \section{summary}
 
-\end{multicols}
 \end{document}
