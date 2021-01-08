@@ -4,7 +4,7 @@
 \usepackage{url}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage[linesnumbered,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{enc}
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
@@ -16,9 +16,9 @@
 \begin{multicols}{2}
 \maketitle
 
-hi --- i propose \emph{ciphart}, a sequential memory-hard key derivation
-function that has a security gain that's measurable more objectively and
-more conveniently than anything in class known to date.
+hi --- i propose \emph{ciphart}, a memory-hard key derivation function that
+has a security gain that's measurable more objectively and more
+conveniently than anything in class known to date.
 
 to nail this goal, \emph{ciphart}'s security gain is measured in the unit
 of \emph{relative entropy bits}.  relative to what?  relative to the
@@ -63,6 +63,8 @@ here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
 $\hat k$ & better key, with $B$, or more, \emph{relative entropy bits}.\\
 \end{tabular}
 
+\noindent\textbf{steps:}
+
 \begin{algorithm}[H]
 \While{true}{
     \For{$s=1, 2, \ldots, S$}{
@@ -95,7 +97,6 @@ $\hat k$ & better key, with $B$, or more, \emph{relative entropy bits}.\\
         $n[1] \gets n[1] + 1$\;
     }
 }
-\caption{ciphart version 6}
 \end{algorithm}
 
 \section{parallelism}
