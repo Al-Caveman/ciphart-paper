@@ -63,7 +63,7 @@ here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
 $\hat k$ & better key, with $B$, or more, \emph{relative entropy bits}.\\
 \end{tabular}
 
-\begin{algorithm}[tbh]
+\begin{algorithm}[H]
 \While{true}{
     \For{$s=1, 2, \ldots, S$}{
         \For{$l=1, 2, \ldots, L$}{
@@ -99,21 +99,7 @@ $\hat k$ & better key, with $B$, or more, \emph{relative entropy bits}.\\
 \end{algorithm}
 
 \section{parallelism}
-iterations in steps $2$ to $12$, are independent of one another, so we can
-distribute them happily across different threads to achieve maximum cpu
-utilisation.
-
-iterations in steps $13$ to $18$ can also be done in parallel after
-completion of steps $2$ to $12$.
-
 \section{hardness with smaller memory}
-steps $13$ to $18$ is the part where sequential memory-hardness is expected
-to be born.  proof maybe soon.  but first i have to actually test it in
-code to see how fast/slow is it.  right now i fear that memory's I/O might
-become a significant bottleneck.
-\vfill\null
-\columnbreak
-
 \section{security interpretation}
 \section{comparison}
 \section{summary}
