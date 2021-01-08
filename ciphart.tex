@@ -3,11 +3,11 @@
 \usepackage{multicol}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{algorithmic}
+\usepackage[noend]{algorithmic}
 \DeclareMathOperator{\enc}{enc}
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\nonce}{nonce}
-\DeclareMathOperator{\hash}{hash}
+\DeclareMathOperator{\len}{len}
 \usepackage{url}
 \renewcommand{\contentsname}{content}
 
@@ -57,7 +57,6 @@ here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
     for $t^{th}$ task to work on.  $m_t[0:16]$ means first $16$ bytes.
     $m_t[-16:]$ means last $16$ bytes.\\
     $\nonce$ & a variable with enough bytes to store nonces in.\\
-    $\hash$ & a function to compress $W$ bytes into desired key length.\\
 \end{tabular}
 
 \noindent\textbf{output:}
@@ -71,25 +70,31 @@ specifically, with $\log_2(PTR) \ge B$ bits.\\
 
 \begin{algorithmic}[1]
     \FOR{$p=1, 2, \ldots, P$}
-        \FOR{$t=1,3, \ldots, T-1$, in steps of $2$}
-            \STATE $i \gets t$
-            \STATE $j \gets t+1$
-            \FOR{$r=1, 2, \ldots, 2R$}
-                \STATE $\nonce \gets (p, t, r)$
-                \STATE $m_i \gets \enc(m_j, \nonce, k)$
-                \STATE $\hat i \gets i$
-                \STATE $i \gets j$
-                \STATE $j \gets \hat i$
-            \ENDFOR
-        \ENDFOR
-        \FOR{$t=1,2, \ldots, T$}
-            \FOR{$\hat t=1, \ldots, t-1$ and $\hat t=t+1, \ldots, T$}
-                \STATE $m_t[-16:] \gets m_t[-16:] \ll 1$
-                \STATE $m_t[-16:] \gets m_t[-16:] \oplus m_{\hat t}[0:16]$
+        \FOR{$l=1, 2, \ldots, L$}
+            \FOR{$s=1, 2, \ldots, S$}
+                \FOR{$t=1, 2, \ldots, T$}
+                    \FOR{$r=1, 2, \ldots, R$}
+                        \STATE $n \gets (p, l, s, t, r)$
+                        \IF{$t = 1$}
+                            \STATE $m_{l,s,t} \gets \enc(m_{l,s,T}, n, k)$
+                        \ELSE
+                            \STATE $m_{l,s,t} \gets \enc(m_{l,s,t-1}, n, k)$
+                        \ENDIF
+                        \STATE $k \gets f(m_{l,s,t}[-64:], p, l, s, t)$
+                    \ENDFOR
+                \ENDFOR
             \ENDFOR
         \ENDFOR
     \ENDFOR
-    \RETURN $\hat k \gets \hash(m_1, m_2, \ldots, m_T)$
+    \WHILE{true}
+        \FOR{$l=1, 2, \ldots, L$}
+            \STATE $n \gets (0, l, 0, 0, 0)$
+            \STATE $\hat k \gets \hat k \mathbin\Vert \enc(m_{l,S,T}[-64:], n, k)$
+            \IF{$\len(\hat k) \ge K$}
+                \RETURN $\hat k[0:K]$
+            \ENDIF
+        \ENDFOR
+    \ENDWHILE
 \end{algorithmic}
 \vfill\null
 \columnbreak
