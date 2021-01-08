@@ -5,6 +5,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{cleveref} % must be loaded last
 \DeclareMathOperator{\enc}{enc}
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
@@ -67,7 +68,7 @@ $k$ & key with $B$, or more, \emph{relative entropy bits}.\\
 \end{tabular}
 
 \subsection{algorithm's steps}
-shown in algorithm \ref{alg_ciphart}.
+shown in \cref{alg_ciphart}.
 
 \begin{algorithm}[tbh]
 \SetAlgorithmName{algorithm}
@@ -87,11 +88,11 @@ shown in algorithm \ref{alg_ciphart}.
             }
         }
         \If{$\log_2 n \ge B$}{
-            \textbf{go to step} 15\;
+            \textbf{go to} \cref{ciphart_out}\;
         }
     }
 }
-\While{true}{
+\While{true}{\label{ciphart_out}
     \For{$l=1, 2, \ldots, L$}{
         \If{$\len(k) \ge K$}{
             \Return $k[0:K]$
