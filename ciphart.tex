@@ -11,6 +11,7 @@
 \DeclareMathOperator{\len}{len}
 \renewcommand{\contentsname}{content}
 \begin{document}
+\SetAlgorithmName{algorithm}{}{list of algorithms}
 
 \begin{center}
 \Huge
@@ -43,35 +44,33 @@ here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
 
 \section{ciphart}
 \subsection{users' parameters}
-\begin{tabular}{lp{18em}}
+\begin{tabular}{ll}
     $M$ & total memory in multiples of $2 \times 64$ bytes.\\
-    $S$ & maximum number of tasks per lane segment.\\
+    $T$ & maximum number of tasks per lane segment.\\
     $R$ & number of rounds per task.\\
     $B$ & added security in \emph{relative entropy bits}.\\
     $L$ & number of lanes for concurrency.\\
+    $S$ & salt.\\
+    $K$ & output key size in bytes.\\
     $\enc$ & encryption function.\\
     $p$ & passphrase.\\
 \end{tabular}
 
 \subsection{algorithm's parameters}
-\begin{tabular}{lp{18em}}
-    $T$ & $\gets M/W$\\
-    $m_{l,s,t}$ & $64$ bytes memory for $t^{th}$ task, in $s^{th}$ segment,
-    in $l^{th}$ lane to work on.\\
-    $n$ & $\gets 0$, a variable with at least $64$ bits to store nonces
-    in.\\
+\begin{tabular}{ll}
+    $m_i$ & $64$ bytes memory for $i^{th}$ task in $M$-bytes pad.\\
+    $n$   & nonce variable with at least $64$ bits.\\
 \end{tabular}
 
 \subsection{algorithm's output}
-\begin{tabular}{lp{18em}}
-$k$ & key with $B$, or more, \emph{relative entropy bits}.\\
+\begin{tabular}{ll}
+$k$ & $K$-bytes key with $\ge B$ \emph{relative entropy bits}.\\
 \end{tabular}
 
 \subsection{algorithm's steps}
 shown in \cref{alg_ciphart}.
 
 \begin{algorithm}[tbh]
-\SetAlgorithmName{algorithm}
 \While{true}{
     \For{$s=1, 2, \ldots, S$}{
         \For{$l=1, 2, \ldots, L$}{
