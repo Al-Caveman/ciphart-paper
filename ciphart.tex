@@ -1,6 +1,5 @@
 \documentclass[twocolumn]{article}
 \usepackage[margin=.7in]{geometry}
-\usepackage{xhfill}
 \usepackage{url}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -10,12 +9,15 @@
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
 \renewcommand{\contentsname}{content}
+\makeatletter
+\def\myrulefill{\leavevmode\leaders\hrule height .6ex width 1ex depth -0.4ex\hfill\kern\z@}
+\makeatother
 \begin{document}
 \SetAlgorithmName{algorithm}{}{list of algorithms}
 
 \begin{center}
 \Huge
-\noindent\xrfill[.5ex]{2pt}ciphart\xrfill[.5ex]{2pt}\\
+\myrulefill\ ciphart \myrulefill\\
 \LARGE
 key derivation with easier measurable security\\
 \normalsize
@@ -24,55 +26,70 @@ caveman\\
 \rule{1\columnwidth}{2pt}
 \end{center}
 
-i propose \emph{ciphart} --- a memory-hard key derivation function with a
-security gain that's measurable more objectively and more conveniently than
-anything in class known to date, while maintaining a memory-hardness
-identical to
-argon2d\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}.
+\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
+is mostly nice, but trying to interpret its contribution to enhancing the
+protection against password brute-forcing attacks remains more difficult
+than it should be.  this is a problem that is also shared with every other
+key derivation function that i've known so far.
 
-to nail this goal, \emph{ciphart}'s security gain is measured in the unit
-of \emph{relative entropy bits}.  relative to what?  relative to the
-encryption algorithm that's used later on.
+when one uses \emph{argon2}, his derived key will surely have superior
+protection against password brute-forcing attacks, but by how much?  to
+answer this, one would need to survey the industry that manufactures
+application-specific integrated circuits to obtain a map between
+\emph{time} and \emph{money}.  the centre of my thesis is that this part is
+not nice, because i found that life can be easier.
 
-therefore, this measure is guaranteed to hold irrespective of adversary's
-hardware, for as long as the encryption algorithm that's used with
-\emph{ciphart} is also the same one that's used to encrypt the data
-afterwards.
+henceforth, i propose \emph{ciphart} --- a memory-hard key derivation
+function with a security contribution that is measured in a unit that i
+propose: \emph{relative entropy bits}.  this unit is measured objectively
+and is guaranteed to be true irrespective of whatever alien technology the
+adversary might have.
 
-my reference implementation is available
-here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
+\texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
+--- a library that implements \emph{ciphart} very closely to this paper,
+without much fluff.  this should make integrating \emph{ciphart} into other
+systems more convenient.
+\texttt{ciphart}\footnote{\url{https://github.com/Al-Caveman/ciphart}} ---
+a tool for encrypting and decrypting files that makes use of
+\texttt{libciphart}.  this tool is meant to be used by humans or scripts.
 
 \section{ciphart}
 \subsection{parameters}
-\begin{tabular}{ll}
-    $M$ & total memory in multiples of $2 \times 64$ bytes.\\
-    $T$ & number of $64$-byte tasks per lane segment.\\
+\begin{tabular}{lp{7.5cm}}
+    $\enc$ & encryption function.  this also defines $C$.  e.g. if $\enc$
+    is \emph{xchacha20}, then $C=64$ bytes to reflect its block size.\\
+    $p$ & password.\\
+    $s$ & salt.\\
+    $L$ & number of memory lanes for concurrency.\\
+    $M$ & total memory in bytes, increased to nearest multiple of $2CL$.\\
+    $T$ & number of $C$-byte tasks per lane segment.\\
     $R$ & number of rounds per task.\\
     $B$ & added security in \emph{relative entropy bits}.\\
-    $L$ & number of lanes for concurrency.\\
-    $S$ & salt.\\
     $K$ & output key size in bytes.\\
-    $\enc$ & encryption function.\\
-    $p$ & passphrase.\\
 \end{tabular}
 
 \subsection{internal variables}
 \begin{tabular}{lp{7.5cm}}
-    $G$   & $\gets M/64/T/L$; total number of segments.\\
-    $m_i$ & $64$ bytes memory for $i^{th}$ task in $M$-bytes pad.\\
+    $\hat M$   & $\gets M - (M \bmod 2CL) + 2CL$.  this is to ensure that
+    it is in multiples of $2CL$.\\
+    $G$   & $\gets \hat M/C/T/L$; total number of segments per lane.\\
+    $\hat B$& $\gets \begin{cases}
+                    B & \text{if } B \ge \log_2(GLTR)\\
+                    \log_2(GLTR) & \text{otherwise}\\
+                 \end{cases}$\\
+            & this is to ensure that $\hat B$ is large enough to have at
+            least one pass over the $\hat M$ bytes memory.\\
+    $m_i$ & $C$ bytes memory for $i^{th}$ task in $\hat M$-bytes pad.\\
     $n_l$ & $\gets lG$; nonce variable for $l^{th}$ lane with
     at least $64$ bits.\\
-    $f$   & $\gets \text{false}$; a flag indicating whether the $M$-byte
-    pad is filled.\\
+    $f$   & $\gets \text{false}$; a flag indicating whether the $\hat
+    M$-byte pad is filled.\\
 \end{tabular}
 
 \subsection{output}
 \begin{tabular}{ll}
 $k$ & $K$-bytes key with $\ge B$ \emph{relative entropy bits}.\\
 \end{tabular}
-
-\subsection{steps}
-shown in \cref{alg_ciphart}.
 
 \begin{algorithm}[tbh]
 \While{true}{
@@ -94,7 +111,7 @@ shown in \cref{alg_ciphart}.
                 }
             }
         }
-        \If{f = \text{true} \textbf{and} $\log_2(n_1L) \ge B$}{
+        \If{$f = \text{true}$ {\bf and} $\log_2(n_1L) \ge B$}{
             \textbf{go to} \cref{ciphart_out}\;
         }
     }
