@@ -43,10 +43,10 @@ my reference implementation is available
 here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
 
 \section{ciphart}
-\subsection{users' parameters}
+\subsection{parameters}
 \begin{tabular}{ll}
     $M$ & total memory in multiples of $2 \times 64$ bytes.\\
-    $T$ & maximum number of tasks per lane segment.\\
+    $T$ & number of $64$-byte tasks per lane segment.\\
     $R$ & number of rounds per task.\\
     $B$ & added security in \emph{relative entropy bits}.\\
     $L$ & number of lanes for concurrency.\\
@@ -56,46 +56,53 @@ here\footnote{\url{https://github.com/Al-Caveman/ciphart}}.
     $p$ & passphrase.\\
 \end{tabular}
 
-\subsection{algorithm's parameters}
-\begin{tabular}{ll}
+\subsection{internal variables}
+\begin{tabular}{lp{7.5cm}}
+    $G$   & $\gets M/64/T/L$; total number of segments.\\
     $m_i$ & $64$ bytes memory for $i^{th}$ task in $M$-bytes pad.\\
-    $n$   & nonce variable with at least $64$ bits.\\
+    $n_l$ & $\gets lG$; nonce variable for $l^{th}$ lane with
+    at least $64$ bits.\\
+    $f$   & $\gets \text{false}$; a flag indicating whether the $M$-byte
+    pad is filled.\\
 \end{tabular}
 
-\subsection{algorithm's output}
+\subsection{output}
 \begin{tabular}{ll}
 $k$ & $K$-bytes key with $\ge B$ \emph{relative entropy bits}.\\
 \end{tabular}
 
-\subsection{algorithm's steps}
+\subsection{steps}
 shown in \cref{alg_ciphart}.
 
 \begin{algorithm}[tbh]
 \While{true}{
-    \For{$s=1, 2, \ldots, S$}{
-        \For{$l=1, 2, \ldots, L$}{
-            \For{$t=1, 2, \ldots, T$}{
-                \For{$r=1, 2, \ldots, R$}{
-                    \eIf{$t = 1$}{
-                        $m_{l,s,t} \gets \enc(m_{l,s,T}, n, k)$\;
-                    }{
-                        $m_{l,s,t} \gets \enc(m_{l,s,t-1}, n, k)$\;
+    \For{$g=0, 1, \ldots, G-1$}{
+        \For{$l=0, 1, \ldots, L-1$}{
+            \For{$t=0, 1, \ldots, T-1$}{
+                \For{$r=0, 1, \ldots, R-1$}{
+                    $i \gets gT + t$\;
+                    \uIf{$t = 0$}{
+                        $j \gets i + T - 1$\;
+                    }\uElseIf{$t = T - 1$}{
+                        $j \gets i + 1 - T$\;
+                    }\Else{
+                        $j \gets i + 1$\;
                     }
-                    $n \gets n + 1$\;
-                    $k \gets f(m_{l,s,t}[-64:], p, l, s, t)$\;
+                    $m_j \gets \enc(m_i, n_l, k)$\;
+                    $n_l \gets n_l + 1$\;
+                    $k \gets f(m_j, p, l, s, t)$\;
                 }
             }
         }
-        \If{$\log_2 n \ge B$}{
+        \If{f = \text{true} \textbf{and} $\log_2(n_1L) \ge B$}{
             \textbf{go to} \cref{ciphart_out}\;
         }
     }
+    $f \gets \text{true}$\;
 }
 \While{true}{\label{ciphart_out}
     \For{$l=1, 2, \ldots, L$}{
-        \If{$\len(k) \ge K$}{
-            \Return $k[0:K]$
-        }
+        \lIf{$\len(k) \ge K$}{\Return $k[0:K]$}
         $n \gets n + 1$\;
         $k \gets k \mathbin\Vert \enc(m_{l,S,T}[1], n, k)$\;
     }
