@@ -104,7 +104,10 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                         \ldots & \\
                      \end{cases}$\\
                 & this is the size of the encryption key that's used to
-                    solve \emph{ciphart}'s tasks.\\
+                    solve \emph{ciphart}'s tasks.  this is different than
+                    the $\enc$-independent $K_{\text{out}}$ which is
+                    possibly used by other encryption algorithms in later
+                    stages.\\
     $\hat T$    & $\gets T - (T \bmod 2) + 2$.  this is to
                     ensure that it is in multiples of $2$.  why?  because
                     we need a buffer for storing the clear-text and another
@@ -129,7 +132,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     pad.\\
     $n_l$       & $\gets l\hat TR$; nonce variable for $l^{th}$ lane with at
                     least $64$ bits.\\
-    $f$         & $\gets {\bf false}$; a flag indicating whether the $\hat
+    $f$         & $\gets 0$; a flag indicating whether the $\hat
                     M$-bytes pad is filled.\\
 \end{tabularx}
 
@@ -142,9 +145,9 @@ $k$ & $K$-bytes key with $\ge B$ \emph{relative entropy bits}.\\
 shown in \cref{alg_ciphart}.
 
 \begin{algorithm}[tbh]
-\While{true}{
+\While{$1$}{
     \For{$g=0, 1, \ldots, G-1$}{
-        \For{$l=0, 1, \ldots, L-1$}{
+        \For{$l=0, 1, \ldots, L-1$}{\label{ciphart_lanes}
             \For{$t=0, 1, \ldots, T-1$}{
                 \For{$r=0, 1, \ldots, R-1$}{
                     $i \gets gT + t$\;
@@ -161,13 +164,13 @@ shown in \cref{alg_ciphart}.
                 }
             }
         }
-        \If{$f = {\bf true}$ {\bf and} $\log_2(n_1L) \ge B$}{
+        \If{$f$ {\bf and} $\log_2(n_1L) \ge B$}{
             \textbf{go to} \cref{ciphart_out}\;
         }
     }
-    $f \gets \text{true}$\;
+    $f \gets 1$\;
 }
-\While{true}{\label{ciphart_out}
+\While{$1$}{\label{ciphart_out}
     \For{$l=1, 2, \ldots, L$}{
         \lIf{$\len(k) \ge K$}{\Return $k[0:K]$}
         $n \gets n + 1$\;
@@ -179,6 +182,35 @@ shown in \cref{alg_ciphart}.
 \end{algorithm}
 
 \section{parallelism}
+since iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
+are fully independent of one other, they can quite happily utilise $L$ cpu
+cores, specially when segment sizes, $T$, are larger.
+
+other lines are not easily independent, so i didn't even bother to try to
+parallelise them.  specially since this is not a problem, since the
+cpu-heavy part is in in the easily-paralleliseable  part.
+
+with \emph{argon2}, if one wants to increase the cpu load without
+increasing memory pad's use, one can increase the number of passes over the
+pad.  this feature is supported by \emph{ciphart} via the \emph{relative
+entropy bits} parameter $B$.
+
+but, simply increasing number of passes on the pad may not be the best
+option for all cases.  e.g. what if someone has a small pad, and small
+segments?  in such case, a higher percentage of the cpu will be wasted in
+the non-paralleliseable steps, which is a waste.
+
+this is why \emph{ciphart} has an additional parameter $R$.  this parameter
+can allow to increase the load on the cpu without even requiring to go
+through the non-paralleliseable steps.  \emph{argon2} lacks this parameter.
+this is not the main reason \emph{ciphart} was made, but it's one of the
+incremental improvements.
+
+one could philosophically argue that \emph{argon2} has the $R$ parameter,
+except that it always assumes that $R=1$.  i don't agree with this
+assumption, which is why i made \emph{ciphart} to allows the user to set
+$R$ more flexibly.
+
 \section{memory-hardness}
 \section{security interpretation}
 \section{comparison}
