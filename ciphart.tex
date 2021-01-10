@@ -27,16 +27,17 @@
 memory-hard key derivation \\
 with easier measurable security\\
 \normalsize
-caveman\\
+caveman\footnote{toraboracaveman [at] protonmail [dot] com}\\
 \today\\
 \rule{1\columnwidth}{2pt}
 \end{center}
 
-\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
-is mostly nice, but trying to interpret its contribution to enhancing the
-protection against password brute-forcing attacks remains more difficult
-than it should be.  this is a problem that is also shared with every other
-key derivation function that i've known so far.
+\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}} is
+mostly nice, but trying to interpret its contribution to the protection
+against password brute-forcing attacks remains more difficult than it
+should be.  this vagueness is a problem that is not limited to
+\emph{argon2}, but also shared with every other key derivation function
+that i've known so far.
 
 when one uses \emph{argon2}, his derived key will surely have superior
 protection against password brute-forcing attacks, but by how much?  to
@@ -45,24 +46,30 @@ application-specific integrated circuits to obtain a map between
 \emph{time} and \emph{money}.  the centre of my thesis is that this part is
 not nice, because i found that life can be easier.
 
+resolving this vagueness is not a mere luxury to have, but a necessity for
+maximising survival, because it hinders the process of studying the
+cost-value of memory-hard key derivation functions, which, effectively,
+increases the risk of having a false sense of security.
+
 so i propose \emph{ciphart} --- a memory-hard key derivation function with
 a security contribution that is measured in a unit that i call
 \emph{relative entropy bits}.  this unit is measured objectively and is
-guaranteed to be true irrespective of whatever alien technology the
+guaranteed to be true irrespective of whatever alien technology that the
 adversary might have.
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
 is a library that implements \emph{ciphart} very closely to this paper,
 without much fluff.  this should make integrating \emph{ciphart} into other
 systems more convenient.
-\texttt{ciphart}\footnote{\url{https://github.com/Al-Caveman/ciphart}} is a
-tool for encrypting and decrypting files that makes use of
-\texttt{libciphart}.  the latter is meant to be used by end-users or
-scripts.
 
-\tableofcontents
-\vfill
-\break
+\texttt{ciphart}\footnote{\url{https://github.com/Al-Caveman/ciphart}} is
+an application for encrypting and decrypting files that makes use of
+\texttt{libciphart}.  this application is intended for use by end-users or
+scripts, henceforth it has some fluff to treat mankind with dignity.
+
+%\tableofcontents
+%\vfill
+%\break
 
 \section{ciphart}
 \subsection{parameters}
@@ -75,34 +82,52 @@ scripts.
     $T$ & number of tasks per lane segment.\\
     $R$ & number of rounds per task.\\
     $B$ & added security in \emph{relative entropy bits}.\\
-    $K$ & output key size in bytes.\\
+    $K_{\text{out}}$ & output key size in bytes.\\
 \end{tabularx}
 
 \subsection{internal variables}
 \begin{tabularx}{\columnwidth}{lX}
     $C$         & $\gets \begin{cases}
-                        64 & \text{if $\enc$ is \emph{xchacha20}}\\
-                        16 & \text{if $\enc$ is \emph{aes}}\\
+                        64 \text{ bytes} & \text{if $\enc$ is
+                                            \emph{xchacha20}}\\
+                        16 \text{ bytes} & \text{if $\enc$ is \emph{aes}}\\
                         \ldots & \\
                      \end{cases}$\\
                 & this to reflect the block size of the encryption
-                algorithm that's going to use \emph{ciphart}'s generated
-                key to encrypt data.\\
-    $\hat T$    & $\gets T - (T \bmod 2) + 2$.  this is to
-                    ensure that it is in multiples of $2$.\\
-    $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  this is to
-                    ensure that it is in multiples of $C\hat TL$.\\
-    $G$         & $\gets \hat M/C/T/L$; total number of segments per
-                    lane.\\
-    $\hat B$    & $\gets \begin{cases}
-                        B & \text{if } B \ge \log_2(GLTR)\\
-                        \log_2(GLTR) & \text{otherwise}\\
+                    algorithm that's going to use \emph{ciphart}'s
+                    generated key to encrypt data.\\
+    $K_{\text{in}}$ & $\gets \begin{cases}
+                        32 \text{ bytes} & \text{if $\enc$ is
+                                            \emph{xchacha20}}\\
+                        16 \text{ bytes} & \text{if $\enc$ is
+                            \emph{aes-128}}\\
+                        \ldots & \\
                      \end{cases}$\\
-                & this is to ensure that $\hat B$ is large enough to have
-                    at least one pass over the $\hat M$ bytes memory.\\
-    $m_i$       & $C$ bytes memory for $i^{th}$ task in $\hat M$-bytes
+                & this is the size of the encryption key that's used to
+                    solve \emph{ciphart}'s tasks.\\
+    $\hat T$    & $\gets T - (T \bmod 2) + 2$.  this is to
+                    ensure that it is in multiples of $2$.  why?  because
+                    we need a buffer for storing the clear-text and another
+                    for storing the output cipher-text.\\
+    $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  this is to
+                    ensure that it is in multiples of $C\hat TL$.  why?  so
+                    that all segments are of equal lengths in order to
+                    simplify \emph{ciphart}'s logic.  e.g. it wouldn't be
+                    nice if the last segments were of unequal sizes.\\
+    $G$         & $\gets \hat M/C/\hat T/L$; total number of segments per
+                    lane.\\
+    $\hat B$    & $\gets \maxf(\log_2(GL\hat TR), B)$.  this is to ensure
+                    that $\hat B$ is large enough to have at least one pass
+                    over the $\hat M$-bytes memory.\\
+    $\hat B$    & $\gets \log_2(2^{\hat B} - (2^{\hat B} \bmod L\hat TR) +
+                    L\hat TR)$.  this is just to reflect the reality with
+                    \emph{ciphart} that segments must complete.  i.e. when
+                    the user asks for $B$ \emph{relative entropy bits}, he
+                    gets $\hat B$ instead, where $\hat B \ge B$.  more
+                    details on this later.\\
+    $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
-    $n_l$       & $\gets lG$; nonce variable for $l^{th}$ lane with at
+    $n_l$       & $\gets l\hat TR$; nonce variable for $l^{th}$ lane with at
                     least $64$ bits.\\
     $f$         & $\gets {\bf false}$; a flag indicating whether the $\hat
                     M$-bytes pad is filled.\\
