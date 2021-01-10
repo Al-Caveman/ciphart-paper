@@ -1,5 +1,6 @@
 \documentclass[twocolumn]{article}
 \usepackage[margin=.7in]{geometry}
+\usepackage[showisoZ=false]{datetime2}
 \usepackage{url}
 \usepackage{tabularx}
 \usepackage{amsmath}
@@ -17,6 +18,7 @@
     \hfill\kern\z@%
 }
 \makeatother
+\DTMsetdatestyle{iso}
 \begin{document}
 \SetAlgorithmName{algorithm}{}{list of algorithms}
 
@@ -28,7 +30,8 @@ memory-hard key derivation \\
 with easier measurable security\\
 \normalsize
 caveman\footnote{toraboracaveman [at] protonmail [dot] com}\\
-\today\\
+\footnotesize
+\DTMnow\\
 \rule{1\columnwidth}{2pt}
 \end{center}
 
@@ -43,8 +46,9 @@ when one uses \emph{argon2}, his derived key will surely have superior
 protection against password brute-forcing attacks, but by how much?  to
 answer this, one would need to survey the industry that manufactures
 application-specific integrated circuits to obtain a map between
-\emph{time} and \emph{money}.  the centre of my thesis is that this part is
-not nice, because i found that life can be easier.
+\emph{time} and \emph{money}, in order to get an estimation on how much
+would it cost the adversary to discover the password in a given time
+window.
 
 resolving this vagueness is not a mere luxury to have, but a necessity for
 maximising survival, because it hinders the process of studying the
@@ -117,7 +121,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     that all segments are of equal lengths in order to
                     simplify \emph{ciphart}'s logic.  e.g. it wouldn't be
                     nice if the last segments were of unequal sizes.\\
-    $G$         & $\gets \hat M/C/\hat T/L$; total number of segments per
+    $G$         & $\gets \hat M/C/\hat T/L$.  total number of segments per
                     lane.\\
     $\hat B$    & $\gets \maxf(\log_2(GL\hat TR), B)$.  this is to ensure
                     that $\hat B$ is large enough to have at least one pass
@@ -130,10 +134,10 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     details on this later.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
-    $n_l$       & $\gets l\hat TR$; nonce variable for $l^{th}$ lane with at
-                    least $64$ bits.\\
-    $f$         & $\gets 0$; a flag indicating whether the $\hat
-                    M$-bytes pad is filled.\\
+    $n_l$       & $\gets l\hat TR$.  nonce variable for $l^{th}$ lane with
+                    at least $64$ bits.\\
+    $f$         & $\gets 0$.  a flag indicating whether the $\hat M$-bytes
+                    pad is filled.\\
 \end{tabularx}
 
 \subsection{output}
