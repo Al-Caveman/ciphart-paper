@@ -121,9 +121,9 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     that all segments are of equal lengths in order to
                     simplify \emph{ciphart}'s logic.  e.g. it wouldn't be
                     nice if the last segments were of unequal sizes.\\
-    $G$         & $\gets \hat M/C/\hat T/L$.  total number of segments per
-                    lane.\\
-    $\hat B$    & $\gets \maxf(\log_2(GL\hat TR), B)$.  this is to ensure
+    $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
+                    segments per lane.\\
+    $\hat B$    & $\gets \maxf(\log_2(\hat MC^{-1}R), B)$.  this is to ensure
                     that $\hat B$ is large enough to have at least one pass
                     over the $\hat M$-bytes memory.\\
     $\hat B$    & $\gets \log_2(2^{\hat B} - (2^{\hat B} \bmod L\hat TR) +
