@@ -1,6 +1,7 @@
 \documentclass[twocolumn]{article}
 \usepackage[margin=.7in]{geometry}
 \usepackage{url}
+\usepackage{tabularx}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
@@ -10,7 +11,11 @@
 \DeclareMathOperator{\len}{len}
 \renewcommand{\contentsname}{content}
 \makeatletter
-\def\myrulefill{\leavevmode\leaders\hrule height .6ex width 1ex depth -0.4ex\hfill\kern\z@}
+\def\myrulefill{%
+    \leavevmode\leaders\hrule%
+    height .6ex width 1ex depth -0.4ex%
+    \hfill\kern\z@%
+}
 \makeatother
 \begin{document}
 \SetAlgorithmName{algorithm}{}{list of algorithms}
@@ -41,18 +46,18 @@ application-specific integrated circuits to obtain a map between
 not nice, because i found that life can be easier.
 
 so i propose \emph{ciphart} --- a memory-hard key derivation function with
-a security contribution that is measured in a unit that i propose:
+a security contribution that is measured in a unit that i call
 \emph{relative entropy bits}.  this unit is measured objectively and is
 guaranteed to be true irrespective of whatever alien technology the
 adversary might have.
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
---- a library that implements \emph{ciphart} very closely to this paper,
+is a library that implements \emph{ciphart} very closely to this paper,
 without much fluff.  this should make integrating \emph{ciphart} into other
 systems more convenient.
-\texttt{ciphart}\footnote{\url{https://github.com/Al-Caveman/ciphart}} ---
-a tool for encrypting and decrypting files that makes use of
-\texttt{libciphart}.  latter tool is meant to be used by end-users or
+\texttt{ciphart}\footnote{\url{https://github.com/Al-Caveman/ciphart}} is a
+tool for encrypting and decrypting files that makes use of
+\texttt{libciphart}.  the latter is meant to be used by end-users or
 scripts.
 
 \tableofcontents
@@ -61,36 +66,47 @@ scripts.
 
 \section{ciphart}
 \subsection{parameters}
-\begin{tabular}{lp{7.5cm}}
-    $\enc$ & encryption function.  this also defines $C$.  e.g. if $\enc$
-    is \emph{xchacha20}, then $C=64$ bytes to reflect its block size.\\
+\begin{tabularx}{\columnwidth}{lX}
+    $\enc$ & encryption function.\\
     $p$ & password.\\
     $s$ & salt.\\
     $L$ & number of memory lanes for concurrency.\\
-    $M$ & total memory in bytes, increased to nearest multiple of $2CL$.\\
-    $T$ & number of $C$-bytes tasks per lane segment.\\
+    $M$ & total memory in bytes.\\
+    $T$ & number of tasks per lane segment.\\
     $R$ & number of rounds per task.\\
     $B$ & added security in \emph{relative entropy bits}.\\
     $K$ & output key size in bytes.\\
-\end{tabular}
+\end{tabularx}
 
 \subsection{internal variables}
-\begin{tabular}{lp{7.5cm}}
-    $\hat M$   & $\gets M - (M \bmod 2CL) + 2CL$.  this is to ensure that
-    it is in multiples of $2CL$.\\
-    $G$   & $\gets \hat M/C/T/L$; total number of segments per lane.\\
-    $\hat B$& $\gets \begin{cases}
-                    B & \text{if } B \ge \log_2(GLTR)\\
-                    \log_2(GLTR) & \text{otherwise}\\
-                 \end{cases}$\\
-            & this is to ensure that $\hat B$ is large enough to have at
-            least one pass over the $\hat M$ bytes memory.\\
-    $m_i$ & $C$ bytes memory for $i^{th}$ task in $\hat M$-bytes pad.\\
-    $n_l$ & $\gets lG$; nonce variable for $l^{th}$ lane with
-    at least $64$ bits.\\
-    $f$   & $\gets {\bf false}$; a flag indicating whether the $\hat
-    M$-bytes pad is filled.\\
-\end{tabular}
+\begin{tabularx}{\columnwidth}{lX}
+    $C$         & $\gets \begin{cases}
+                        64 & \text{if $\enc$ is \emph{xchacha20}}\\
+                        16 & \text{if $\enc$ is \emph{aes}}\\
+                        \ldots & \\
+                     \end{cases}$\\
+                & this to reflect the block size of the encryption
+                algorithm that's going to use \emph{ciphart}'s generated
+                key to encrypt data.\\
+    $\hat T$    & $\gets T - (T \bmod 2) + 2$.  this is to
+                    ensure that it is in multiples of $2$.\\
+    $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  this is to
+                    ensure that it is in multiples of $C\hat TL$.\\
+    $G$         & $\gets \hat M/C/T/L$; total number of segments per
+                    lane.\\
+    $\hat B$    & $\gets \begin{cases}
+                        B & \text{if } B \ge \log_2(GLTR)\\
+                        \log_2(GLTR) & \text{otherwise}\\
+                     \end{cases}$\\
+                & this is to ensure that $\hat B$ is large enough to have
+                    at least one pass over the $\hat M$ bytes memory.\\
+    $m_i$       & $C$ bytes memory for $i^{th}$ task in $\hat M$-bytes
+                    pad.\\
+    $n_l$       & $\gets lG$; nonce variable for $l^{th}$ lane with at
+                    least $64$ bits.\\
+    $f$         & $\gets {\bf false}$; a flag indicating whether the $\hat
+                    M$-bytes pad is filled.\\
+\end{tabularx}
 
 \subsection{output}
 \begin{tabular}{ll}
