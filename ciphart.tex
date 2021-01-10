@@ -19,7 +19,8 @@
 \Huge
 \myrulefill\ ciphart \myrulefill\\
 \LARGE
-key derivation with easier measurable security\\
+memory-hard key derivation \\
+with easier measurable security\\
 \normalsize
 caveman\\
 \today\\
@@ -39,10 +40,10 @@ application-specific integrated circuits to obtain a map between
 \emph{time} and \emph{money}.  the centre of my thesis is that this part is
 not nice, because i found that life can be easier.
 
-henceforth, i propose \emph{ciphart} --- a memory-hard key derivation
-function with a security contribution that is measured in a unit that i
-propose: \emph{relative entropy bits}.  this unit is measured objectively
-and is guaranteed to be true irrespective of whatever alien technology the
+so i propose \emph{ciphart} --- a memory-hard key derivation function with
+a security contribution that is measured in a unit that i propose:
+\emph{relative entropy bits}.  this unit is measured objectively and is
+guaranteed to be true irrespective of whatever alien technology the
 adversary might have.
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
@@ -51,7 +52,12 @@ without much fluff.  this should make integrating \emph{ciphart} into other
 systems more convenient.
 \texttt{ciphart}\footnote{\url{https://github.com/Al-Caveman/ciphart}} ---
 a tool for encrypting and decrypting files that makes use of
-\texttt{libciphart}.  this tool is meant to be used by humans or scripts.
+\texttt{libciphart}.  latter tool is meant to be used by end-users or
+scripts.
+
+\tableofcontents
+\vfill
+\break
 
 \section{ciphart}
 \subsection{parameters}
@@ -62,7 +68,7 @@ a tool for encrypting and decrypting files that makes use of
     $s$ & salt.\\
     $L$ & number of memory lanes for concurrency.\\
     $M$ & total memory in bytes, increased to nearest multiple of $2CL$.\\
-    $T$ & number of $C$-byte tasks per lane segment.\\
+    $T$ & number of $C$-bytes tasks per lane segment.\\
     $R$ & number of rounds per task.\\
     $B$ & added security in \emph{relative entropy bits}.\\
     $K$ & output key size in bytes.\\
@@ -82,14 +88,17 @@ a tool for encrypting and decrypting files that makes use of
     $m_i$ & $C$ bytes memory for $i^{th}$ task in $\hat M$-bytes pad.\\
     $n_l$ & $\gets lG$; nonce variable for $l^{th}$ lane with
     at least $64$ bits.\\
-    $f$   & $\gets \text{false}$; a flag indicating whether the $\hat
-    M$-byte pad is filled.\\
+    $f$   & $\gets {\bf false}$; a flag indicating whether the $\hat
+    M$-bytes pad is filled.\\
 \end{tabular}
 
 \subsection{output}
 \begin{tabular}{ll}
 $k$ & $K$-bytes key with $\ge B$ \emph{relative entropy bits}.\\
 \end{tabular}
+
+\subsection{steps}
+shown in \cref{alg_ciphart}.
 
 \begin{algorithm}[tbh]
 \While{true}{
@@ -111,7 +120,7 @@ $k$ & $K$-bytes key with $\ge B$ \emph{relative entropy bits}.\\
                 }
             }
         }
-        \If{$f = \text{true}$ {\bf and} $\log_2(n_1L) \ge B$}{
+        \If{$f = {\bf true}$ {\bf and} $\log_2(n_1L) \ge B$}{
             \textbf{go to} \cref{ciphart_out}\;
         }
     }
