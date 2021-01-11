@@ -45,10 +45,16 @@ that i've known so far.
 when one uses \emph{argon2}, his derived key will surely have superior
 protection against password brute-forcing attacks, but by how much?  to
 answer this, one would need to survey the industry that manufactures
-application-specific integrated circuits to obtain a map between
+application-specific integrated circuits (asics) to obtain a map between
 \emph{time} and \emph{money}, in order to get an estimation on how much
 would it cost the adversary to discover the password in a given time
 window.
+
+while the approach of surveying the asics industry is not wrong, it is
+largely subjective, with expensive housekeeping, and practically leads the
+user to rely on vague foundations to build his security on.  this vagueness
+is not nice, and it would be better if we had an objective measure to
+quantify the security of our memory-hard key derivation functions.
 
 resolving this vagueness is not a mere luxury to have, but a necessity for
 maximising survival, because it hinders the process of studying the
@@ -81,11 +87,13 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
     $\enc$ & encryption function.\\
     $p$ & password.\\
     $s$ & salt.\\
-    $L$ & number of memory lanes for concurrency.\\
     $M$ & total memory in bytes.\\
+    $L$ & number of memory lanes for concurrency.\\
     $T$ & number of tasks per lane segment.\\
     $R$ & number of rounds per task.\\
-    $B$ & added security in \emph{relative entropy bits}.\\
+    $B$ & minimum quantity of increased protection against password
+            brute-forcing attacks in the unit of \emph{relative entropy
+            bits}.\\
     $K_{\text{out}}$ & output key size in bytes.\\
 \end{tabularx}
 
@@ -98,8 +106,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                         \ldots & \\
                      \end{cases}$\\
                 & this to reflect the block size of the encryption
-                    algorithm that's going to use \emph{ciphart}'s
-                    generated key to encrypt data.\\
+                    algorithm that implements $\enc$.\\
     $K_{\text{in}}$ & $\gets \begin{cases}
                         32 \text{ bytes} & \text{if $\enc$ is
                                             \emph{xchacha20}}\\
@@ -113,10 +120,10 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     possibly used by other encryption algorithms in later
                     stages\footnote{at the expense of losing the meaning of
                     \emph{relative entropy bits}.}.\\
-    $\hat T$    & $\gets T - (T \bmod 2) + 2$.  this is to
-                    ensure that it is in multiples of $2$.  why?  because
-                    we need a buffer for storing the clear-text and another
-                    for storing the output cipher-text.\\
+    $\hat T$    & $\gets T - (T \bmod 2) + 2$.  this is to ensure that
+                    there is an even number of tasks in a segment.  why?
+                    because we need a buffer for storing the clear-text and
+                    another for storing the output cipher-text.\\
     $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  this is to
                     ensure that it is in multiples of $C\hat TL$.  why?  so
                     that all segments are of equal lengths in order to
@@ -128,7 +135,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     that $\hat B$ is large enough to have at least one pass
                     over the $\hat M$-bytes memory.\\
     $\hat B$    & $\gets \log_2(2^{\hat B} - (2^{\hat B} \bmod L\hat TR) +
-                    L\hat TR)$.  this is just to reflect the reality with
+                    L\hat TR)$.  this is to reflect the reality with
                     \emph{ciphart} that segments must complete.  i.e. when
                     the user asks for $B$ \emph{relative entropy bits}, he
                     gets $\hat B$ instead, where $\hat B \ge B$.  more
@@ -143,7 +150,8 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 
 \subsection{output}
 \begin{tabular}{ll}
-$k$ & $K$-bytes key with $\ge B$ \emph{relative entropy bits}.\\
+$k$ & $K_{\text{out}}$-bytes key with $\ge B$ \emph{relative entropy
+        bits}.\\
 \end{tabular}
 
 \subsection{steps}
@@ -156,12 +164,12 @@ shown in \cref{alg_ciphart}.
             \For{$t=0, 1, \ldots, T-1$}{
                 \For{$r=0, 1, \ldots, R-1$}{
                     $i \gets gT + t$\;
-                    \uIf{$t = 0$}{
-                        $j \gets i + T - 1$\;
-                    }\uElseIf{$t = T - 1$}{
-                        $j \gets i + 1 - T$\;
-                    }\Else{
+                    \uIf{$0 < t < T - 1$}{
                         $j \gets i + 1$\;
+                    }\uElseIf{$t = 0$}{
+                        $j \gets i + T - 1$\;
+                    }\ElseIf{$t = T - 1$}{
+                        $j \gets i - T + 1$\;
                     }
                     $m_j \gets \enc(m_i, n_l, k)$\;
                     $n_l \gets n_l + 1$\;
@@ -193,7 +201,7 @@ cores, specially when segment sizes, $T$, are larger.
 
 other lines are not easily independent, so i didn't even bother to try to
 parallelise them.  specially since this is not a problem, since the
-cpu-heavy part is in in the easily-paralleliseable  part.
+cpu-heavy part is in the easily-parallelise-able  part.
 
 with \emph{argon2}, if one wants to increase the cpu load without
 increasing memory pad's use, one can increase the number of passes over the
@@ -203,18 +211,22 @@ entropy bits} parameter $B$.
 but, simply increasing number of passes on the pad may not be the best
 option for all cases.  e.g. what if someone has a small pad, and small
 segments?  in such case, a higher percentage of the cpu will be wasted in
-the non-paralleliseable steps, which is a waste.
+the non-parallelise-able steps, which is a waste.
 
 this is why \emph{ciphart} has an additional parameter $R$.  this parameter
 can allow to increase the load on the cpu without even requiring to go
-through the non-paralleliseable steps.  \emph{argon2} lacks this parameter.
+through the non-parallelise-able steps.  \emph{argon2} lacks this parameter.
 this is not the main reason \emph{ciphart} was made, but it's one of the
 incremental improvements.
 
-one could philosophically argue that \emph{argon2} has the $R$ parameter,
-except that it always assumes that $R=1$.  i don't agree with this
-assumption, which is why i made \emph{ciphart} to allows the user to set
-$R$ more flexibly.
+philosophically, i think that \emph{argon2} does have the $R$ parameter,
+except that it assumes that $R=1$, and does not allow the user to change
+it.  i don't agree with this assumption, which is why i made \emph{ciphart}
+to allows the user to set $R$ more freely.
+
+however, i do agree that $R=1$ can be a sensible \emph{default} value when
+$M$ and $T$ are large enough for a given system, but this is not a reason
+to force $R=1$ for all other parameters or systems.
 
 \section{memory-hardness}
 \section{security interpretation}
