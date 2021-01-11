@@ -22,6 +22,7 @@
 \usepackage{cleveref} % must be loaded last
 \begin{document}
 \SetAlgorithmName{algorithm}{}{list of algorithms}
+\SetInd{.1em}{1em}
 
 \begin{center}
 \Huge
@@ -162,7 +163,6 @@ but i didn't do it \emph{yet} because my threat model currently doesn't
 benefit from as such.
 
 \begin{algorithm}[tbh]
-\SetInd{.1}{1}
 \While{$1$}{
     \leIf{$f = 0$}{$\hat R \gets 1$}{$\hat R \gets R$}
     \For{$g=0, 1, \ldots, G-1$}{
