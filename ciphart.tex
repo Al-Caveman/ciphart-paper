@@ -6,10 +6,10 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
-\usepackage{cleveref} % must be loaded last
 \DeclareMathOperator{\enc}{enc}
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
+\DeclareMathOperator{\newkey}{newkey}
 \renewcommand{\contentsname}{content}
 \makeatletter
 \def\myrulefill{%
@@ -19,6 +19,7 @@
 }
 \makeatother
 \DTMsetdatestyle{iso}
+\usepackage{cleveref} % must be loaded last
 \begin{document}
 \SetAlgorithmName{algorithm}{}{list of algorithms}
 
@@ -142,7 +143,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     details on this later.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
-    $n_l$       & $\gets l\hat TR$.  nonce variable for $l^{th}$ lane with
+    $n_l$       & $\gets gl\hat TR$.  nonce variable for $l^{th}$ lane with
                     at least $64$ bits.\\
     $f$         & $\gets 0$.  a flag indicating whether the $\hat M$-bytes
                     pad is filled.\\
@@ -155,25 +156,42 @@ $k$ & $K_{\text{out}}$-bytes key with $\ge B$ \emph{relative entropy
 \end{tabular}
 
 \subsection{steps}
-shown in \cref{alg_ciphart}.
+steps of \emph{ciphart} is shown in \cref{alg_ciphart}.  this corresponds
+to \emph{argon2d}.  adding a \emph{ciphart-i} variant is a trivial matter,
+but i didn't do it \emph{yet} because my threat model currently doesn't
+benefit from as such.
 
 \begin{algorithm}[tbh]
+\SetInd{.1}{1}
 \While{$1$}{
+    \leIf{$f = 0$}{$\hat R \gets 1$}{$\hat R \gets R$}
     \For{$g=0, 1, \ldots, G-1$}{
         \For{$l=0, 1, \ldots, L-1$}{\label{ciphart_lanes}
             \For{$t=0, 1, \ldots, T-1$}{
-                \For{$r=0, 1, \ldots, R-1$}{
-                    $i \gets gT + t$\;
-                    \uIf{$0 < t < T - 1$}{
-                        $j \gets i + 1$\;
-                    }\uElseIf{$t = 0$}{
-                        $j \gets i + T - 1$\;
-                    }\ElseIf{$t = T - 1$}{
-                        $j \gets i - T + 1$\;
-                    }
+                $i \gets gLT + t$\;
+                \uIf{$t < T - 1$}{
+                    $j \gets i + 1$\;
+                }\ElseIf{$t = T - 1$}{
+                    $j \gets i - T + 1$\;
+                }
+                \For{$r=0, 1, \ldots, \hat R-1$}{
                     $m_j \gets \enc(m_i, n_l, k)$\;
+                    $\hat i \gets i$\;
+                    $i \gets j$\;
+                    $j \gets \hat i$\;
                     $n_l \gets n_l + 1$\;
-                    $k \gets f(m_j, p, l, s, t)$\;
+                    \uIf{$f = 0$}{
+                        $v \gets m_j \bmod (gLTR + t)$\;
+                        \If{$v \ge gLTR$}{
+                            $v \gets v + lT$\;
+                        }
+                    }\Else{
+                        $v \gets m_j \bmod (GLTR - LTR + t)$\;
+                        \If{$v \ge gLTR$}{
+                            $v \gets v + LTR$\;
+                        }
+                    }
+                    $k \gets m_v[0:K_{\text{in}}]$\;\label{ciphart_newkey}
                 }
             }
         }
@@ -185,12 +203,12 @@ shown in \cref{alg_ciphart}.
 }
 \While{$1$}{\label{ciphart_out}
     \For{$l=1, 2, \ldots, L$}{
-        \lIf{$\len(k) \ge K$}{\Return $k[0:K]$}
+        \lIf{$\len(k) \ge K_{\text{out}}$}{\Return $k[0:K_{\text{out}}]$}
         $n \gets n + 1$\;
         $k \gets k \mathbin\Vert \enc(m_{l,S,T}[1], n, k)$\;
     }
 }
-\caption{ciphart version 6}
+\caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
 
@@ -222,11 +240,11 @@ incremental improvements.
 philosophically, i think that \emph{argon2} does have the $R$ parameter,
 except that it assumes that $R=1$, and does not allow the user to change
 it.  i don't agree with this assumption, which is why i made \emph{ciphart}
-to allows the user to set $R$ more freely.
+to allow the user to set $R$ more freely.
 
-however, i do agree that $R=1$ can be a sensible \emph{default} value when
-$M$ and $T$ are large enough for a given system, but this is not a reason
-to force $R=1$ for all other parameters or systems.
+however, i do agree that $R=1$ can be a sensible \emph{default} for most
+parameter and system combinations, but this is not a reason to force $R=1$
+for all other parameters or systems.
 
 \section{memory-hardness}
 \section{security interpretation}
