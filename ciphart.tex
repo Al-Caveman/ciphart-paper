@@ -181,14 +181,17 @@ benefit from as such.
                     $j \gets \hat i$\;
                     $n_l \gets n_l + 1$\;
                     \uIf{$f = 0$}{
-                        $v \gets m_j \bmod (gLTR + t)$\;
-                        \If{$v \ge gLTR$}{
+                        $v \gets m_j \bmod (gLT + t)$\;
+                        \If{$v \ge gLT$}{
                             $v \gets v + lT$\;
                         }
                     }\Else{
-                        $v \gets m_j \bmod (GLTR - LTR + t)$\;
-                        \If{$v \ge gLTR$}{
-                            $v \gets v + LTR$\;
+                        $v \gets m_j \bmod (GLT - LT + t)$\;
+                        \uIf{$v \ge gLT + t$}{
+                            $v \gets v + LT$\;
+                        }
+                        \ElseIf{$v \ge gLT$}{
+                            $v \gets v + lT$\;
                         }
                     }
                     $k \gets m_v[0:K_{\text{in}}]$\;\label{ciphart_newkey}
@@ -233,18 +236,20 @@ the non-parallelise-able steps, which is a waste.
 
 this is why \emph{ciphart} has an additional parameter $R$.  this parameter
 can allow to increase the load on the cpu without even requiring to go
-through the non-parallelise-able steps.  \emph{argon2} lacks this parameter.
-this is not the main reason \emph{ciphart} was made, but it's one of the
-incremental improvements.
+through the non-parallelise-able steps.  \emph{argon2} lacks this
+parameter.  this is not the main reason \emph{ciphart} was made, but it's
+one of the incremental improvements.
 
 philosophically, i think that \emph{argon2} does have the $R$ parameter,
 except that it assumes that $R=1$, and does not allow the user to change
 it.  i don't agree with this assumption, which is why i made \emph{ciphart}
 to allow the user to set $R$ more freely.
 
-however, i do agree that $R=1$ can be a sensible \emph{default} for most
-parameter and system combinations, but this is not a reason to force $R=1$
-for all other parameters or systems.
+however, i think that $R=1$ is best for the first pass to ensure that the
+memory is filled soonest possible.  this is why \emph{ciphart} assumes
+$R=1$ in the first pass, just to fillt he memory as soon as possible.  but
+in subsequet passes, user's value for $R$ will be chosen.  i.e. if $R=5$,
+then each task in later passes will be solved recursively $5$ times.
 
 \section{memory-hardness}
 \section{security interpretation}
