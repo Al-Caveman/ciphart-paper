@@ -133,18 +133,18 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     nice if the last segments were of unequal sizes.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
-    $\hat B$    & $\gets \maxf(\log_2(\hat MC^{-1}R), B)$.  this is to ensure
+    $\hat B$    & $\gets \maxf(\hat MC^{-1}R, 2^B)$.  this is to ensure
                     that $\hat B$ is large enough to have at least one pass
                     over the $\hat M$-bytes memory.\\
-    $\hat B$    & $\gets \log_2(2^{\hat B} - (2^{\hat B} \bmod L\hat TR) +
-                    L\hat TR)$.  this is to reflect the reality with
-                    \emph{ciphart} that segments must complete.  i.e. when
-                    the user asks for $B$ \emph{relative entropy bits}, he
-                    gets $\hat B$ instead, where $\hat B \ge B$.  more
-                    details on this later.\\
+    $\hat B$    & $\gets \hat B - (\hat B \bmod L\hat TR) +
+                    L\hat TR$.  this is to reflect the reality that, with
+                    \emph{ciphart}, segments must complete.  i.e. when the
+                    user asks for $B$ \emph{relative entropy bits}, he gets
+                    $\log_2 \hat B$ bits instead, where $\log_2\hat B \ge
+                    B$.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
-    $n_l$       & $\gets gl\hat TR$.  nonce variable for $l^{th}$ lane with
+    $n_l$       & $\gets lG\hat TR$.  nonce variable for $l^{th}$ lane with
                     at least $64$ bits.\\
     $f$         & $\gets 0$.  a flag indicating whether the $\hat M$-bytes
                     pad is filled.\\
@@ -189,8 +189,7 @@ benefit from as such.
                         $v \gets m_j \bmod (GLT - LT + t)$\;
                         \uIf{$v \ge gLT + t$}{
                             $v \gets v + LT$\;
-                        }
-                        \ElseIf{$v \ge gLT$}{
+                        }\ElseIf{$v \ge gLT$}{
                             $v \gets v + lT$\;
                         }
                     }
@@ -198,7 +197,8 @@ benefit from as such.
                 }
             }
         }
-        \If{$f$ {\bf and} $\log_2(n_1L) \ge B$}{
+        \If{$n_1L = \hat B$}{
+            $g_{\text{last}} = g$\;
             \textbf{go to} \cref{ciphart_out}\;
         }
     }
