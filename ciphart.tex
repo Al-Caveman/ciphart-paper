@@ -78,8 +78,10 @@ systems more convenient.
 an application for encrypting and decrypting files that makes use of
 \texttt{libciphart}.  this application is intended for use by end-users or
 scripts, henceforth it has some fluff to treat mankind with dignity.
+\vfill
+\break
 
-%\tableofcontents
+\tableofcontents
 %\vfill
 %\break
 
@@ -122,10 +124,15 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     possibly used by other encryption algorithms in later
                     stages\footnote{at the expense of losing the meaning of
                     \emph{relative entropy bits}.}.\\
+    $\hat T$    & $\gets \maxf(\lceil K_{\text{in}} / C\rceil, T)$.  this
+                    is to ensure that we have enough encrypted bytes for
+                    new keys.\\
     $\hat T$    & $\gets T - (T \bmod 2) + 2$.  this is to ensure that
                     there is an even number of tasks in a segment.  why?
                     because we need a buffer for storing the clear-text and
                     another for storing the output cipher-text.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  this is to
                     ensure that it is in multiples of $C\hat TL$.  why?  so
                     that all segments are of equal lengths in order to
@@ -159,8 +166,8 @@ $k$ & $K_{\text{out}}$-bytes key with $\ge B$ \emph{relative entropy
 \subsection{steps}
 steps of \emph{ciphart} is shown in \cref{alg_ciphart}.  this corresponds
 to \emph{argon2d}.  adding a \emph{ciphart-i} variant is a trivial matter,
-but i didn't do it \emph{yet} because my threat model currently doesn't
-benefit from as such.
+i just didn't do it yet because my threat model currently doesn't benefit
+from a password independent variant.
 
 \begin{algorithm}[tbh]
 \While{$1$}{
