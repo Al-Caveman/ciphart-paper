@@ -184,10 +184,6 @@ from a password independent variant.
                 }
                 \For{$r=0, 1, \ldots, \hat R-1$}{
                     $m_j \gets \enc(m_i, n_l, v)$\;
-                    $\hat i \gets i$\;
-                    $i \gets j$\;
-                    $j \gets \hat i$\;
-                    $n_l \gets n_l + 1$\;
                     \uIf{$f = 0$}{
                         $v \gets m_j \bmod (gLTC + tC - V)$\;
                         \If{$v \ge gLTC - V$}{
@@ -201,6 +197,10 @@ from a password independent variant.
                             $v \gets v + lTC$\;
                         }
                     }
+                    $\hat i \gets i$\;
+                    $i \gets j$\;
+                    $j \gets \hat i$\;
+                    $n_l \gets n_l + 1$\;
                 }
             }
         }
