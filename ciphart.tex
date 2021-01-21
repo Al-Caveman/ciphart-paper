@@ -3,12 +3,14 @@
 \usepackage[showisoZ=false]{datetime2}
 \usepackage{url}
 \usepackage{tabularx}
+\usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{enc}
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
+\DeclareMathOperator{\hash}{hash}
 \renewcommand{\contentsname}{content}
 \makeatletter
 \def\myrulefill{%
@@ -88,6 +90,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \subsection{parameters}
 \begin{tabularx}{\columnwidth}{lX}
     $\enc$ & encryption function.\\
+    $\hash$ & hashing function.\\
     $p$ & password.\\
     $s$ & salt.\\
     $M$ & total memory in bytes.\\
@@ -155,14 +158,15 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     at least $64$ bits.\\
     $f$         & $\gets 0$.  a flag indicating whether the $\hat M$-bytes
                     pad is filled.\\
-    $v$         & $\gets l\hat T$.  a pointer to the first byte where
-                    $V$-bytes key is stored.\\
+    $v$         & $\gets *\hash(p \mathbin\Vert s, V)$.  a pointer to the
+                    first byte where $V$-bytes key is stored.\\
 \end{tabularx}
 
 \subsection{output}
-\begin{tabular}{ll}
-$k$ & $K$-bytes key with $\hat B$ \emph{relative entropy bits}.\\
-\end{tabular}
+\begin{tabularx}{\columnwidth}{lX}
+$k$ & $K$-bytes key with an increased protection against brute-forcing
+attacks by $\hat B$ \emph{relative entropy bits}.\\
+\end{tabularx}
 
 \subsection{steps}
 steps of \emph{ciphart} is shown in \cref{alg_ciphart}.  this corresponds
@@ -175,7 +179,7 @@ from a password independent variant.
     \For{$g=0, 1, \ldots, G-1$}{
         \For{$l=0, 1, \ldots, L-1$}{\label{ciphart_lanes}
             \For{$t=0, 1, \ldots, T-1$}{
-                $i \gets gLT + t$\;
+                $i \gets gLT + lT + t$\;
                 \uIf{$t < T - 1$}{
                     $j \gets i + 1$\;
                 }\ElseIf{$t = T - 1$}{
@@ -198,11 +202,19 @@ from a password independent variant.
                 }
             }
         }
-        \lIf{$n_1L = \hat B$}{\textbf{go to} \cref{ciphart_out}}
+        \If{$n_1L = \hat B$}{
+            $g_{\text{last}} \gets g$\;
+            \textbf{go to} \cref{ciphart_out}\;
+        }
     }
     $f \gets 1$\;
 }
-\textbf{out}\label{ciphart_out}
+$i \gets g_{\text{last}}LT + T-1$\;
+$k \gets \hash(
+    m_i \mathbin\Vert m_{i+T} \mathbin\Vert m_{i+2T} \mathbin\Vert \ldots
+    \mathbin\Vert m_{i+LT}, K
+)$\label{ciphart_out}\;
+\Return{$k$}
 \caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
@@ -213,6 +225,12 @@ are fully independent of one other, they can quite happily utilise $L$ cpu
 cores, specially when segment sizes, $T$, are larger.
 
 \section{memory-hardness}
+\begin{proof}
+    \cref{alg_ciphart} is just a variation of \emph{argon2d}, except that
+    it uses an encryption function, $\enc$, instead of a hashing functionn.
+    so if \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
+\end{proof}
+
 \section{security interpretation}
 \section{comparison}
 \section{summary}
