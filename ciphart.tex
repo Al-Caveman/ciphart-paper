@@ -202,18 +202,25 @@ from a password independent variant.
                 }
             }
         }
-        \If{$n_1L = \hat B$}{
+        \If{$n_0L = \hat B$}{
             $g_{\text{last}} \gets g$\;
             \textbf{go to} \cref{ciphart_out}\;
         }
     }
     $f \gets 1$\;
 }
-$i \gets g_{\text{last}}LT + T-1$\;
+
+$i \gets g_{\text{last}}LT + T-1$\;\label{ciphart_out}
 $k \gets \hash(
     m_i \mathbin\Vert m_{i+T} \mathbin\Vert m_{i+2T} \mathbin\Vert \ldots
     \mathbin\Vert m_{i+LT}, K
-)$\label{ciphart_out}\;
+)$\;
+$t \gets T - 1$\;
+\For{$l=0, 1, \ldots, L-1$}{
+    $m_{i + t} \gets \enc(m_{i + t - 1}, n_0, v)$\;
+    $n_0 \gets n_0 + 1$\;
+    $v \gets m_{i + t - 1} \bmod(GLTC - LC + lC - V)$\;
+}
 \Return{$k$}
 \caption{ciphart}
 \label{alg_ciphart}
