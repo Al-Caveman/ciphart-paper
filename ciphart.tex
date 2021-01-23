@@ -143,15 +143,8 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     nice if the last segments were of unequal sizes.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
-    $\hat B$    & $\gets \maxf(\hat MC^{-1}, 2^B)$.  this is to ensure
-                    that $\hat B$ is large enough to have at least one pass
-                    over the $\hat M$-bytes memory.\\
-    $\hat B$    & $\gets \hat B - (\hat B \bmod L\hat T) +
-                    L\hat T$.  this is to reflect the reality that, with
-                    \emph{ciphart}, segments must complete.  i.e. when the
-                    user asks for $B$ \emph{relative entropy bits}, he gets
-                    $\log_2 \hat B$ bits instead, where $\log_2\hat B \ge
-                    B$.\\
+    $\hat B$    & $\gets 0$.  actual number of added \emph{relative entropy
+                    bits}, where $\hat B \ge 2^B$.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
     $n_l$       & $\gets lG\hat T$.  nonce variable for $l^{th}$ lane with
@@ -193,7 +186,7 @@ from a password independent variant.
                         $v \gets v + lTC$\;
                     }
                 }\Else{
-                    $v \gets m_j \bmod (GLTC - LTC + tC - V)$\;
+                    $v \gets m_j \bmod (\hat M - LTC + tC - V)$\;
                     \uIf{$v \ge gLTC + tC - V$}{
                         $v \gets v + LTC$\;
                     }\ElseIf{$v \ge gLTC - V$}{
@@ -202,7 +195,8 @@ from a password independent variant.
                 }
             }
         }
-        \If{$n_0L = \hat B$}{
+        $\hat B \gets \hat B + LT$\;
+        \If{$\hat B \ge 2^B$}{
             $g_{\text{last}} \gets g$\;
             \textbf{go to} \cref{ciphart_out}\;
         }
@@ -210,18 +204,14 @@ from a password independent variant.
     $f \gets 1$\;
 }
 
-$i \gets g_{\text{last}}LT + T-1$\;\label{ciphart_out}
-$k \gets \hash(
-    m_i \mathbin\Vert m_{i+T} \mathbin\Vert m_{i+2T} \mathbin\Vert \ldots
-    \mathbin\Vert m_{i+LT}, K
-)$\;
-$t \gets T - 1$\;
-\For{$l=0, 1, \ldots, L-1$}{
-    $m_{i + t} \gets \enc(m_{i + t - 1}, n_0, v)$\;
+\For{$l=1, 2, \ldots, L-1$}{\label{ciphart_out}
+    $i \gets C\times\left(g_{\text{last}}LT + lT + T-1\right)$\;
+    $m_i \gets \enc(m_{i - 1}, n_0, v)$\;
     $n_0 \gets n_0 + 1$\;
-    $v \gets m_{i + t - 1} \bmod(GLTC - LC + lC - V)$\;
+    $v \gets m_i \bmod(i + C - V)$\;
+    $\hat B \gets \hat B + 1$\;
 }
-\Return{$k$}
+\Return{$k, \hat B$}
 \caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
