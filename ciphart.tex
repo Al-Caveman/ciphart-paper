@@ -143,8 +143,10 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     nice if the last segments were of unequal sizes.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
-    $\hat B$    & $\gets 0$.  actual number of added \emph{relative entropy
-                    bits}, where $\hat B \ge 2^B$.\\
+    $\hat B$    & $\gets \maxf(GLT, B - (B\bmod LT) + LT)$.  actual number
+                    of times $\enc$ is called so that we at least one pass
+                    is performed over the $\hat M$-bytes pad, where $\hat B
+                    \ge 2^B$.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
     $n_l$       & $\gets lG\hat T$.  nonce variable for $l^{th}$ lane with
@@ -158,7 +160,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \subsection{output}
 \begin{tabularx}{\columnwidth}{lX}
 $k$ & $K$-bytes key with an increased protection against brute-forcing
-attacks by $\hat B$ \emph{relative entropy bits}.\\
+attacks by $\log_2 \hat B$ \emph{relative entropy bits}.\\
 \end{tabularx}
 
 \subsection{steps}
@@ -203,15 +205,9 @@ from a password independent variant.
     }
     $f \gets 1$\;
 }
-
-\For{$l=1, 2, \ldots, L-1$}{\label{ciphart_out}
-    $i \gets C\times\left(g_{\text{last}}LT + lT + T-1\right)$\;
-    $m_i \gets \enc(m_{i - 1}, n_0, v)$\;
-    $n_0 \gets n_0 + 1$\;
-    $v \gets m_i \bmod(i + C - V)$\;
-    $\hat B \gets \hat B + 1$\;
-}
-\Return{$k, \hat B$}
+$i \gets g_{\text{last}}LT$\;\label{ciphart_out}
+$k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
+\Return{$k$}
 \caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
