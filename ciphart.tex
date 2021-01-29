@@ -8,8 +8,8 @@
 \usepackage{amssymb}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{\texttt{enc}}
-\DeclareMathOperator{\maxf}{\texttt{max}}
-\DeclareMathOperator{\len}{\texttt{len}}
+\DeclareMathOperator{\maxf}{max}
+\DeclareMathOperator{\len}{len}
 \DeclareMathOperator{\hash}{\texttt{hash}}
 \DeclareMathOperator{\kdf}{\texttt{ciphart}}
 \renewcommand{\contentsname}{paper's layout}
@@ -243,7 +243,7 @@ original clear-text.  so what options does he have?
         \item $\hat v_0 \gets \texttt{0x00\ldots 0}$,
         \item $\hat v_1 \gets \texttt{0x00\ldots 1}$,
         \item $\vdots$
-        \item $\hat v_{2^{H(p)}-1} \gets \texttt{0xFF\ldots F}$,
+        \item $\hat v_{2^{H(p)}-1} \gets \texttt{0xff\ldots f}$,
     \end{itemize}
     until the adversary finds a key that manages to decrypt $m_0$.
 
@@ -298,17 +298,21 @@ effort was pointless.
 brute-forcing attacks is $\min(H(p), 8V)$ entropy bits.
 
 \subsection{with \emph{ciphart}}
-\emph{option 1} is identical to the case without \emph{ciphart}, but
-\emph{option 2} is only modified to evaluate keys from:
+adversary's options are:
 \begin{itemize}
-    \item $\hat v_0 \gets \kdf(\enc, \hat p_0, s, M, L, T, B, K)$,
-    \item $\hat v_1 \gets \kdf(\enc, \hat p_1, s, M, L, T, B, K)$,
-    \item $\vdots$
-    \item $\hat v_{2^{H(p)}-1} \gets \kdf(\enc, \hat p_{2^{H(p)}-1}, s, M,
-    L, T, B, K)$,
+    \item \emph{option 1:} identical to the case without \emph{ciphart}.
+    \item \emph{option 3:} this is similar to \emph{option 2} except for
+    evaluating keys from:
+    \begin{itemize}
+        \item $\hat v_0 \gets \kdf(\enc, \hat p_0, s, M, L, T, B, K)$,
+        \item $\hat v_1 \gets \kdf(\enc, \hat p_1, s, M, L, T, B, K)$,
+        \item $\vdots$
+        \item $\hat v_{2^{H(p)}-1} \gets \kdf(\enc, \hat p_{2^{H(p)}-1}, s, M,
+        L, T, B, K)$,
+    \end{itemize}
+    where $\enc$ is the same function that's used to encrypt cipher-texts $m_0,
+    m_1, \ldots$ and $K = V$.
 \end{itemize}
-where $\enc$ is the same function that's used to encrypt cipher-texts $m_0,
-m_1, \ldots$ and $K = V$.
 
 why should it be the same encryption function and $K=V$?  because it's the
 case where \emph{ciphart} has a guaranteed interpretation as i show later
@@ -338,9 +342,8 @@ also, since the encryption algorithm that's used by $\kdf$ is the same as
 the one that's used to encrypt cipher-text blocks $m_0, m_1, \ldots$, we
 know that if it costs the adversary $c$-many units of money for a single
 call to $\enc$ with strategy \emph{option 1}, it will necessarily have to
-cost him $cN$ units of money with strategy \emph{option 2} with
-\emph{ciphart}, because $\kdf$ in \emph{option 2} is using the same $\enc$
-that's used in \emph{option 1}.
+cost him $cN$ units of money with strategy \emph{option 3}, because $\kdf$
+in \emph{option 3} is using the same $\enc$ that's used in \emph{option 1}.
 
 this way, it doesn't matter to us what kind of alien technology that
 adversary has:  if one call to $\enc$ costs him $c$ units of money, then
