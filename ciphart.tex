@@ -11,7 +11,8 @@
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
 \DeclareMathOperator{\hash}{\texttt{hash}}
-\DeclareMathOperator{\kdf}{\texttt{ciphart}}
+\DeclareMathOperator{\argon}{\texttt{argon2}}
+\DeclareMathOperator{\ciphart}{\texttt{ciphart}}
 \renewcommand{\contentsname}{paper's layout}
 \makeatletter
 \def\myrulefill{%
@@ -222,8 +223,11 @@ cores, specially when segment sizes, $T$, are larger.
     so if \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
 \end{proof}
 
+\section{comparison}
+\subsection{raw}
+
 \section{security interpretation}
-\subsection{without \emph{ciphart}}
+\subsection{raw}
 let's say that we used block encryption function $\enc$ and a key $v \gets
 \hash(p \Vert s, V)$ to encrypt some clear-text into a sequence of
 $C$-byte cipher-text blocks $m_0, m_1, \ldots$.  let's say that the
@@ -235,7 +239,8 @@ original clear-text.  so what options does he have?
     \item \emph{option 1:} brute-force the $V$-bytes key space.  in order
     to get a probability of $1$ of finding the key $v$, the adversary would
     need to evaluate $2^{8V}$ many keys\footnote{assuming that each
-    byte is $8$ bits.}.
+    byte is $8$ bits.}.  $2^{8V}$ is too large of a number, and i think
+    maybe the adversary would be fossilised 
 
     this works by having the adversary repeatedly decrypting $m_0$ with
     $\enc$, each time using a new key among
@@ -243,7 +248,7 @@ original clear-text.  so what options does he have?
         \item $\hat v_0 \gets \texttt{0x00\ldots 0}$,
         \item $\hat v_1 \gets \texttt{0x00\ldots 1}$,
         \item $\vdots$
-        \item $\hat v_{2^{H(p)}-1} \gets \texttt{0xff\ldots f}$,
+        \item $\hat v_{8V-1} \gets \texttt{0xff\ldots f}$,
     \end{itemize}
     until the adversary finds a key that manages to decrypt $m_0$.
 
@@ -297,6 +302,23 @@ effort was pointless.
 \textbf{security interpretation:}  your protection against password
 brute-forcing attacks is $\min(H(p), 8V)$ entropy bits.
 
+\subsection{with \emph{argon2}}
+adversary's options are:
+\begin{itemize}
+    \item \emph{option 1:} identical to the \emph{raw} case.
+    \item \emph{option 3:} this is similar to \emph{option 2} except for
+    evaluating keys from:
+    \begin{itemize}
+        \item $\hat v_0 \gets \argon(\hat p_0, \ldots)$,
+        \item $\hat v_1 \gets \argon(\hat p_1, \ldots)$,
+        \item $\vdots$
+        \item $\hat v_{2^{H(p)}-1} \gets \argon(\hat p_{2^{H(p)}-1},
+        \ldots)$,
+    \end{itemize}
+    where $\enc$ is the same function that's used to encrypt cipher-texts
+    $m_0, m_1, \ldots$ and $K = V$.
+\end{itemize}
+
 \subsection{with \emph{ciphart}}
 adversary's options are:
 \begin{itemize}
@@ -304,11 +326,11 @@ adversary's options are:
     \item \emph{option 3:} this is similar to \emph{option 2} except for
     evaluating keys from:
     \begin{itemize}
-        \item $\hat v_0 \gets \kdf(\enc, \hat p_0, s, M, L, T, B, K)$,
-        \item $\hat v_1 \gets \kdf(\enc, \hat p_1, s, M, L, T, B, K)$,
+        \item $\hat v_0 \gets \ciphart(\enc, \hat p_0, s, M, L, T, B, K)$,
+        \item $\hat v_1 \gets \ciphart(\enc, \hat p_1, s, M, L, T, B, K)$,
         \item $\vdots$
-        \item $\hat v_{2^{H(p)}-1} \gets \kdf(\enc, \hat p_{2^{H(p)}-1}, s, M,
-        L, T, B, K)$,
+        \item $\hat v_{2^{H(p)}-1} \gets \ciphart(\enc, \hat
+        p_{2^{H(p)}-1}, s, M, L, T, B, K)$,
     \end{itemize}
     where $\enc$ is the same function that's used to encrypt cipher-texts $m_0,
     m_1, \ldots$ and $K = V$.
@@ -320,40 +342,39 @@ on.  \emph{ciphart} may also have a guaranteed interpretation with
 different encryption functions and with $K \ne V$, but i don't know it yet.
 so let's stick with identical encryption functions and $K=V$ for now.
 
-each time the function $\kdf$ is called, the encryption function $\enc$ is
+each time the function $\ciphart$ is called, the encryption function $\enc$ is
 called $N$ many times, where $N\ge2^B$.  as per \cref{alg_ciphart}, there
 is no way for the adversary to cheat by reducing $N$ for as long as $\enc$
 is not broken.  the guarantee that the adversary cannot reduce $N$ is
 cryptographic, and is totally independent of the implementation of his
 brute-forcing apparatus.
 
-so, when $\kdf$ is called for $2^{H(p)}$ many times, it \emph{necessarily}
+so, when $\ciphart$ is called for $2^{H(p)}$ many times, it \emph{necessarily}
 has to result in calling $\enc$ for $N2^{H(p)} = 2^{H(p) + \log_2N}$ many
 times.
 
-meaning, using $\kdf$ with $p$ would have the \emph{same} computational
+meaning, using $\ciphart$ with $p$ would have the \emph{same} computational
 effect to the case of using just $\hash$ but with a more complex password
 $\hat p$, such that:
 \begin{equation}
     H(\hat p) = H(p) + \log_2 N
 \end{equation}
 
-also, since the encryption algorithm that's used by $\kdf$ is the same as
+also, since the encryption algorithm that's used by $\ciphart$ is the same as
 the one that's used to encrypt cipher-text blocks $m_0, m_1, \ldots$, we
 know that if it costs the adversary $c$-many units of money for a single
 call to $\enc$ with strategy \emph{option 1}, it will necessarily have to
-cost him $cN$ units of money with strategy \emph{option 3}, because $\kdf$
+cost him $cN$ units of money with strategy \emph{option 3}, because $\ciphart$
 in \emph{option 3} is using the same $\enc$ that's used in \emph{option 1}.
 
 this way, it doesn't matter to us what kind of alien technology that
 adversary has:  if one call to $\enc$ costs him $c$ units of money, then
-using $\kdf$ will make his calls to $\enc$ increase $N$ fold.
+using $\ciphart$ will make his calls to $\enc$ increase $N$ fold.
 
 \textbf{security interpretation:}  your protection against password
 brute-forcing attacks is $\ge \min(H(p) + \log_2 N, 8V)$ \emph{relative
 entropy bits}.
 
-\section{comparison}
 \section{summary}
 
 \end{document}
