@@ -7,11 +7,12 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
-\DeclareMathOperator{\enc}{enc}
-\DeclareMathOperator{\maxf}{max}
-\DeclareMathOperator{\len}{len}
-\DeclareMathOperator{\hash}{hash}
-\renewcommand{\contentsname}{content}
+\DeclareMathOperator{\enc}{\texttt{enc}}
+\DeclareMathOperator{\maxf}{\texttt{max}}
+\DeclareMathOperator{\len}{\texttt{len}}
+\DeclareMathOperator{\hash}{\texttt{hash}}
+\DeclareMathOperator{\kdf}{\texttt{ciphart}}
+\renewcommand{\contentsname}{paper's layout}
 \makeatletter
 \def\myrulefill{%
     \leavevmode\leaders\hrule%
@@ -32,7 +33,7 @@
 memory-hard key derivation \\
 with easier measurable security\\
 \normalsize
-caveman\footnote{toraboracaveman [at] protonmail [dot] com}\\
+caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
 \footnotesize
 \DTMnow\\
 \rule{1\columnwidth}{2pt}
@@ -79,18 +80,15 @@ systems more convenient.
 an application for encrypting and decrypting files that makes use of
 \texttt{libciphart}.  this application is intended for use by end-users or
 scripts, henceforth it has some fluff to treat mankind with dignity.
-\vfill
-\break
 
 \tableofcontents
-%\vfill
-%\break
+\noindent
+\rule{1\columnwidth}{2pt}
 
 \section{ciphart}
 \subsection{parameters}
 \begin{tabularx}{\columnwidth}{lX}
     $\enc$ & encryption function.\\
-    $\hash$ & hashing function.\\
     $p$ & password.\\
     $s$ & salt.\\
     $M$ & total memory in bytes.\\
@@ -104,6 +102,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 
 \subsection{internal variables}
 \begin{tabularx}{\columnwidth}{lX}
+    $\hash$ & hashing function.\\
     $C$         & $\gets \begin{cases}
                         64 \text{ bytes} & \text{if $\enc$ is
                                             \emph{xchacha20}}\\
@@ -130,10 +129,11 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
     $\hat T$    & $\gets \maxf(\lceil V C^{-1}\rceil, T)$.  this
                     is to ensure that we have enough encrypted bytes for
                     new keys.\\
-    $\hat T$    & $\gets T - (T \bmod 2) + 2$.  this is to ensure that
-                    there is an even number of tasks in a segment.  why?
-                    because we need a buffer for storing the clear-text and
-                    another for storing the output cipher-text.\\
+    $\hat T$    & $\gets \hat T - (\hat T \bmod 2) + 2$.  this is to ensure
+                    that there is an even number of tasks in a segment.
+                    why?  because we need a buffer for storing the
+                    clear-text and another for storing the output
+                    cipher-text.\\
 \end{tabularx}
 \begin{tabularx}{\columnwidth}{lX}
     $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  this is to
@@ -143,10 +143,8 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     nice if the last segments were of unequal sizes.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
-    $\hat B$    & $\gets \maxf(GLT, B - (B\bmod LT) + LT)$.  actual number
-                    of times $\enc$ is called so that we at least one pass
-                    is performed over the $\hat M$-bytes pad, where $\hat B
-                    \ge 2^B$.\\
+    $N$    & $\gets 0$.  actual number of times $\enc$ is called,
+                    where $\hat N \ge 2^B$.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
     $n_l$       & $\gets lG\hat T$.  nonce variable for $l^{th}$ lane with
@@ -160,7 +158,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \subsection{output}
 \begin{tabularx}{\columnwidth}{lX}
 $k$ & $K$-bytes key with an increased protection against brute-forcing
-attacks by $\log_2 \hat B$ \emph{relative entropy bits}.\\
+attacks by $\log_2 N$ \emph{relative entropy bits}.\\
 \end{tabularx}
 
 \subsection{steps}
@@ -197,8 +195,8 @@ from a password independent variant.
                 }
             }
         }
-        $\hat B \gets \hat B + LT$\;
-        \If{$\hat B \ge 2^B$}{
+        $N \gets N + LT$\;
+        \If{$N \ge 2^B$}{
             $g_{\text{last}} \gets g$\;
             \textbf{go to} \cref{ciphart_out}\;
         }
@@ -225,6 +223,133 @@ cores, specially when segment sizes, $T$, are larger.
 \end{proof}
 
 \section{security interpretation}
+\subsection{without \emph{ciphart}}
+let's say that we used block encryption function $\enc$ and a key $v \gets
+\hash(p \Vert s, V)$ to encrypt some clear-text into a sequence of
+$C$-byte cipher-text blocks $m_0, m_1, \ldots$.  let's say that the
+adversary got those $m_0, m_1, \ldots$.
+
+adversary's goal is to decrypt those cipher-text blocks back into the
+original clear-text.  so what options does he have?
+\begin{itemize}
+    \item \emph{option 1:} brute-force the $V$-bytes key space.  in order
+    to get a probability of $1$ of finding the key $v$, the adversary would
+    need to evaluate $2^{8V}$ many keys\footnote{assuming that each
+    byte is $8$ bits.}.
+
+    this works by having the adversary repeatedly decrypting $m_0$ with
+    $\enc$, each time using a new key among
+    \begin{itemize}
+        \item $\hat v_0 \gets \texttt{0x00\ldots 0}$,
+        \item $\hat v_1 \gets \texttt{0x00\ldots 1}$,
+        \item $\vdots$
+        \item $\hat v_{2^{H(p)}-1} \gets \texttt{0xFF\ldots F}$,
+    \end{itemize}
+    until the adversary finds a key that manages to decrypt $m_0$.
+
+    the adversary could be extremely lucky and have $v_0$ manage to decrypt
+    $m_0$, hence needing to call $\enc$ only once.  
+
+    or he might be extremely unlucky and need to keep trying until
+    $v_{2^{8V}-1}$ manages to do it, hence needing to call $\enc$ for
+    $2^{8V}$ many times.
+
+    usually it's sometime in between.  asymptotically on on average, the
+    adversary would need to call $\enc$ for $2^{8V}/2$ many times.
+
+    but in order to guarantee finding $v$, the brute-forcing process would
+    need to run $2^{8V}$ many evaluations, hence calling $\enc$ for
+    $2^{8V}$ many times.
+
+    \item \emph{option 2:} brute-force the $H(p)$ bits password space.
+    where $H(p)$ is the amount of entropy bits in $p$.  in order to get a
+    probability of $1$ of finding the password $p$, the adversary would
+    need to evaluate $2^{H(p)}$ many keys\footnote{the adversary does not
+    know $p$, obviously, but he knows the process that the user used to
+    generate $p$, henceforth he knows $H(p)$.}.
+
+    this works by having the adversary repeatedly decrypting $m_0$ with
+    $\enc$, each time using a new key among:
+    \begin{itemize}
+        \item $\hat v_0 \gets \hash(\hat p_0 \Vert s, V)$,
+        \item $\hat v_1 \gets \hash(\hat p_1 \Vert s, V)$,
+        \item $\vdots$
+        \item $\hat v_{2^{H(p)}-1} \gets \hash(\hat p_{2^{H(p)}-1} \Vert s,
+        V)$,
+    \end{itemize}
+    until the adversary finds a key that manages to decrypt $m_0$.
+
+    in order to guarantee finding $v$, the brute-forcing process would need
+    to call $\enc$ for $2^{H(p)}$ many times.
+\end{itemize}
+
+unless the adversary is an idiot, he will try to attack the weakest element
+in the chain: \emph{option 2}, since $H(p) < 8V$ is almost always true for
+any $p$ that is memorable by humans.
+
+knowing the strategy above, we'd be very dumb to choose a password $p$ with
+more entropy than $8V$ bits.  because we would end up needlessly memorising
+a password that is too long.  why?  because if $H(p) > 8V$, the weakest
+element in the chain becomes \emph{option 1} instead, and the attacker
+wouldn't bother with passwords, hence any extra password memorisation
+effort was pointless.
+
+\textbf{security interpretation:}  your protection against password
+brute-forcing attacks is $\min(H(p), 8V)$ entropy bits.
+
+\subsection{with \emph{ciphart}}
+\emph{option 1} is identical to the case without \emph{ciphart}, but
+\emph{option 2} is only modified to evaluate keys from:
+\begin{itemize}
+    \item $\hat v_0 \gets \kdf(\enc, \hat p_0, s, M, L, T, B, K)$,
+    \item $\hat v_1 \gets \kdf(\enc, \hat p_1, s, M, L, T, B, K)$,
+    \item $\vdots$
+    \item $\hat v_{2^{H(p)}-1} \gets \kdf(\enc, \hat p_{2^{H(p)}-1}, s, M,
+    L, T, B, K)$,
+\end{itemize}
+where $\enc$ is the same function that's used to encrypt cipher-texts $m_0,
+m_1, \ldots$ and $K = V$.
+
+why should it be the same encryption function and $K=V$?  because it's the
+case where \emph{ciphart} has a guaranteed interpretation as i show later
+on.  \emph{ciphart} may also have a guaranteed interpretation with
+different encryption functions and with $K \ne V$, but i don't know it yet.
+so let's stick with identical encryption functions and $K=V$ for now.
+
+each time the function $\kdf$ is called, the encryption function $\enc$ is
+called $N$ many times, where $N\ge2^B$.  as per \cref{alg_ciphart}, there
+is no way for the adversary to cheat by reducing $N$ for as long as $\enc$
+is not broken.  the guarantee that the adversary cannot reduce $N$ is
+cryptographic, and is totally independent of the implementation of his
+brute-forcing apparatus.
+
+so, when $\kdf$ is called for $2^{H(p)}$ many times, it \emph{necessarily}
+has to result in calling $\enc$ for $N2^{H(p)} = 2^{H(p) + \log_2N}$ many
+times.
+
+meaning, using $\kdf$ with $p$ would have the \emph{same} computational
+effect to the case of using just $\hash$ but with a more complex password
+$\hat p$, such that:
+\begin{equation}
+    H(\hat p) = H(p) + \log_2 N
+\end{equation}
+
+also, since the encryption algorithm that's used by $\kdf$ is the same as
+the one that's used to encrypt cipher-text blocks $m_0, m_1, \ldots$, we
+know that if it costs the adversary $c$-many units of money for a single
+call to $\enc$ with strategy \emph{option 1}, it will necessarily have to
+cost him $cN$ units of money with strategy \emph{option 2} with
+\emph{ciphart}, because $\kdf$ in \emph{option 2} is using the same $\enc$
+that's used in \emph{option 1}.
+
+this way, it doesn't matter to us what kind of alien technology that
+adversary has:  if one call to $\enc$ costs him $c$ units of money, then
+using $\kdf$ will make his calls to $\enc$ increase $N$ fold.
+
+\textbf{security interpretation:}  your protection against password
+brute-forcing attacks is $\ge \min(H(p) + \log_2 N, 8V)$ \emph{relative
+entropy bits}.
+
 \section{comparison}
 \section{summary}
 
