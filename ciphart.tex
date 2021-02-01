@@ -6,6 +6,7 @@
 \usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\newtheorem{security}{security interpretation}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{\texttt{enc}}
 \DeclareMathOperator{\maxf}{max}
@@ -223,11 +224,7 @@ cores, specially when segment sizes, $T$, are larger.
     so if \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
 \end{proof}
 
-\section{comparison}
-\subsection{raw}
-
 \section{security interpretation}
-\subsection{raw}
 let's say that we used block encryption function $\enc$ and a key $v \gets
 \hash(p \Vert s, V)$ to encrypt some clear-text into a sequence of
 $C$-byte cipher-text blocks $m_0, m_1, \ldots$.  let's say that the
@@ -235,89 +232,115 @@ adversary got those $m_0, m_1, \ldots$.
 
 adversary's goal is to decrypt those cipher-text blocks back into the
 original clear-text.  so what options does he have?
+
+\subsection{key brute-forcing}
+brute-force the $V$-bytes key space.  in order to get a probability of $1$
+of finding the key $v$, the adversary would need to evaluate $2^{8V}$ many
+keys\footnote{assuming that each byte is $8$ bits.}.
+
+this works by having the adversary repeatedly decrypting $m_0$ with $\enc$,
+each time using a new key among
 \begin{itemize}
-    \item \emph{option 1:} brute-force the $V$-bytes key space.  in order
-    to get a probability of $1$ of finding the key $v$, the adversary would
-    need to evaluate $2^{8V}$ many keys\footnote{assuming that each
-    byte is $8$ bits.}.  $2^{8V}$ is too large of a number, and i think
-    maybe the adversary would be fossilised 
-
-    this works by having the adversary repeatedly decrypting $m_0$ with
-    $\enc$, each time using a new key among
-    \begin{itemize}
-        \item $\hat v_0 \gets \texttt{0x00\ldots 0}$,
-        \item $\hat v_1 \gets \texttt{0x00\ldots 1}$,
-        \item $\vdots$
-        \item $\hat v_{8V-1} \gets \texttt{0xff\ldots f}$,
-    \end{itemize}
-    until the adversary finds a key that manages to decrypt $m_0$.
-
-    the adversary could be extremely lucky and have $v_0$ manage to decrypt
-    $m_0$, hence needing to call $\enc$ only once.  
-
-    or he might be extremely unlucky and need to keep trying until
-    $v_{2^{8V}-1}$ manages to do it, hence needing to call $\enc$ for
-    $2^{8V}$ many times.
-
-    usually it's sometime in between.  asymptotically on on average, the
-    adversary would need to call $\enc$ for $2^{8V}/2$ many times.
-
-    but in order to guarantee finding $v$, the brute-forcing process would
-    need to run $2^{8V}$ many evaluations, hence calling $\enc$ for
-    $2^{8V}$ many times.
-
-    \item \emph{option 2:} brute-force the $H(p)$ bits password space.
-    where $H(p)$ is the amount of entropy bits in $p$.  in order to get a
-    probability of $1$ of finding the password $p$, the adversary would
-    need to evaluate $2^{H(p)}$ many keys\footnote{the adversary does not
-    know $p$, obviously, but he knows the process that the user used to
-    generate $p$, henceforth he knows $H(p)$.}.
-
-    this works by having the adversary repeatedly decrypting $m_0$ with
-    $\enc$, each time using a new key among:
-    \begin{itemize}
-        \item $\hat v_0 \gets \hash(\hat p_0 \Vert s, V)$,
-        \item $\hat v_1 \gets \hash(\hat p_1 \Vert s, V)$,
-        \item $\vdots$
-        \item $\hat v_{2^{H(p)}-1} \gets \hash(\hat p_{2^{H(p)}-1} \Vert s,
-        V)$,
-    \end{itemize}
-    until the adversary finds a key that manages to decrypt $m_0$.
-
-    in order to guarantee finding $v$, the brute-forcing process would need
-    to call $\enc$ for $2^{H(p)}$ many times.
+    \item $\hat v_0 \gets \texttt{0x00\ldots 0}$,
+    \item $\hat v_1 \gets \texttt{0x00\ldots 1}$,
+    \item $\vdots$
+    \item $\hat v_{2^{8V-1}} \gets \texttt{0xff\ldots f}$,
 \end{itemize}
+until the adversary finds a key that manages to decrypt $m_0$.
 
-unless the adversary is an idiot, he will try to attack the weakest element
-in the chain: \emph{option 2}, since $H(p) < 8V$ is almost always true for
-any $p$ that is memorable by humans.
+the adversary could be extremely lucky and have $v_0$ manage to decrypt
+$m_0$, hence needing to call $\enc$ only once.  
 
-knowing the strategy above, we'd be very dumb to choose a password $p$ with
-more entropy than $8V$ bits.  because we would end up needlessly memorising
-a password that is too long.  why?  because if $H(p) > 8V$, the weakest
-element in the chain becomes \emph{option 1} instead, and the attacker
-wouldn't bother with passwords, hence any extra password memorisation
-effort was pointless.
+or he might be extremely unlucky and need to keep trying until
+$v_{2^{8V}-1}$ manages to do it, hence needing to call $\enc$ for $2^{8V}$
+many times.
 
-\textbf{security interpretation:}  your protection against password
-brute-forcing attacks is $\min(H(p), 8V)$ entropy bits.
+usually it's sometime in between.  asymptotically  n on average, the
+adversary would need to call $\enc$ for $2^{8V}/2$ many times.
+
+but in order to guarantee finding $v$, the brute-forcing process would need
+to run $2^{8V}$ many evaluations, hence calling $\enc$ for $2^{8V}$ many
+times.
+
+that said, the adversary would be fossilised long before his application
+completes.  e.g.  since $8V = 256$ is common for ciphers nowadays, on
+average while considering the lucky and the unlucky cases, it would take my
+laptop $4.28\times10^{58}$ centuries to just increment a counter for
+$2^{256}$ many times.  so if the adversary's best hope is to brute-force
+keys, our system has reached maximum security.
+
+\begin{security}
+your protection against key brute-forcing attacks under the key
+brute-forcing approach is $2^{8V} c(\enc)$, where $c(\enc)$ is the cost of
+executing $\enc$ a single time.  or  for short:
+\[
+    8V H_{\enc}
+\]
+\end{security}
+
+i propose the $\enc$-entropy unit $H_{\enc}$.  it is specific only to
+$\enc$'s algorithm, so must hold with whatever alien technology that the
+adversary may have, for as long as $\enc$, as an algorithm, has no
+cryptanalysis.  if there is any cryptanalysis, we'll have to subtract bits
+from $8V$, e.g. $8V - z \; H_{\enc}$, where $z$ is number of reduced bits
+due to cryptanalysis.
+
+\subsection{normal password brute-forcing}
+brute-force the $H(p)$ bits password space.  where $H(p)$ is the amount of
+entropy bits in $p$.  in order to get a probability of $1$ of finding the
+password $p$, the adversary would need to evaluate $2^{H(p)}$ many
+keys\footnote{the adversary does not know $p$, obviously, but he knows the
+process that the user used to generate $p$, henceforth he knows $H(p)$.}.
+
+this works by having the adversary repeatedly decrypting $m_0$ with $\enc$,
+each time using a new key among:
+\begin{itemize}
+    \item $\hat v_0 \gets \hash(\hat p_0 \Vert s, V)$,
+    \item $\hat v_1 \gets \hash(\hat p_1 \Vert s, V)$,
+    \item $\vdots$
+    \item $\hat v_{2^{H(p)}-1} \gets \hash(\hat p_{2^{H(p)}-1} \Vert s,
+    V)$,
+\end{itemize}
+until the adversary finds a key that manages to decrypt $m_0$.
+
+\begin{security}
+your protection against password brute-forcing attacks under the normal
+password brute-forcing approach is $2^{H(p)} c(\hash) + 2^{H(p)} c(\enc)$.
+or for short:
+\[
+    H(p) H_{\hash} + H(p) H_{\enc}
+\]
+\end{security}
 
 \subsection{with \emph{argon2}}
-adversary's options are:
-\begin{itemize}
-    \item \emph{option 1:} identical to the \emph{raw} case.
-    \item \emph{option 3:} this is similar to \emph{option 2} except for
-    evaluating keys from:
+adversary evaluates keys from:
     \begin{itemize}
-        \item $\hat v_0 \gets \argon(\hat p_0, \ldots)$,
-        \item $\hat v_1 \gets \argon(\hat p_1, \ldots)$,
+        \item $\hat v_0 \gets \argon(\hat p_0, N, M, \ldots)$,
+        \item $\hat v_1 \gets \argon(\hat p_1, N, M, \ldots)$,
         \item $\vdots$
-        \item $\hat v_{2^{H(p)}-1} \gets \argon(\hat p_{2^{H(p)}-1},
+        \item $\hat v_{2^{H(p)}-1} \gets \argon(\hat p_{2^{H(p)}-1}, N, M
         \ldots)$,
     \end{itemize}
-    where $\enc$ is the same function that's used to encrypt cipher-texts
-    $m_0, m_1, \ldots$ and $K = V$.
-\end{itemize}
+
+for every \emph{argon2} call, $\hash$ is called for $N$ many times if there
+is $M$ bytes of memory.
+
+if an adversary lacks $M$ bytes, he can still compute $\argon(p, N, M,
+\ldots)$, but at the expense of needing exponentially more cpu time as his
+memory is linearly reduced.
+
+\begin{security}
+your protection against password brute-forcing attacks under the
+\emph{argon2} password brute-forcing approach is:
+\begin{align*}
+      & N 2^{H(p)} c(\hash)          & + 2^{H(p)} c(\enc) &\\
+    = & 2^{H(p) + \log_2 N} c(\hash) & + 2^{H(p)} c(\enc) &\\
+\end{align*}
+or for short:
+\[
+    (H(p) + \log_2 N) H_{\hash} + H(p) H_{\enc}
+\]
+\end{security}
 
 \subsection{with \emph{ciphart}}
 adversary's options are:
@@ -362,7 +385,7 @@ $\hat p$, such that:
 
 also, since the encryption algorithm that's used by $\ciphart$ is the same as
 the one that's used to encrypt cipher-text blocks $m_0, m_1, \ldots$, we
-know that if it costs the adversary $c$-many units of money for a single
+know that if it costs the adversary $c$ many units of money for a single
 call to $\enc$ with strategy \emph{option 1}, it will necessarily have to
 cost him $cN$ units of money with strategy \emph{option 3}, because $\ciphart$
 in \emph{option 3} is using the same $\enc$ that's used in \emph{option 1}.
