@@ -7,13 +7,17 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \newtheorem{security}{security interpretation}
+\newtheorem{definition}{definition}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
-\DeclareMathOperator{\enc}{\texttt{enc}}
+\DeclareMathOperator{\enc}{\mathtt{enc}}
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
-\DeclareMathOperator{\hash}{\texttt{hash}}
-\DeclareMathOperator{\argon}{\texttt{argon2}}
-\DeclareMathOperator{\ciphart}{\texttt{ciphart}}
+\DeclareMathOperator{\hash}{\mathtt{hash}}
+\DeclareMathOperator{\argon}{\mathtt{argon2}}
+\DeclareMathOperator{\ciphart}{\mathtt{ciphart}}
+\DeclareMathOperator{\cost}{\mathtt{cost}}
+\DeclareMathOperator{\henc}{\; HENC}
+\DeclareMathOperator{\hhash}{\; HHASH}
 \renewcommand{\contentsname}{paper's layout}
 \makeatletter
 \def\myrulefill{%
@@ -41,12 +45,11 @@ caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
 \rule{1\columnwidth}{2pt}
 \end{center}
 
-\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}} is
-mostly nice, but trying to interpret its contribution to the protection
-against password brute-forcing attacks remains more difficult than it
-should be.  this vagueness is a problem that is not limited to
-\emph{argon2}, but also shared with every other key derivation function
-that i've known so far.
+argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}} is mostly
+nice, but trying to interpret its contribution to the protection against
+password brute-forcing attacks remains more difficult than it should be.
+this vagueness is a problem that is not limited to \emph{argon2}, but also
+shared with every other key derivation function that i've known so far.
 
 when one uses \emph{argon2}, his derived key will surely have superior
 protection against password brute-forcing attacks, but by how much?  to
@@ -159,8 +162,10 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 
 \subsection{output}
 \begin{tabularx}{\columnwidth}{lX}
-$k$ & $K$-bytes key with an increased protection against brute-forcing
-attacks by $\log_2 N$ \emph{relative entropy bits}.\\
+$k$ & $K$-bytes key.\\
+$\hat B$ & actual quantity of increased security against password
+            brute-forcing attacks in the unit of \emph{relative entropy
+            bits}, where $\hat B \ge B$.\\
 \end{tabularx}
 
 \subsection{steps}
@@ -207,7 +212,8 @@ from a password independent variant.
 }
 $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
-\Return{$k$}
+$\hat B \gets log_2 N$\;
+\Return{$k$, $\hat B$}
 \caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
@@ -270,20 +276,27 @@ $2^{256}$ many times.  so if the adversary's best hope is to brute-force
 keys, our system has reached maximum security.
 
 \begin{security}
-your protection against key brute-forcing attacks under the key
-brute-forcing approach is $2^{8V} c(\enc)$, where $c(\enc)$ is the cost of
-executing $\enc$ a single time.  or  for short:
+your protection against key brute-forcing attacks with key brute-forcing is
+$2^{8V} \cost(\enc)$, where $\cost(\enc)$ is the cost of executing $\enc$ a
+single time.  
+
+this is usually called $8V$ \emph{entropy bits}.  but for the purpose of
+helping later sections, i think it's better to call it $8V$ \emph{entropy
+bits from the viewing angle of $\enc$}, or, for short:
 \[
-    8V H_{\enc}
+    8V \henc
 \]
 \end{security}
 
-i propose the $\enc$-entropy unit $H_{\enc}$.  it is specific only to
-$\enc$'s algorithm, so must hold with whatever alien technology that the
-adversary may have, for as long as $\enc$, as an algorithm, has no
-cryptanalysis.  if there is any cryptanalysis, we'll have to subtract bits
-from $8V$, e.g. $8V - z \; H_{\enc}$, where $z$ is number of reduced bits
-due to cryptanalysis.
+\begin{definition}
+$\henc$ is entropy bits from the viewing angle of $\enc$.
+\end{definition}
+
+$\henc$  is specific only to $\enc$'s algorithm, so must hold with whatever
+alien technology that the adversary may have, for as long as $\enc$, as an
+algorithm, has no cryptanalysis.  if there is any cryptanalysis, we'll have
+to subtract bits from $8V$, e.g. $8V
+- z \henc$, where $z$ is number of reduced bits due to cryptanalysis.
 
 \subsection{normal password brute-forcing}
 brute-force the $H(p)$ bits password space.  where $H(p)$ is the amount of
@@ -304,26 +317,47 @@ each time using a new key among:
 until the adversary finds a key that manages to decrypt $m_0$.
 
 \begin{security}
-your protection against password brute-forcing attacks under the normal
-password brute-forcing approach is $2^{H(p)} c(\hash) + 2^{H(p)} c(\enc)$.
-or for short:
+your protection against password brute-forcing attacks with normal hashed
+passwords is $2^{H(p)} \cost(\hash) + 2^{H(p)} \cost(\enc)$.  the latter
+$\enc$ calls are due to trying to decrypt $m_0$ at every attempt.
+
+this is usually called $H(p)$ \emph{entropy bits}.  but for the purpose of
+this paper, i think it's better to be more specific.  from the viewing
+angle of $\enc$, we get the entropy:
 \[
-    H(p) H_{\hash} + H(p) H_{\enc}
+    H(p) \henc
 \]
+and from the viewing angle of $\hash$, we get the entropy:
+\[
+    H(p) \hhash
+\]
+this may seem silly as it is too obvious, but i think it helps me to
+communicate my thoughts in later sections.
 \end{security}
+
+\begin{definition}
+$\hhash$ is entropy bits from the viewing angle of  $\hash$.
+\end{definition}
 
 \subsection{with \emph{argon2}}
 adversary evaluates keys from:
-    \begin{itemize}
-        \item $\hat v_0 \gets \argon(\hat p_0, N, M, \ldots)$,
-        \item $\hat v_1 \gets \argon(\hat p_1, N, M, \ldots)$,
-        \item $\vdots$
-        \item $\hat v_{2^{H(p)}-1} \gets \argon(\hat p_{2^{H(p)}-1}, N, M
-        \ldots)$,
-    \end{itemize}
+\begin{itemize}
+    \item $\hat v_0 \gets \argon(\hat p_0, N, M, \ldots)$,
+    \item $\hat v_1 \gets \argon(\hat p_1, N, M, \ldots)$,
+    \item $\vdots$
+    \item $\hat v_{2^{H(p)}-1} \gets \argon(\hat p_{2^{H(p)}-1}, N, M,
+    \ldots)$,
+\end{itemize}
 
 for every \emph{argon2} call, $\hash$ is called for $N$ many times if there
-is $M$ bytes of memory.
+is $M$ bytes of memory.  so, from the viewing angle of $\hash$, we get:
+\begin{itemize}
+    \item $\hat v_0 \gets \hash(\hat p_0 \Vert s_0, V)$,
+    \item $\hat v_1 \gets \hash(\hat p_1 \Vert s_1, V)$,
+    \item $\vdots$
+    \item $\hat v_{N2^{H(p)}-1} \gets \hash(\hat p_{N2^{H(p)}-1}
+    \Vert s_{N2^{H(p)}-1}, V)$,
+\end{itemize}
 
 if an adversary lacks $M$ bytes, he can still compute $\argon(p, N, M,
 \ldots)$, but at the expense of needing exponentially more cpu time as his
@@ -331,72 +365,112 @@ memory is linearly reduced.
 
 \begin{security}
 your protection against password brute-forcing attacks under the
-\emph{argon2} password brute-forcing approach is:
-\begin{align*}
-      & N 2^{H(p)} c(\hash)          & + 2^{H(p)} c(\enc) &\\
-    = & 2^{H(p) + \log_2 N} c(\hash) & + 2^{H(p)} c(\enc) &\\
-\end{align*}
-or for short:
+\emph{argon2} protection is:
+\begin{alignat*}{2}
+        & N 2^{H(p)} \cost(\hash)          && + 2^{H(p)} \cost(\enc) \\
+    ={} & 2^{H(p) + \log_2 N} \cost(\hash) && + 2^{H(p)} \cost(\enc) \\
+\end{alignat*}
+from the viewing angle of $\enc$ we get the entropy:
 \[
-    (H(p) + \log_2 N) H_{\hash} + H(p) H_{\enc}
+    H(p) \henc
+\]
+while from the viewing angle of $\hash$ we get the entropy:
+\[
+    H(p) + \log_2 N \hhash
 \]
 \end{security}
 
-\subsection{with \emph{ciphart}}
-adversary's options are:
+so which one to pick?  i think people so far just pick $H(p) \henc$ to
+reflect password's entropy, and seem to not pick $H(p) + \log_2 N \hhash$
+as they don't seem to consider it entropy.  but i have two disagreements
+with people:
 \begin{itemize}
-    \item \emph{option 1:} identical to the case without \emph{ciphart}.
-    \item \emph{option 3:} this is similar to \emph{option 2} except for
-    evaluating keys from:
-    \begin{itemize}
-        \item $\hat v_0 \gets \ciphart(\enc, \hat p_0, s, M, L, T, B, K)$,
-        \item $\hat v_1 \gets \ciphart(\enc, \hat p_1, s, M, L, T, B, K)$,
-        \item $\vdots$
-        \item $\hat v_{2^{H(p)}-1} \gets \ciphart(\enc, \hat
-        p_{2^{H(p)}-1}, s, M, L, T, B, K)$,
-    \end{itemize}
-    where $\enc$ is the same function that's used to encrypt cipher-texts $m_0,
-    m_1, \ldots$ and $K = V$.
+    \item i think not accepting that $H(p) + \log_2 N \hhash$ is entropy is
+    needlessly limiting.  because i think $H(p) + \log_2 N \hhash$ is
+    entropy as much as $H(p) \henc$ is entropy; it's just that they are
+    measured from different viewing angles:  former is measured from the
+    $\hash$ viewing angle, while the latter is measured from the $\enc$
+    viewing angle.
+
+    i don't see any reason why any of them is more true than the other.  i
+    think that both of them are entropies, but of different units.
+
+    \item why do people only pick either one of them?  it's technically
+    false my view.  in my view truth is:  we're just dealing with two
+    entropies measured in different units.  so i think truth is that we
+    have the following number of entropy bits:
+    \begin{alignat}{2}
+            & H(p)              && \henc \\
+        +{} & H(p) + \log_2 N   && \hhash 
+    \end{alignat}
+    which obviously looks a bit ugly, since we cannot sum them due to the
+    terms having different units, which also gives our brain a hard time to
+    get a feeling of what that even means.
 \end{itemize}
 
-why should it be the same encryption function and $K=V$?  because it's the
-case where \emph{ciphart} has a guaranteed interpretation as i show later
-on.  \emph{ciphart} may also have a guaranteed interpretation with
-different encryption functions and with $K \ne V$, but i don't know it yet.
-so let's stick with identical encryption functions and $K=V$ for now.
+so what's the solution here to this ugliness?  should we ignore $H(p)\henc
++ H(p)+\log_2N\hhash$ as an entropy measure that quantifies the security of
+our protection against password brute-forcing, as people currently do, and
+measure it only in terms of the computational cost by surveying the
+industry of asics in order to find a map between
+time and money?
 
-each time the function $\ciphart$ is called, the encryption function $\enc$ is
-called $N$ many times, where $N\ge2^B$.  as per \cref{alg_ciphart}, there
-is no way for the adversary to cheat by reducing $N$ for as long as $\enc$
-is not broken.  the guarantee that the adversary cannot reduce $N$ is
-cryptographic, and is totally independent of the implementation of his
-brute-forcing apparatus.
+my answer to the questions above is:  
+\begin{itemize}
+    \item no.  the right approach is to just admit that \emph{argon2}'s
+    approach is dragging us into the situation where we end up with two
+    entropies measured in different units.
+    \item \emph{argon2}'s security contribution is measurable as entropy,
+    except that it is ugly since it is made of two entropies in distinct
+    units.  if we ignore this, we won't solve the problem, but end up
+    stashing the dirts under the carpet.
+    \item of course, we are always free to also survey the industry of
+    asics to derive time-money maps, but this doesn't have to be our only
+    approach to quantify our security gain.
+\end{itemize}
 
-so, when $\ciphart$ is called for $2^{H(p)}$ many times, it \emph{necessarily}
-has to result in calling $\enc$ for $N2^{H(p)} = 2^{H(p) + \log_2N}$ many
-times.
+\subsection{with \emph{ciphart}}
+adversary evaluates keys from:
+\begin{itemize}
+    \item $\hat v_0 \gets \ciphart(\hat p_0, B, M, \ldots)$,
+    \item $\hat v_1 \gets \ciphart(\hat p_1, B, M, \ldots)$,
+    \item $\vdots$
+    \item $\hat v_{2^{H(p)}-1} \gets \ciphart(\hat p_{2^{H(p)}-1}, B, M,
+    \ldots)$,
+\end{itemize}
 
-meaning, using $\ciphart$ with $p$ would have the \emph{same} computational
-effect to the case of using just $\hash$ but with a more complex password
-$\hat p$, such that:
-\begin{equation}
-    H(\hat p) = H(p) + \log_2 N
-\end{equation}
+mostly similar to $\argon$.  differences related to this section is that
+$\ciphart$ calls $\enc$ instead of $\hash$, and specifies $B$ instead of
+$N$, where $B \approx \log_2 N$.  similar exponential time penalty applies
+with memory less than $M$.
 
-also, since the encryption algorithm that's used by $\ciphart$ is the same as
-the one that's used to encrypt cipher-text blocks $m_0, m_1, \ldots$, we
-know that if it costs the adversary $c$ many units of money for a single
-call to $\enc$ with strategy \emph{option 1}, it will necessarily have to
-cost him $cN$ units of money with strategy \emph{option 3}, because $\ciphart$
-in \emph{option 3} is using the same $\enc$ that's used in \emph{option 1}.
+\begin{security}
+your protection against password brute-forcing attacks under the
+\emph{ciphart} protection approach is:
+\begin{align*}
+        & \left(2^{H(p)} + 2^{\hat B}\right) \cost(\enc) + 2^{H(p)}
+            \cost(\enc) \\
+    ={} & \left(2^{H(p)} + 2^{\hat B} + 2^{H(p)}\right) \cost(\enc) \\
+    ={} & \left(2\times2^{H(p)} + 2^{\hat B}\right) \cost(\enc) \\
+    ={} & \left(2^{H(p) + \log_2 2} + 2^{\hat B}\right) \cost(\enc) \\
+    ={} & \left(2^{H(p) + 1} + 2^{\hat B}\right) \cost(\enc) \\
+\end{align*}
+from the viewing angle of $\enc$ we get the entropy:
+\[
+    H(p) + 1 + \hat B \henc
+\]
+\end{security}
 
-this way, it doesn't matter to us what kind of alien technology that
-adversary has:  if one call to $\enc$ costs him $c$ units of money, then
-using $\ciphart$ will make his calls to $\enc$ increase $N$ fold.
+and there is no other viewing angle than $\enc$ since only $\enc$ is used!
+as a result our brain can easily interpret it.  
 
-\textbf{security interpretation:}  your protection against password
-brute-forcing attacks is $\ge \min(H(p) + \log_2 N, 8V)$ \emph{relative
-entropy bits}.
+plus, if we wish to study the industry of asics to obtain time-money maps,
+our job will be much easier as we can simply look at the cost of asics that
+are already implemented for $\enc$\footnote{e.g. if $\enc$ is a popular
+algorithm, such as aes-256, then we can get more specific data from
+manufacturers, ultimately giving us a more accurate time-money maps.  but
+when $\enc$ is not popular, we may need to do rougher calculations based on
+the expected asics area as done in the \emph{scrypt} paper.}.
 
 \section{summary}
 
