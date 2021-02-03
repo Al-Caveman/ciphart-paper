@@ -8,6 +8,7 @@
 \usepackage{amssymb}
 \newtheorem{security}{security interpretation}
 \newtheorem{definition}{definition}
+\newtheorem{note}{note}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
 \DeclareMathOperator{\maxf}{max}
@@ -231,10 +232,20 @@ cores, specially when segment sizes, $T$, are larger.
 \end{proof}
 
 \section{security interpretation}
+\begin{note}
+    i assume that the decryption part of the encryption algorithm $\enc$
+    costs the same as the encryption.  this is true for algorithms such as
+    \emph{xchacha20}.  and in cases where it is not true, such as with aes,
+    \emph{ciphart} can simply encrypt using the decryption function.  this
+    way we guarantee that the cost are identical between \emph{ciphart}'s
+    encryption, and the cipher-text decryption that the adversary does to
+    test a given key.
+\end{note}
+
 let's say that we used block encryption function $\enc$ and a key $v \gets
-\hash(p \Vert s, V)$ to encrypt some clear-text into a sequence of
-$C$-byte cipher-text blocks $m_0, m_1, \ldots$.  let's say that the
-adversary got those $m_0, m_1, \ldots$.
+\hash(p \Vert s, V)$ to encrypt some clear-text into a sequence of $C$-byte
+cipher-text blocks $m_0, m_1, \ldots$.  let's say that the adversary got
+those $m_0, m_1, \ldots$.
 
 adversary's goal is to decrypt those cipher-text blocks back into the
 original clear-text.  so what options does he have?
