@@ -399,10 +399,10 @@ with people:
     false my view.  in my view truth is:  we're just dealing with two
     entropies measured in different units.  so i think truth is that we
     have the following number of entropy bits:
-    \begin{alignat}{2}
+    \begin{alignat*}{2}
             & H(p)              && \henc \\
         +{} & H(p) + \log_2 N   && \hhash 
-    \end{alignat}
+    \end{alignat*}
     which obviously looks a bit ugly, since we cannot sum them due to the
     terms having different units, which also gives our brain a hard time to
     get a feeling of what that even means.
@@ -453,7 +453,7 @@ your protection against password brute-forcing attacks under the
     ={} & \left(2^{H(p)} + 2^{\hat B} + 2^{H(p)}\right) \cost(\enc) \\
     ={} & \left(2\times2^{H(p)} + 2^{\hat B}\right) \cost(\enc) \\
     ={} & \left(2^{H(p) + \log_2 2} + 2^{\hat B}\right) \cost(\enc) \\
-    ={} & \left(2^{H(p) + 1} + 2^{\hat B}\right) \cost(\enc) \\
+    ={} & \left(2^{H(p) + 1} + 2^{\hat B}\right) \cost(\enc)
 \end{align*}
 from the viewing angle of $\enc$ we get the entropy:
 \[
