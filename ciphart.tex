@@ -91,6 +91,20 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \noindent
 \rule{1\columnwidth}{2pt}
 
+\section{entropy}
+we've got password $p$ with $H(p)$ shannon's entropy bits.  what does this
+mean to us?
+
+\subsection{shannon's entropy}
+means, on average, we'd need to ask $H(p)$ many perfect binary questions in
+order to fully resolve all ambiguities about $p$.  a question is perfect
+if, each time it is answered, we get the search space reduced in half.
+
+this is perfect for quantifying information in things.  but is it also
+perfect for quantifying the security of passwords?  spoiler:  no.
+
+\subsection{caveman's entropy}
+
 \section{ciphart}
 \subsection{parameters}
 \begin{tabularx}{\columnwidth}{lX}
@@ -140,8 +154,6 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
                     why?  because we need a buffer for storing the
                     clear-text and another for storing the output
                     cipher-text.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  this is to
                     ensure that it is in multiples of $C\hat TL$.  why?  so
                     that all segments are of equal lengths in order to
