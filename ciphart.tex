@@ -73,7 +73,7 @@ increases the risk of having a false sense of security.
 
 so i propose \emph{ciphart} --- a memory-hard key derivation function with
 a security contribution that is measured in a unit that i call
-\emph{relative entropy bits}.  this unit is measured objectively and is
+\emph{caveman's entropy bits}.  this unit is measured objectively and is
 guaranteed to be true irrespective of whatever alien technology that the
 adversary might have.
 
@@ -91,14 +91,19 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \noindent
 \rule{1\columnwidth}{2pt}
 
-\section{entropy}
-we've got password $p$ with $H(p)$ shannon's entropy bits.  what does this
-mean to us?
+\section{caveman's entropy}
+we've got password $p$ with $H(p)$ many shannon's entropy bits worth of
+information in it.  what does this mean to us?  it means that, on average,
+we'd need to ask $H(p)$ many perfect binary questions in order to fully
+resolve all ambiguities about $p$; i.e.  to fully get every bit of $p$.
+what is a perfect question? the that, if answered, we get the search space
+reduced in half.  what is that space?  the space of hypotheses which $p$ is
+an element of.
 
-\subsection{shannon's entropy}
-means, on average, we'd need to ask $H(p)$ many perfect binary questions in
-order to fully resolve all ambiguities about $p$.  a question is perfect
-if, each time it is answered, we get the search space reduced in half.
+i think shannon's entropy is \emph{perfect} to quantify information in
+general, but is used.
+
+shannon's entropy means, on average, 
 
 this is perfect for quantifying information in things.  but is it also
 perfect for quantifying the security of passwords?  spoiler:  no.
@@ -115,7 +120,7 @@ perfect for quantifying the security of passwords?  spoiler:  no.
     $L$ & number of memory lanes for concurrency.\\
     $T$ & number of tasks per lane segment.\\
     $B$ & minimum quantity of increased protection against password
-            brute-forcing attacks in the unit of \emph{relative entropy
+            brute-forcing attacks in the unit of \emph{caveman's entropy
             bits}.\\
     $K$ & output key size in bytes.\\
 \end{tabularx}
@@ -145,7 +150,7 @@ perfect for quantifying the security of passwords?  spoiler:  no.
                     the $\enc$-independent $K$ which is
                     possibly used by other encryption algorithms in later
                     stages\footnote{at the expense of losing the meaning of
-                    \emph{relative entropy bits}.}.\\
+                    \emph{caveman's entropy bits}.}.\\
     $\hat T$    & $\gets \maxf(\lceil V C^{-1}\rceil, T)$.  this
                     is to ensure that we have enough encrypted bytes for
                     new keys.\\
@@ -177,7 +182,7 @@ perfect for quantifying the security of passwords?  spoiler:  no.
 \begin{tabularx}{\columnwidth}{lX}
 $k$ & $K$-bytes key.\\
 $\hat B$ & actual quantity of increased security against password
-            brute-forcing attacks in the unit of \emph{relative entropy
+            brute-forcing attacks in the unit of \emph{caveman's entropy
             bits}, where $\hat B \ge B$.\\
 \end{tabularx}
 
