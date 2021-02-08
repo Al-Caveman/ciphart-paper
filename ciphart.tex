@@ -93,11 +93,62 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 
 \section{shannon's entropy}
 we've got password $p$ with $H(p)$ many shannon's entropy bits worth of
-information in it.  which means that, on average, we'd need to ask $H(p)$
-many perfect binary questions in order to fully resolve all ambiguities
-about $p$; i.e.  to fully get every bit of $p$.  what is a perfect
-question? one which, if answered, gets the search space reduced in half on
-average.
+information in it.  so what does this mean?
+
+fundamentally, it means that, on average, we'd need to ask $H(p)$ many
+perfect binary questions\footnote{one which, if answered, and on average,
+gets the search space reduced in half.} in order to fully resolve all
+ambiguities about $p$; i.e.  to fully get every bit of $p$.  
+
+but people use it to do less orthodox things, such as quantifying the
+amount of security $p$ has against, say, brute-forcing attacks.
+
+say that we've got a $256$ bit key $k \gets \hash(p \Vert s, 256)$, derived
+from password $p$, where $s$ is a salt.  if an attacker has a cipher-text
+block $m_0 \gets \enc(\text{``goodbye, world''}, 0, k)$.  attacker's goal
+is to find the key that encrypted the sequence $m_0, m_1, \ldots$.  then
+the attacker has the following options:
+\begin{enumerate}
+    \item try to decrypt $m_0$, each time with a new key, until it results
+    in ``goodbye, world'' in order to conclude that $k$ is found.  this
+    will require him to perform $2^{256}$ decryption calls in order to
+    guarantee finding the key.  or, $2^{256}/2$ on average.  both of which
+    are insanely slow and would take many centuries to complete.  my laptop
+    would take $4.28 \times 10^{58}$ many centuries in order to just in
+    increment a mere counter for $2^{256}$ times.  so this is not
+    practical.\label{dumbbruteforce}
+    \item if $\enc$ is broken enough by cryptanalysis, then using approach
+    in step \cref{dumbbruteforce} could become feasible.  but only an idiot
+    would use a broken $\enc$, and such people need a different type of
+    help than what this paper tries to offer.  so this option is off-topic,
+    and i won't discuss it any further.
+    \item explore key candidates by trying different passwords.  while each
+    step is more expensive as it also requires calling $\hash$, the total
+    number of iterations is $2^{H(p)}$, which is usually small enough to
+    make this strategy practically viable for the adversary to bet
+    on.  this paper is about enhancing our security against this
+    option.\label{passbruteforce}
+\end{enumerate}
+
+the amount of security that we have against brute-forcing options is the
+cost of brute-forcing.  the more expensive the cost is, the harder it is on
+the adversary, and hence the more security we have.  with the option in
+\cref{passbruteforce} our cost is\footnote{where $\cost(\hash)$ is the cost
+of a single call to $\hash$, and $\cost(\enc)$ is that of $\enc$.}:
+\begin{equation}\label{eq_cost_passbruteforce}
+    2^{H(p)} \Big(\cost(\hash) + \cost(\enc)\Big)
+\end{equation}
+
+one may try to empirically estimate $\cost(\hash)$ and $\cost(\enc)$ in
+(\ref{eq_cost_passbruteforce}), by analysing the industry of asics in order
+to obtain a mapping between the total amount of money that's needed in
+order to identify $p$ within a given time frame\footnote{the \emph{scrypt}
+paper contains such an attempt.}.
+
+but this simple $1$ to $1$ mapping between cost and entropy is broken when
+expensive key derivation functions is used.  say that the key $k$ was
+obtained by recursively calling the $\hash$ function $N$ many times.  i.e.
+$\hash(\hash(\ldots\hash(p \Vert s, 256), \ldots, 256), 256)$.  this way
 
 \section{caveman's entropy}
 
