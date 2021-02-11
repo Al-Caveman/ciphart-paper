@@ -11,6 +11,7 @@
 \newtheorem{note}{note}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
+\DeclareMathOperator{\dec}{\mathtt{dec}}
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
 \DeclareMathOperator{\hash}{\mathtt{hash}}
@@ -103,41 +104,82 @@ ambiguities about $p$; i.e.  to fully get every bit of $p$.
 but people use it to do less orthodox things, such as quantifying the
 amount of security $p$ has against, say, brute-forcing attacks.
 
-say that we've got a $256$ bit key $k \gets \hash(p \Vert s, 256)$, derived
-from password $p$, where $s$ is a salt.  if an attacker has a cipher-text
-block $m_0 \gets \enc(\text{``goodbye, world''}, 0, k)$.  attacker's goal
-is to find the key that encrypted the sequence $m_0, m_1, \ldots$.  then
-the attacker has the following options:
+say that we've got a $8V$ bit key $k \gets \hash(p \Vert s, 8V)$, derived
+from password $p$, where $s$ is a salt, and attacker has a cipher-text
+block $m_0 \gets \enc(\text{``goodbye, world''}, 0, k)$\footnote{``goodbye,
+world'' is to be used ever since \emph{dennis ritchie} passed away.  the
+colourful ``Hello, world!'', including the capitalised first letter, was
+only valid when he was alive.  despite his achievements, he died unnoticed
+by almost everyone, as a friend found him dead in his house a week after he
+was dead already.  steve jobs, who did almost nothing really useful, got
+loads of attention, some of whom even called him \emph{the messiah of
+computing}.  this is wrong, and must change.  henceforth i propose: all
+``Hello''s and ``hello''s in algorithms to become ``goodbye''s, and all
+caps, except constants, to be lowered and remain so to eternity.  using
+caps for other than constants is useless anyway.}.  attacker's goal is to
+eventually decrypt the sequence $m_0, m_1, \ldots$ back to original
+plain-text by using $\enc$'s corresponding $\dec$ function.  the attacker
+has these options:
 \begin{enumerate}
-    \item try to decrypt $m_0$, each time with a new key, until it results
-    in ``goodbye, world'' in order to conclude that $k$ is found.  this
-    will require him to perform $2^{256}$ decryption calls in order to
-    guarantee finding the key.  or, $2^{256}/2$ on average.  both of which
-    are insanely slow and would take many centuries to complete.  my laptop
-    would take $4.28 \times 10^{58}$ many centuries in order to just in
-    increment a mere counter for $2^{256}$ times.  so this is not
-    practical.\label{dumbbruteforce}
-    \item if $\enc$ is broken enough by cryptanalysis, then using approach
-    in step \cref{dumbbruteforce} could become feasible.  but only an idiot
-    would use a broken $\enc$, and such people need a different type of
-    help than what this paper tries to offer.  so this option is off-topic,
-    and i won't discuss it any further.
-    \item explore key candidates by trying different passwords.  while each
-    step is more expensive as it also requires calling $\hash$, the total
-    number of iterations is $2^{H(p)}$, which is usually small enough to
-    make this strategy practically viable for the adversary to bet
-    on.  this paper is about enhancing our security against this
-    option.\label{passbruteforce}
-\end{enumerate}
+    \item\label{dumbbruteforce} try to decrypt $m_0$, each time with a new
+    key, until it results in ``goodbye, world''.  i.e. test whether
+    $\text{``goodbye, world''} = \dec(m_0, 0, k)$ is true.  this way the
+    attacker will find $k$ but not $p$.  this will require him to perform
+    $2^{8V}$ $\dec$ calls in order to guarantee finding $k$.  or,
+    $2^{8V}/2$ on average\footnote{in the limit as our repetition of this
+    experiment, except for using different $p$s, approaches infinity.}.
+    both of which are insanely slow and would take many centuries to
+    complete.  e.g. my laptop would take $4.28 \times 10^{58}$ many
+    centuries in order to increment a mere counter for $2^{8V}$ times.  so
+    this is not practical.
 
-the amount of security that we have against brute-forcing options is the
-cost of brute-forcing.  the more expensive the cost is, the harder it is on
-the adversary, and hence the more security we have.  with the option in
-\cref{passbruteforce} our cost is\footnote{where $\cost(\hash)$ is the cost
-of a single call to $\hash$, and $\cost(\enc)$ is that of $\enc$.}:
-\begin{equation}\label{eq_cost_passbruteforce}
-    2^{H(p)} \Big(\cost(\hash) + \cost(\enc)\Big)
-\end{equation}
+    in this case shannon's entropy, $H(k) = 8V$ is used as a measure of
+    security against brute-forcing attacks.
+
+    \item if $\enc$ is broken enough by cryptanalysis, then using approach
+    in \cref{dumbbruteforce} could become feasible by finding a much
+    cheaper decryption function $\hat\dec$ than $\dec$.  but only an idiot
+    would use a broken $\enc$ that has $\hat\dec$, and such people need a
+    different type of help than what i try to offer here.  so this option
+    is off-topic.
+
+    \item\label{passbruteforce} explore key candidates by trying different
+    passwords.  while each step is more expensive than those in
+    \cref{dumbbruteforce} as it also requires calling $\hash$ before
+    $\dec$, the total number of iterations is $2^{H(p)}$, which is usually
+    small enough to make this strategy practically viable for the adversary
+    to bet on.  in this paper i want to enhance our security against this
+    option.  there are sub-scenarios:
+    \begin{enumerate}
+        \item attacker doesn't know $k$.  here, every time the attacker
+        calls $\hash$ to generate a key from a candidate password, he also
+        needs to call $\dec$ in order to see if it leads to output
+        ``goodbye, world'' so that he knows that the key that he found is
+        actually $k$, so that he goes on to decrypt $m_0, m_1, \ldots$.
+        his cost in this sub-scenario is\footnote{where $\cost(\hash)$ is
+        the cost of a single call to $\hash$, $\cost(\enc)$ is that of
+        $\enc$, and $\cost(\text{test if } c_0 = \text{``goodbye, world''}$
+        is that of testing whether $c_0 \gets \dec(m_0, 0, \hat k)$ equals
+        the expected clear-text ``goodbye, world''.}:
+        \begin{equation}\label{eq_cost_passbruteforce_wdec}
+            2^{H(p)} \left(
+                \begin{split}
+                & \cost(\hash) \\
+                & + \cost(\dec) \\
+                & + \cost(\text{test if } c_0 = \text{``goodbye, world''})
+                \end{split}
+            \right)
+        \end{equation}
+
+        \item attacker knows $k$.  here, he doesn't need to call $\dec$, so
+        his cost is\footnote{where $\hat k \gets \hash(p \Vert s, 8V)$.}:
+        \begin{equation}\label{eq_cost_passbruteforce_wodec}
+            2^{H(p)} \left(
+                \cost(\hash) + \cost(\text{test if } \hat k = k)
+            \right)
+        \end{equation}
+    \end{enumerate}
+\end{enumerate}
 
 one may try to empirically estimate $\cost(\hash)$ and $\cost(\enc)$ in
 (\ref{eq_cost_passbruteforce}), by analysing the industry of asics in order
@@ -148,7 +190,7 @@ paper contains such an attempt.}.
 but this simple $1$ to $1$ mapping between cost and entropy is broken when
 expensive key derivation functions is used.  say that the key $k$ was
 obtained by recursively calling the $\hash$ function $N$ many times.  i.e.
-$\hash(\hash(\ldots\hash(p \Vert s, 256), \ldots, 256), 256)$.  this way
+$\hash(\hash(\ldots\hash(p \Vert s, 8V), \ldots, 8V), 8V)$.  this way
 
 \section{caveman's entropy}
 
