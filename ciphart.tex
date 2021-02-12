@@ -114,7 +114,7 @@ by almost everyone, as a friend found him dead in his house a week after he
 was dead already.  steve jobs, who did almost nothing really useful, got
 loads of attention, some of whom even called him \emph{the messiah of
 computing}.  this is wrong, and must change.  henceforth i propose: all
-``Hello''s and ``hello''s in algorithms to become ``goodbye''s, and all
+``Hello, world!''s to become ``goodbye, world''s, and all
 caps, except constants, to be lowered and remain so to eternity.  using
 caps for other than constants is useless anyway.}.  attacker's goal is to
 eventually decrypt the sequence $m_0, m_1, \ldots$ back to original
@@ -127,11 +127,24 @@ has these options:
     attacker will find $k$ but not $p$.  this will require him to perform
     $2^{8V}$ $\dec$ calls in order to guarantee finding $k$.  or,
     $2^{8V}/2$ on average\footnote{in the limit as our repetition of this
-    experiment, except for using different $p$s, approaches infinity.}.
-    both of which are insanely slow and would take many centuries to
-    complete.  e.g. my laptop would take $4.28 \times 10^{58}$ many
-    centuries in order to increment a mere counter for $2^{8V}$ times.  so
-    this is not practical.
+    experiment, except for using different passwords, approaches
+    infinity.}.  both of which are insanely slow and would take many
+    centuries to complete.  e.g. my laptop would take $4.28 \times 10^{58}$
+    many centuries in order to increment a mere counter for $2^{8V}$ times.
+    so this is not practical.
+
+    adversary's cost\footnote{$\cost(\enc)$ is the cost of calling $\enc$,
+    and $\cost(\text{if } c_0 = \text{``goodbye, world''})$ is that of
+    testing whether $c_0 \gets \dec(m_0, 0, \hat k)$ equals the expected
+    clear-text ``goodbye, world''.} in this option is:
+    \begin{equation}\label{eq_cost_keybruteforce}
+        2^{8V} \left(
+            \begin{split}
+                & \cost(\dec) \\
+                & + \cost(\text{if } c_0 = \text{``goodbye, world''})
+            \end{split}
+        \right)
+    \end{equation}
 
     in this case shannon's entropy, $H(k) = 8V$ is used as a measure of
     security against brute-forcing attacks.
@@ -156,26 +169,22 @@ has these options:
         needs to call $\dec$ in order to see if it leads to output
         ``goodbye, world'' so that he knows that the key that he found is
         actually $k$, so that he goes on to decrypt $m_0, m_1, \ldots$.
-        his cost in this sub-scenario is\footnote{where $\cost(\hash)$ is
-        the cost of a single call to $\hash$, $\cost(\enc)$ is that of
-        $\enc$, and $\cost(\text{test if } c_0 = \text{``goodbye, world''}$
-        is that of testing whether $c_0 \gets \dec(m_0, 0, \hat k)$ equals
-        the expected clear-text ``goodbye, world''.}:
+        his cost\footnote{where $\cost(\hash)$ is the cost of a single call
+        to $\hash$.} in this sub-scenario is:
         \begin{equation}\label{eq_cost_passbruteforce_wdec}
             2^{H(p)} \left(
                 \begin{split}
-                & \cost(\hash) \\
-                & + \cost(\dec) \\
-                & + \cost(\text{test if } c_0 = \text{``goodbye, world''})
+                & \cost(\hash) + \cost(\dec) \\
+                & + \cost(\text{if } c_0 = \text{``goodbye\ldots''})
                 \end{split}
             \right)
         \end{equation}
 
         \item attacker knows $k$.  here, he doesn't need to call $\dec$, so
-        his cost is\footnote{where $\hat k \gets \hash(p \Vert s, 8V)$.}:
+        his cost\footnote{where $\hat k \gets \hash(p \Vert s, 8V)$.} is:
         \begin{equation}\label{eq_cost_passbruteforce_wodec}
             2^{H(p)} \left(
-                \cost(\hash) + \cost(\text{test if } \hat k = k)
+                \cost(\hash) + \cost(\text{if } \hat k = k)
             \right)
         \end{equation}
     \end{enumerate}
