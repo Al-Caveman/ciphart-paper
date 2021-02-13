@@ -8,6 +8,7 @@
 \usepackage{amssymb}
 \newtheorem{security}{security interpretation}
 \newtheorem{definition}{definition}
+\newtheorem{request}{request}
 \newtheorem{note}{note}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
@@ -17,7 +18,7 @@
 \DeclareMathOperator{\hash}{\mathtt{hash}}
 \DeclareMathOperator{\argon}{\mathtt{argon2}}
 \DeclareMathOperator{\ciphart}{\mathtt{ciphart}}
-\DeclareMathOperator{\cost}{cost}
+\DeclareMathOperator{\cost}{\mathtt{cost}}
 \DeclareMathOperator{\henc}{\; HENC}
 \DeclareMathOperator{\hhash}{\; HHASH}
 \renewcommand{\contentsname}{paper's layout}
@@ -104,6 +105,7 @@ ambiguities about $p$; i.e.  to fully get every bit of $p$.
 but people use it to do less orthodox things, such as quantifying the
 amount of security $p$ has against, say, brute-forcing attacks.
 
+\subsection{an unorthodox use}
 say that we've got a $8V$ bit key $k \gets \hash(p \Vert s, 8V)$, derived
 from password $p$, where $s$ is a salt, and attacker has a cipher-text
 block $m_0 \gets \enc(\text{``goodbye, world''}, 0, k)$\footnote{``goodbye,
@@ -146,9 +148,6 @@ has these options:
         \right)
     \end{equation}
 
-    in this case shannon's entropy, $H(k) = 8V$ is used as a measure of
-    security against brute-forcing attacks.
-
     \item if $\enc$ is broken enough by cryptanalysis, then using approach
     in \cref{dumbbruteforce} could become feasible by finding a much
     cheaper decryption function $\hat\dec$ than $\dec$.  but only an idiot
@@ -190,18 +189,92 @@ has these options:
     \end{enumerate}
 \end{enumerate}
 
-one may try to empirically estimate $\cost(\hash)$ and $\cost(\enc)$ in
-(\ref{eq_cost_passbruteforce}), by analysing the industry of asics in order
-to obtain a mapping between the total amount of money that's needed in
-order to identify $p$ within a given time frame\footnote{the \emph{scrypt}
-paper contains such an attempt.}.
+\subsubsection{calculating the security}
+\begin{definition}
+the security of a system is the cost of the cheapest method that can break
+it.
+\end{definition}
 
+i think ways to go forward, to make total costs in
+(\ref{eq_cost_keybruteforce}), (\ref{eq_cost_passbruteforce_wdec}) and
+(\ref{eq_cost_passbruteforce_wodec}) calculable so that we can get an
+understanding of the quantity of security that we have, are:
+\begin{itemize}
+    \item estimate the $\cost$ function.  e.g. by surveying the asics
+    industry to get an idea how much money it costs to get a given key, or
+    password, space brute-forced within a target time frame\footnote{see
+    the \emph{scrypt} paper for an example.}.
+
+    this has expensive housekeeping as one needs to keep a constant eye on
+    the industry of asic manufacturing.  plus it is too heuristic-y to
+    build security on.  until i learn more about the theoretical cost
+    guarantees about the involved function calls, i'm going to ignore this
+    option.
+
+    not saying that it's a bad idea.  in fact i think it's the most
+    accurate approach to measure security, as i think security against
+    breakage \emph{is} the cost of breaking it.  it is just that this
+    approach seems to be too expensive for most people to adopt.
+
+    \item ignore anything that has no cryptographic guarantee.  so, in
+    (\ref{eq_cost_keybruteforce}), cryptography
+    guarantees\footnote{statistically by confidence earned through peer
+    review and attempts to break encryption algorithms.} that $2^{8V}$ many
+    tests are needed to be performed in order to find the key $k$ with a
+    probability of $1$.
+
+    but there is no cryptographic guarantee on how slow calling
+    $\dec$ is across hardware implementations, other than that it will cost
+    a unit of time greater than zero.  this way
+    (\ref{eq_cost_keybruteforce}) becomes just:
+    \begin{equation}\label{eq_simplecost_keybruteforce}
+        \begin{split}
+                & 2^{8V} \times 1\\
+            ={} & 2^{8V}
+        \end{split}
+    \end{equation}
+    likewise, (\ref{eq_cost_passbruteforce_wdec}) and
+    (\ref{eq_cost_passbruteforce_wodec}) become just:
+    \begin{equation}\label{eq_simplecost_passbruteforce}
+        \begin{split}
+                & 2^{H(p)} \times 1\\
+            ={} & 2^{H(p)}
+        \end{split}
+    \end{equation}
+
+    until i learn more about the guarantees of the involved function calls,
+    i'm adopting this conservative thinking in this paper.
+\end{itemize}
+
+\begin{request}
+    drop me a mail if you know other ways to go forward, even if not
+    necessarily related to this paper's conclusions or its style of
+    thinking.
+\end{request}
+
+i think \cref{eq_simplecost_keybruteforce,eq_simplecost_passbruteforce} is
+the reason it made sense to people to use entropy as a measure of password
+security.  they just look at it in $log_2$ scale.  i.e.
+\cref{eq_simplecost_keybruteforce,eq_simplecost_passbruteforce} become:
+    \begin{equation}\label{eq_simplecost_keybruteforce_logscale}
+        \begin{split}
+                & 2^{8V} \times 1\\
+            ={} & 2^{8V}
+        \end{split}
+    \end{equation}
+    and
+    \begin{equation}\label{eq_simplecost_passbruteforce_logscale}
+        \begin{split}
+                & 2^{H(p)} \times 1\\
+            ={} & 2^{H(p)}
+        \end{split}
+    \end{equation}
+
+\section{caveman's entropy}
 but this simple $1$ to $1$ mapping between cost and entropy is broken when
 expensive key derivation functions is used.  say that the key $k$ was
 obtained by recursively calling the $\hash$ function $N$ many times.  i.e.
 $\hash(\hash(\ldots\hash(p \Vert s, 8V), \ldots, 8V), 8V)$.  this way
-
-\section{caveman's entropy}
 
 \section{ciphart}
 \subsection{parameters}
