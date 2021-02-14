@@ -233,7 +233,7 @@ and caveman's entropy becomes:
     C(p, \mhash(\ldots, N, M)) = H(p) + e(M-\hat M)\log_2 N
 \end{equation}
 
-\subsection{summary}
+\subsection{implications}
 let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
 a more complex password with $H(p) + e(M-\hat M)\log_2 N$ shannon's entropy
 bits, where $M$, $\hat M$ and $N$ are all positive numbers.
@@ -282,10 +282,13 @@ so you have to pick either one of two options:
     symmetric-encryption functions functions do not exist.
 \end{enumerate}
 
-\begin{theorem}
-when $p$ is secret and $\hash$ is not broken, caveman's entropy $C$ equals
-shannon's entropy $H$.
+\begin{theorem}[the perfect lie]\label{theorem_perfect_lie}
+when $p$ is secret and $\hash$ is not broken, then shannon's entropy $H$ of
+the derived key equals caveman's entropy $C$.
 \end{theorem}
+
+i call \cref{theorem_perfect_lie} the \emph{perfect lie theorem} in a sense
+that a perfect lie is indistinguishable from truth.
 
 \vfill
 
