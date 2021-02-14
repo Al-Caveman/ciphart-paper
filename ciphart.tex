@@ -8,7 +8,7 @@
 \usepackage{amssymb}
 \newtheorem{security}{security interpretation}
 \newtheorem{definition}{definition}
-\newtheorem{request}{request}
+\newtheorem{theorem}{theorem}
 \newtheorem{note}{note}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
@@ -16,6 +16,8 @@
 \DeclareMathOperator{\maxf}{max}
 \DeclareMathOperator{\len}{len}
 \DeclareMathOperator{\hash}{\mathtt{hash}}
+\DeclareMathOperator{\rhash}{\mathtt{rhash}}
+\DeclareMathOperator{\mhash}{\mathtt{mhash}}
 \DeclareMathOperator{\argon}{\mathtt{argon2}}
 \DeclareMathOperator{\ciphart}{\mathtt{ciphart}}
 \DeclareMathOperator{\cost}{\mathtt{cost}}
@@ -105,176 +107,187 @@ ambiguities about $p$; i.e.  to fully get every bit of $p$.
 but people use it to do less orthodox things, such as quantifying the
 amount of security $p$ has against, say, brute-forcing attacks.
 
-\subsection{an unorthodox use}
 say that we've got a $8V$ bit key $k \gets \hash(p \Vert s, 8V)$, derived
-from password $p$, where $s$ is a salt, and attacker has a cipher-text
-block $m_0 \gets \enc(\text{``goodbye, world''}, 0, k)$\footnote{``goodbye,
-world'' is to be used ever since \emph{dennis ritchie} passed away.  the
-colourful ``Hello, world!'', including the capitalised first letter, was
-only valid when he was alive.  despite his achievements, he died unnoticed
-by almost everyone, as a friend found him dead in his house a week after he
-was dead already.  steve jobs, who did almost nothing really useful, got
-loads of attention, some of whom even called him \emph{the messiah of
-computing}.  this is wrong, and must change.  henceforth i propose: all
-``Hello, world!''s to become ``goodbye, world''s, and all
-caps, except constants, to be lowered and remain so to eternity.  using
-caps for other than constants is useless anyway.}.  attacker's goal is to
-eventually decrypt the sequence $m_0, m_1, \ldots$ back to original
-plain-text by using $\enc$'s corresponding $\dec$ function.  the attacker
-has these options:
-\begin{enumerate}
-    \item\label{dumbbruteforce} try to decrypt $m_0$, each time with a new
-    key, until it results in ``goodbye, world''.  i.e. test whether
-    $\text{``goodbye, world''} = \dec(m_0, 0, k)$ is true.  this way the
-    attacker will find $k$ but not $p$.  this will require him to perform
-    $2^{8V}$ $\dec$ calls in order to guarantee finding $k$.  or,
-    $2^{8V}/2$ on average\footnote{in the limit as our repetition of this
-    experiment, except for using different passwords, approaches
-    infinity.}.  both of which are insanely slow and would take many
-    centuries to complete.  e.g. my laptop would take $4.28 \times 10^{58}$
-    many centuries in order to increment a mere counter for $2^{8V}$ times.
-    so this is not practical.
+from password $p$, where $s$ is a salt.  say that the attacker has $s$ and
+$k$ but wants to figure out $p$.  in this case, he will need to brute-force
+the password space in order to find $p$ that gives $k$.  his cost is:
+\begin{equation}\label{eq_cost_passbruteforce}
+    2^{H(p)} \left(
+        \cost(\hash) + \cost(\text{if } \hat k = k)
+    \right)
+\end{equation}
 
-    adversary's cost\footnote{$\cost(\enc)$ is the cost of calling $\enc$,
-    and $\cost(\text{if } c_0 = \text{``goodbye, world''})$ is that of
-    testing whether $c_0 \gets \dec(m_0, 0, \hat k)$ equals the expected
-    clear-text ``goodbye, world''.} in this option is:
-    \begin{equation}\label{eq_cost_keybruteforce}
-        2^{8V} \left(
-            \begin{split}
-                & \cost(\dec) \\
-                & + \cost(\text{if } c_0 = \text{``goodbye, world''})
-            \end{split}
-        \right)
-    \end{equation}
-
-    \item if $\enc$ is broken enough by cryptanalysis, then using approach
-    in \cref{dumbbruteforce} could become feasible by finding a much
-    cheaper decryption function $\hat\dec$ than $\dec$.  but only an idiot
-    would use a broken $\enc$ that has $\hat\dec$, and such people need a
-    different type of help than what i try to offer here.  so this option
-    is off-topic.
-
-    \item\label{passbruteforce} explore key candidates by trying different
-    passwords.  while each step is more expensive than those in
-    \cref{dumbbruteforce} as it also requires calling $\hash$ before
-    $\dec$, the total number of iterations is $2^{H(p)}$, which is usually
-    small enough to make this strategy practically viable for the adversary
-    to bet on.  in this paper i want to enhance our security against this
-    option.  there are sub-scenarios:
-    \begin{enumerate}
-        \item attacker doesn't know $k$.  here, every time the attacker
-        calls $\hash$ to generate a key from a candidate password, he also
-        needs to call $\dec$ in order to see if it leads to output
-        ``goodbye, world'' so that he knows that the key that he found is
-        actually $k$, so that he goes on to decrypt $m_0, m_1, \ldots$.
-        his cost\footnote{where $\cost(\hash)$ is the cost of a single call
-        to $\hash$.} in this sub-scenario is:
-        \begin{equation}\label{eq_cost_passbruteforce_wdec}
-            2^{H(p)} \left(
-                \begin{split}
-                & \cost(\hash) + \cost(\dec) \\
-                & + \cost(\text{if } c_0 = \text{``goodbye\ldots''})
-                \end{split}
-            \right)
-        \end{equation}
-
-        \item attacker knows $k$.  here, he doesn't need to call $\dec$, so
-        his cost\footnote{where $\hat k \gets \hash(p \Vert s, 8V)$.} is:
-        \begin{equation}\label{eq_cost_passbruteforce_wodec}
-            2^{H(p)} \left(
-                \cost(\hash) + \cost(\text{if } \hat k = k)
-            \right)
-        \end{equation}
-    \end{enumerate}
-\end{enumerate}
-
-\subsubsection{calculating the security}
 \begin{definition}
 the security of a system is the cost of the cheapest method that can break
 it.
 \end{definition}
 
-i think ways to go forward, to make total costs in
-(\ref{eq_cost_keybruteforce}), (\ref{eq_cost_passbruteforce_wdec}) and
-(\ref{eq_cost_passbruteforce_wodec}) calculable so that we can get an
-understanding of the quantity of security that we have, are:
-\begin{itemize}
-    \item estimate the $\cost$ function.  e.g. by surveying the asics
-    industry to get an idea how much money it costs to get a given key, or
-    password, space brute-forced within a target time frame\footnote{see
-    the \emph{scrypt} paper for an example.}.
+one way to estimate $\cost$ is to survey the asics industry.  by surveying
+the asics industry to get an idea how much money it costs to get a given
+key, or password, space brute-forced within a target time
+frame\footnote{see the \emph{scrypt} paper for an example.}.  this has an
+expensive housekeeping and is usually not possible to get any guarantees as
+we don't know about state-of-art manufacturing secrets that adversaries may
+have.  the \emph{scrypt} paper has an example of such attempt.
 
-    this has expensive housekeeping as one needs to keep a constant eye on
-    the industry of asic manufacturing.  plus it is too heuristic-y to
-    build security on.  until i learn more about the theoretical cost
-    guarantees about the involved function calls, i'm going to ignore this
-    option.
+another way is to ignore anything that has no cryptographic guarantee.  so,
+in (\ref{eq_cost_passbruteforce}), cryptography
+guarantees\footnote{statistically by confidence earned through peer review
+and attempts to break encryption algorithms.} that $2^{H(p)}$ many $\hash$
+calls are performed and that many equality tests.  the $\hash$ call needs
+to be done once, so let's give it a unit of time $1$.  the equality test
+also needs to be called once, but since since it's so cheap it's easier to
+just assume that its cost is free.  this way (\ref{eq_cost_passbruteforce})
+becomes just:
+\begin{equation}\label{eq_simplecost_passbruteforce}
+    2^{H(p)} (1+0) = 2^{H(p)}
+\end{equation}
 
-    not saying that it's a bad idea.  in fact i think it's the most
-    accurate approach to measure security, as i think security against
-    breakage \emph{is} the cost of breaking it.  it is just that this
-    approach seems to be too expensive for most people to adopt.
-
-    \item ignore anything that has no cryptographic guarantee.  so, in
-    (\ref{eq_cost_keybruteforce}), cryptography
-    guarantees\footnote{statistically by confidence earned through peer
-    review and attempts to break encryption algorithms.} that $2^{8V}$ many
-    tests are needed to be performed in order to find the key $k$ with a
-    probability of $1$.
-
-    but there is no cryptographic guarantee on how slow calling
-    $\dec$ is across hardware implementations, other than that it will cost
-    a unit of time greater than zero.  this way
-    (\ref{eq_cost_keybruteforce}) becomes just:
-    \begin{equation}\label{eq_simplecost_keybruteforce}
-        \begin{split}
-                & 2^{8V} \times 1\\
-            ={} & 2^{8V}
-        \end{split}
-    \end{equation}
-    likewise, (\ref{eq_cost_passbruteforce_wdec}) and
-    (\ref{eq_cost_passbruteforce_wodec}) become just:
-    \begin{equation}\label{eq_simplecost_passbruteforce}
-        \begin{split}
-                & 2^{H(p)} \times 1\\
-            ={} & 2^{H(p)}
-        \end{split}
-    \end{equation}
-
-    until i learn more about the guarantees of the involved function calls,
-    i'm adopting this conservative thinking in this paper.
-\end{itemize}
-
-\begin{request}
-    drop me a mail if you know other ways to go forward, even if not
-    necessarily related to this paper's conclusions or its style of
-    thinking.
-\end{request}
-
-i think \cref{eq_simplecost_keybruteforce,eq_simplecost_passbruteforce} is
-the reason it made sense to people to use entropy as a measure of password
-security.  they just look at it in $log_2$ scale.  i.e.
-\cref{eq_simplecost_keybruteforce,eq_simplecost_passbruteforce} become:
-    \begin{equation}\label{eq_simplecost_keybruteforce_logscale}
-        \begin{split}
-                & 2^{8V} \times 1\\
-            ={} & 2^{8V}
-        \end{split}
-    \end{equation}
-    and
-    \begin{equation}\label{eq_simplecost_passbruteforce_logscale}
-        \begin{split}
-                & 2^{H(p)} \times 1\\
-            ={} & 2^{H(p)}
-        \end{split}
-    \end{equation}
+i think this is why people use password entropy as a measure of its
+security.  not because it is the quantity of security, but rather because
+its the quantity of \emph{simplified} security.  further, for convenience,
+it seems that people report it in the $\log_2$ scale.  i.e. $\log_2
+2^{H(p)} = H(p)$.
 
 \section{caveman's entropy}
-but this simple $1$ to $1$ mapping between cost and entropy is broken when
-expensive key derivation functions is used.  say that the key $k$ was
-obtained by recursively calling the $\hash$ function $N$ many times.  i.e.
-$\hash(\hash(\ldots\hash(p \Vert s, 8V), \ldots, 8V), 8V)$.  this way
+\subsection{recursive $\hash$}
+if the $\hash$ function is replaced by an $N$-deep recursion over $\hash$,
+like:
+\[
+    \begin{split}
+        & \rhash(p \Vert s, 8V, N) \\
+    ={} &  \hash(\hash(\ldots\hash(p \Vert s, 8V), \ldots, 8V), 8V)
+    \end{split}
+\]
+then, if $\hash$ is not broken,  (\ref{eq_cost_passbruteforce}) becomes:
+\begin{equation}\label{eq_cost_passbruteforce_N}
+    2^{H(p)} \left(
+        N\cost(\hash) + \cost(\text{if } \hat k = k)
+    \right)
+\end{equation}
+and (\ref{eq_simplecost_passbruteforce}) becomes:
+\begin{equation}\label{eq_simplecost_passbruteforce_N}
+    \begin{split}
+    2^{H(p)} (N+0) &= N2^{H(p)} \\
+                  &= 2^{H(p) + \log_2 N}
+    \end{split}
+\end{equation}
+
+at this point, thanks to cryptographic guarantees, there is absolutely no
+security distinction between a password with shannon's $H(p) + \log_2 N$
+entropy bits, and a password with just $H(p)$ entropy bits that made use of
+the $N$-deep recursive calls of $\hash$.
+
+shannon's entropy of $p$ remains $H(p)$, but thanks to the recursive calls
+of $\hash$, that password will be as expensive as another password $\hat
+p$, such that $H(\hat p) = H(p) + \log_2 N$.
+
+i think it will be simpler if we introduce the function-dependent caveman's
+entropy $C$ as a measure.  it goes like this:
+\begin{equation}
+    C(p, \hash(\ldots)) = H(p)
+\end{equation}
+
+\begin{equation}
+    C(\hat p, \hash(\ldots)) = H(p) + \log_2 N
+\end{equation}
+
+\begin{equation}
+    \begin{split}
+        C(p, \rhash(\ldots, N)) &= H(p) + \log_2 N \\
+                                &= H(\hat p) \\
+    \end{split}
+\end{equation}
+
+security-wise, there is no distinction between the more complex password
+$\hat p$, and the simpler password $p$ that used $\rhash(\ldots, N)$.  so i
+really think we need to measure password security in $C$ instead of $H$.
+
+\subsection{memory-hard $\hash$}
+let $\mhash$ be like $\rhash$, except that it also requires $M$ many memory
+bites such that, as available memory is linearly reduced from $M$, penalty
+in cpu time grows exponentially.  let $M$ be requested memory, $\hat M$ be
+available memory, and $e(M - \hat M)$ be the exponential penalty value for
+reduction in memory, where $e(0) = 1$.
+\begin{equation}
+    \mhash(p \Vert s, N, M)  =  \rhash(p \Vert s, N)^{e(\hat M - M)}
+\end{equation}
+
+if the $\hash$ function is replaced by $M$ bytes memory-hardened $N$-deep
+recursion hash function $\mhash$, (\ref{eq_cost_passbruteforce}) becomes:
+\begin{equation}\label{eq_cost_passbruteforce_NM}
+    2^{H(p)} \left(
+        N^{e(M-\hat M)}\cost(\hash) + \cost(\text{if } \hat k = k)
+    \right)
+\end{equation}
+(\ref{eq_simplecost_passbruteforce}) becomes:
+\begin{equation}\label{eq_simplecost_passbruteforce_NM}
+    \begin{split}
+    2^{H(p)} (N^{e(M-\hat M)}+0) &= N^{e(M-\hat M)} 2^{H(p)} \\
+                  &= 2^{H(p) + \log_2 N^{e(M-\hat M)}} \\
+                  &= 2^{H(p) + e(M-\hat M)\log_2 N}
+    \end{split}
+\end{equation}
+and caveman's entropy becomes:
+\begin{equation}
+    C(p, \mhash(\ldots, N, M)) = H(p) + e(M-\hat M)\log_2 N
+\end{equation}
+
+\subsection{summary}
+let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
+a more complex password with $H(p) + e(M-\hat M)\log_2 N$ shannon's entropy
+bits, where $M$, $\hat M$ and $N$ are all positive numbers.
+
+then caveman's entropy says that the following keys are information
+theoretically indistinguishable for as long as only $p$ and $\hat p$ remain
+unknown (everything else is known, such as the distribution from which $p$
+and $\hat p$ was sampled), and for as long as $\hash$ is not broken:
+\begin{itemize}
+    \item $k \gets \mhash(p \Vert s, N, M)$
+    \item $\hat k \gets \hash(\hat p \Vert s)$
+\end{itemize}
+
+in other words:
+\begin{equation}
+    C(p, \mhash(\ldots, N, M)) = H(\hat p)
+\end{equation}
+
+since the assumption that passwords are kept away from the adversary is
+fundamental in a symmetric encryption context, i think it makes since that
+we measure our security with memory-hard key derivation functions using the
+caveman's entropy $C$.
+
+from a security point of view, it will feel absolutely identical to as if
+the password got injected with extra shannon's entropy bits.  no one can
+tell the difference for as long as the fundamental assumption of hiding
+passwords is honoured, as well as the hashing function $\hash$ is not
+broken.
+
+in other words, we can say, if password $p$ is unknown, and $\hash$ is not
+broken, then we have injected into $p$ extra shannon's entropy bits.  this
+lie will be only discovered after $p$ is revealed ---  call it caveman's
+cat thought experiment.
+
+if you think that it is impossible for this \emph{lie} to be \emph{truth}
+under the secrecy of $p$, then i've done an even better job: proving that
+cryptographically secure hashing functions do not exist.  likewise, same
+can be trivially extended to: cryptographically symmetric ciphers do not
+exist.
+
+so you have to pick either one of two options:
+\begin{enumerate}
+    \item either accept that the lie is truth.  i.e. we injected shannon's
+    entropy bits into $p$, for as long as only $p$ is not revealed.
+    \item or, accept that cryptographically-secure hashing and
+    symmetric-encryption functions functions do not exist.
+\end{enumerate}
+
+\begin{theorem}
+when $p$ is secret and $\hash$ is not broken, caveman's entropy $C$ equals
+shannon's entropy $H$.
+\end{theorem}
+
+\vfill
 
 \section{ciphart}
 \subsection{parameters}
