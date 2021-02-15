@@ -143,11 +143,11 @@ becomes just:
     2^{H(p)} (1+0) = 2^{H(p)}
 \end{equation}
 
-i think this is why people use password entropy as a measure of its
-security.  not because it is the quantity of security, but rather because
-its the quantity of \emph{simplified} security.  further, for convenience,
-it seems that people report it in the $\log_2$ scale.  i.e. $\log_2
-2^{H(p)} = H(p)$.
+further, for convenience, it seems that people report it in the $\log_2$
+scale.  i.e. $\log_2 2^{H(p)} = H(p)$.  i think this is why people use
+password entropy as a measure of its security.  not because it is the
+quantity of security, but rather because its the quantity of
+\emph{simplified} security.  
 
 \section{caveman's entropy}
 \subsection{recursive $\hash$}
@@ -185,16 +185,16 @@ p$, such that $H(\hat p) = H(p) + \log_2 N$.
 i think it will be simpler if we introduce the function-dependent caveman's
 entropy $C$ as a measure.  it goes like this:
 \begin{equation}
-    C(p, \hash(\ldots)) = H(p)
+    C\Big(p, \hash(\ldots)\Big) = H(p)
 \end{equation}
 
 \begin{equation}
-    C(\hat p, \hash(\ldots)) = H(p) + \log_2 N
+    C\Big(\hat p, \hash(\ldots)\Big) = H(p) + \log_2 N
 \end{equation}
 
 \begin{equation}
     \begin{split}
-        C(p, \rhash(\ldots, N)) &= H(p) + \log_2 N \\
+        C\Big(p, \rhash(\ldots, N)\Big) &= H(p) + \log_2 N \\
                                 &= H(\hat p) \\
     \end{split}
 \end{equation}
@@ -205,22 +205,26 @@ really think we need to measure password security in $C$ instead of $H$.
 
 \subsection{memory-hard $\hash$}
 let $\mhash$ be like $\rhash$, except that it also requires $M$ many memory
-bites such that, as available memory is linearly reduced from $M$, penalty
+bytes such that, as available memory is linearly reduced from $M$, penalty
 in cpu time grows exponentially.  let $M$ be requested memory, $\hat M$ be
 available memory, and $e(M - \hat M)$ be the exponential penalty value for
 reduction in memory, where $e(0) = 1$.
 \begin{equation}
-    \mhash(p \Vert s, N, M)  =  \rhash(p \Vert s, N)^{e(\hat M - M)}
+    \begin{split}
+        & \cost\Big(\mhash(p \Vert s, N, M)\Big) \\
+    ={} & \cost\Big(\rhash(p \Vert s, N)\Big)^{e(\hat M - M)}
+    \end{split}
 \end{equation}
 
-if the $\hash$ function is replaced by $M$ bytes memory-hardened $N$-deep
-recursion hash function $\mhash$, (\ref{eq_cost_passbruteforce}) becomes:
+if $\hash$ in (\ref{eq_cost_passbruteforce}) is replaced by the $M$-bytes
+memory-hardened $N$-deep recursion hash function $\mhash$, then
+(\ref{eq_cost_passbruteforce}) becomes:
 \begin{equation}\label{eq_cost_passbruteforce_NM}
     2^{H(p)} \left(
         N^{e(M-\hat M)}\cost(\hash) + \cost(\text{if } \hat k = k)
     \right)
 \end{equation}
-(\ref{eq_simplecost_passbruteforce}) becomes:
+and (\ref{eq_simplecost_passbruteforce}) becomes:
 \begin{equation}\label{eq_simplecost_passbruteforce_NM}
     \begin{split}
     2^{H(p)} (N^{e(M-\hat M)}+0) &= N^{e(M-\hat M)} 2^{H(p)} \\
@@ -230,7 +234,7 @@ recursion hash function $\mhash$, (\ref{eq_cost_passbruteforce}) becomes:
 \end{equation}
 and caveman's entropy becomes:
 \begin{equation}
-    C(p, \mhash(\ldots, N, M)) = H(p) + e(M-\hat M)\log_2 N
+    C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-\hat M)\log_2 N
 \end{equation}
 
 \subsection{implications}
@@ -249,7 +253,7 @@ and $\hat p$ was sampled), and for as long as $\hash$ is not broken:
 
 in other words:
 \begin{equation}
-    C(p, \mhash(\ldots, N, M)) = H(\hat p)
+    C\Big(p, \mhash(\ldots, N, M)\Big) = H(\hat p)
 \end{equation}
 
 since the assumption that passwords are kept away from the adversary is
@@ -290,7 +294,26 @@ the derived key equals caveman's entropy $C$.
 i call \cref{theorem_perfect_lie} the \emph{perfect lie theorem} in a sense
 that a perfect lie is indistinguishable from truth.
 
-\vfill
+the reason this lie is appealing is because it simplifies our
+quantification of the amount of security that we have gained by using a
+given key derivation function.
+
+without treating this lie as truth, our only hope would be surveying the
+asics industry.  but with this lie, we have one more approach to get a feel
+of the gained security quantity by just accepting caveman's entropy $C$ as
+shannon's entropy $H$, and move on as if the lie is truth, and no one can
+notice it.
+
+we can also look at it from the perspective of \emph{occam's razor}.  i.e.
+if two things are not distinguishable from one another, then assuming that
+they are just the same thing is simpler than assuming otherwise.  since (1)
+each assumption bit has a positive probability of error, (2) since assuming
+that indistinguishable things are different than one another is more
+complex (i.e. more assumption bits) than assuming not, and (3) since there
+is no observable difference between the two things, therefore it
+necessarily follows that our model's total error will be reduced if we
+accept that the indistinguishable things are identical (i.e.  which is what
+\cref{theorem_perfect_lie} says).
 
 \section{ciphart}
 \subsection{parameters}
