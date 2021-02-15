@@ -41,7 +41,7 @@
 \Huge
 \myrulefill\ ciphart \myrulefill\\
 \LARGE
-memory-hard key derivation \\
+memory-harder key derivation \\
 with easier measurable security\\
 \normalsize
 caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
@@ -95,7 +95,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \noindent
 \rule{1\columnwidth}{2pt}
 
-\section{shannon's entropy}
+\section{background}
 we've got password $p$ with $H(p)$ many shannon's entropy bits worth of
 information in it.  so what does this mean?
 
@@ -173,10 +173,11 @@ and (\ref{eq_simplecost_passbruteforce}) becomes:
     \end{split}
 \end{equation}
 
-at this point, thanks to cryptographic guarantees, there is absolutely no
-security distinction between a password with shannon's $H(p) + \log_2 N$
-entropy bits, and a password with just $H(p)$ entropy bits that made use of
-the $N$-deep recursive calls of $\hash$.
+at this point, thanks to cryptographic guarantees concerning properties of
+hashing functions, there is absolutely no security distinction between a
+password with shannon's $H(p) + \log_2 N$ entropy bits, and a password with
+just $H(p)$ entropy bits that made use of the $N$-deep recursive calls of
+$\hash$.
 
 shannon's entropy of $p$ remains $H(p)$, but thanks to the recursive calls
 of $\hash$, that password will be as expensive as another password $\hat
@@ -224,7 +225,7 @@ memory-hardened $N$-deep recursion hash function $\mhash$, then
         N^{e(M-\hat M)}\cost(\hash) + \cost(\text{if } \hat k = k)
     \right)
 \end{equation}
-and (\ref{eq_simplecost_passbruteforce}) becomes:
+(\ref{eq_simplecost_passbruteforce}) becomes:
 \begin{equation}\label{eq_simplecost_passbruteforce_NM}
     \begin{split}
     2^{H(p)} (N^{e(M-\hat M)}+0) &= N^{e(M-\hat M)} 2^{H(p)} \\
@@ -237,7 +238,7 @@ and caveman's entropy becomes:
     C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-\hat M)\log_2 N
 \end{equation}
 
-\subsection{implications}
+\subsection{the perfect lie theorem}
 let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
 a more complex password with $H(p) + e(M-\hat M)\log_2 N$ shannon's entropy
 bits, where $M$, $\hat M$ and $N$ are all positive numbers.
@@ -259,7 +260,7 @@ in other words:
 since the assumption that passwords are kept away from the adversary is
 fundamental in a symmetric encryption context, i think it makes since that
 we measure our security with memory-hard key derivation functions using the
-caveman's entropy $C$.
+caveman's entropy $C$ instead of shannon's entropy $H$.
 
 from a security point of view, it will feel absolutely identical to as if
 the password got injected with extra shannon's entropy bits.  no one can
@@ -269,8 +270,7 @@ broken.
 
 in other words, we can say, if password $p$ is unknown, and $\hash$ is not
 broken, then we have injected into $p$ extra shannon's entropy bits.  this
-lie will be only discovered after $p$ is revealed ---  call it caveman's
-cat thought experiment.
+lie will be only discovered after $p$ is revealed.
 
 if you think that it is impossible for this \emph{lie} to be \emph{truth}
 under the secrecy of $p$, then i've done an even better job: proving that
@@ -278,10 +278,11 @@ cryptographically secure hashing functions do not exist.  likewise, same
 can be trivially extended to: cryptographically symmetric ciphers do not
 exist.
 
-so you have to pick either one of two options:
+so you have to pick only one of these options:
 \begin{enumerate}
-    \item either accept that the lie is truth.  i.e. we injected shannon's
-    entropy bits into $p$, for as long as only $p$ is not revealed.
+    \item either accept that the lie is truth.  i.e. accept that we've
+    injected shannon's entropy bits into $p$, for as long as only $p$ is
+    not revealed.
     \item or, accept that cryptographically-secure hashing and
     symmetric-encryption functions functions do not exist.
 \end{enumerate}
@@ -296,7 +297,7 @@ that a perfect lie is indistinguishable from truth.
 
 the reason this lie is appealing is because it simplifies our
 quantification of the amount of security that we have gained by using a
-given key derivation function.
+given key derivation function, such as $\rhash$ or $\mhash$.
 
 without treating this lie as truth, our only hope would be surveying the
 asics industry.  but with this lie, we have one more approach to get a feel
@@ -306,32 +307,32 @@ notice it.
 
 we can also look at it from the perspective of \emph{occam's razor}.  i.e.
 if two things are not distinguishable from one another, then assuming that
-they are just the same thing is simpler than assuming otherwise.  since (1)
-each assumption bit has a positive probability of error, (2) since assuming
-that indistinguishable things are different than one another is more
-complex (i.e. more assumption bits) than assuming not, and (3) since there
-is no observable difference between the two things, therefore it
-necessarily follows that our model's total error will be reduced if we
-accept that the indistinguishable things are identical (i.e.  which is what
+they are just the same thing is simpler than assuming otherwise.  
+
+to be more specific about \emph{occam's razor}: (1) each assumption bit has
+a positive probability of error by definition, (2) since assuming that
+indistinguishable things are different than one another is more complex
+(i.e. more assumption bits) than assuming not, and (3) since there is no
+observable difference between the two things, therefore it necessarily
+follows that our model's total error will be reduced if we accept that the
+indistinguishable things are identical (i.e.  which is what
 \cref{theorem_perfect_lie} says).
 
 \section{ciphart}
 \subsection{parameters}
 \begin{tabularx}{\columnwidth}{lX}
-    $\enc$ & encryption function.\\
     $p$ & password.\\
     $s$ & salt.\\
     $M$ & total memory in bytes.\\
     $L$ & number of memory lanes for concurrency.\\
     $T$ & number of tasks per lane segment.\\
-    $B$ & minimum quantity of increased protection against password
-            brute-forcing attacks in the unit of \emph{caveman's entropy
-            bits}.\\
-    $K$ & output key size in bytes.\\
+    $B$ & minimum \emph{caveman's entropy bits} to inject into $p$.\\
+    $K$ & output key's size in bytes.\\
 \end{tabularx}
 
 \subsection{internal variables}
 \begin{tabularx}{\columnwidth}{lX}
+    $\enc$ & encryption function.\\
     $\hash$ & hashing function.\\
     $C$         & $\gets \begin{cases}
                         64 \text{ bytes} & \text{if $\enc$ is
@@ -386,9 +387,8 @@ accept that the indistinguishable things are identical (i.e.  which is what
 \subsection{output}
 \begin{tabularx}{\columnwidth}{lX}
 $k$ & $K$-bytes key.\\
-$\hat B$ & actual quantity of increased security against password
-            brute-forcing attacks in the unit of \emph{caveman's entropy
-            bits}, where $\hat B \ge B$.\\
+$\hat B$ & actual \emph{caveman's entropy bits} that were injected into
+            $p$, where $\hat B \ge B$.\\
 \end{tabularx}
 
 \subsection{steps}
@@ -452,258 +452,6 @@ cores, specially when segment sizes, $T$, are larger.
     it uses an encryption function, $\enc$, instead of a hashing functionn.
     so if \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
 \end{proof}
-
-\section{security interpretation}
-\begin{note}
-    i assume that the decryption part of the encryption algorithm $\enc$
-    costs the same as the encryption.  this is true for algorithms such as
-    \emph{xchacha20}.  and in cases where it is not true, such as with aes,
-    \emph{ciphart} can simply encrypt using the decryption function.  this
-    way we guarantee that the cost are identical between \emph{ciphart}'s
-    encryption, and the cipher-text decryption that the adversary does to
-    test a given key.
-\end{note}
-
-let's say that we used block encryption function $\enc$ and a key $v \gets
-\hash(p \Vert s, V)$ to encrypt some clear-text into a sequence of $C$-byte
-cipher-text blocks $m_0, m_1, \ldots$.  let's say that the adversary got
-those $m_0, m_1, \ldots$.
-
-adversary's goal is to decrypt those cipher-text blocks back into the
-original clear-text.  so what options does he have?
-
-\subsection{key brute-forcing}
-brute-force the $V$-bytes key space.  in order to get a probability of $1$
-of finding the key $v$, the adversary would need to evaluate $2^{8V}$ many
-keys\footnote{assuming that each byte is $8$ bits.}.
-
-this works by having the adversary repeatedly decrypting $m_0$ with $\enc$,
-each time using a new key among
-\begin{itemize}
-    \item $\hat v_0 \gets \texttt{0x00\ldots 0}$,
-    \item $\hat v_1 \gets \texttt{0x00\ldots 1}$,
-    \item $\vdots$
-    \item $\hat v_{2^{8V-1}} \gets \texttt{0xff\ldots f}$,
-\end{itemize}
-until the adversary finds a key that manages to decrypt $m_0$.
-
-the adversary could be extremely lucky and have $v_0$ manage to decrypt
-$m_0$, hence needing to call $\enc$ only once.  
-
-or he might be extremely unlucky and need to keep trying until
-$v_{2^{8V}-1}$ manages to do it, hence needing to call $\enc$ for $2^{8V}$
-many times.
-
-usually it's sometime in between.  asymptotically  n on average, the
-adversary would need to call $\enc$ for $2^{8V}/2$ many times.
-
-but in order to guarantee finding $v$, the brute-forcing process would need
-to run $2^{8V}$ many evaluations, hence calling $\enc$ for $2^{8V}$ many
-times.
-
-that said, the adversary would be fossilised long before his application
-completes.  e.g.  since $8V = 256$ is common for ciphers nowadays, on
-average while considering the lucky and the unlucky cases, it would take my
-laptop $4.28\times10^{58}$ centuries to just increment a counter for
-$2^{256}$ many times.  so if the adversary's best hope is to brute-force
-keys, our system has reached maximum security.
-
-\begin{security}
-your protection against key brute-forcing attacks with key brute-forcing is
-$2^{8V} \cost(\enc)$, where $\cost(\enc)$ is the cost of executing $\enc$ a
-single time.  
-
-this is usually called $8V$ \emph{entropy bits}.  but for the purpose of
-helping later sections, i think it's better to call it $8V$ \emph{entropy
-bits from the viewing angle of $\enc$}, or, for short:
-\[
-    8V \henc
-\]
-\end{security}
-
-\begin{definition}
-$\henc$ is entropy bits from the viewing angle of $\enc$.
-\end{definition}
-
-$\henc$  is specific only to $\enc$'s algorithm, so must hold with whatever
-alien technology that the adversary may have, for as long as $\enc$, as an
-algorithm, has no cryptanalysis.  if there is any cryptanalysis, we'll have
-to subtract bits from $8V$, e.g. $8V
-- z \henc$, where $z$ is number of reduced bits due to cryptanalysis.
-
-\subsection{normal password brute-forcing}
-brute-force the $H(p)$ bits password space.  where $H(p)$ is the amount of
-entropy bits in $p$.  in order to get a probability of $1$ of finding the
-password $p$, the adversary would need to evaluate $2^{H(p)}$ many
-keys\footnote{the adversary does not know $p$, obviously, but he knows the
-process that the user used to generate $p$, henceforth he knows $H(p)$.}.
-
-this works by having the adversary repeatedly decrypting $m_0$ with $\enc$,
-each time using a new key among:
-\begin{itemize}
-    \item $\hat v_0 \gets \hash(\hat p_0 \Vert s, V)$,
-    \item $\hat v_1 \gets \hash(\hat p_1 \Vert s, V)$,
-    \item $\vdots$
-    \item $\hat v_{2^{H(p)}-1} \gets \hash(\hat p_{2^{H(p)}-1} \Vert s,
-    V)$,
-\end{itemize}
-until the adversary finds a key that manages to decrypt $m_0$.
-
-\begin{security}
-your protection against password brute-forcing attacks with normal hashed
-passwords is $2^{H(p)} \cost(\hash) + 2^{H(p)} \cost(\enc)$.  the latter
-$\enc$ calls are due to trying to decrypt $m_0$ at every attempt.
-
-this is usually called $H(p)$ \emph{entropy bits}.  but for the purpose of
-this paper, i think it's better to be more specific.  from the viewing
-angle of $\enc$, we get the entropy:
-\[
-    H(p) \henc
-\]
-and from the viewing angle of $\hash$, we get the entropy:
-\[
-    H(p) \hhash
-\]
-this may seem silly as it is too obvious, but i think it helps me to
-communicate my thoughts in later sections.
-\end{security}
-
-\begin{definition}
-$\hhash$ is entropy bits from the viewing angle of  $\hash$.
-\end{definition}
-
-\subsection{with \emph{argon2}}
-adversary evaluates keys from:
-\begin{itemize}
-    \item $\hat v_0 \gets \argon(\hat p_0, N, M, \ldots)$,
-    \item $\hat v_1 \gets \argon(\hat p_1, N, M, \ldots)$,
-    \item $\vdots$
-    \item $\hat v_{2^{H(p)}-1} \gets \argon(\hat p_{2^{H(p)}-1}, N, M,
-    \ldots)$,
-\end{itemize}
-
-for every \emph{argon2} call, $\hash$ is called for $N$ many times if there
-is $M$ bytes of memory.  so, from the viewing angle of $\hash$, we get:
-\begin{itemize}
-    \item $\hat v_0 \gets \hash(\hat p_0 \Vert s_0, V)$,
-    \item $\hat v_1 \gets \hash(\hat p_1 \Vert s_1, V)$,
-    \item $\vdots$
-    \item $\hat v_{N2^{H(p)}-1} \gets \hash(\hat p_{N2^{H(p)}-1}
-    \Vert s_{N2^{H(p)}-1}, V)$,
-\end{itemize}
-
-if an adversary lacks $M$ bytes, he can still compute $\argon(p, N, M,
-\ldots)$, but at the expense of needing exponentially more cpu time as his
-memory is linearly reduced.
-
-\begin{security}
-your protection against password brute-forcing attacks under the
-\emph{argon2} protection is:
-\begin{alignat*}{2}
-        & N 2^{H(p)} \cost(\hash)          && + 2^{H(p)} \cost(\enc) \\
-    ={} & 2^{H(p) + \log_2 N} \cost(\hash) && + 2^{H(p)} \cost(\enc) \\
-\end{alignat*}
-from the viewing angle of $\enc$ we get the entropy:
-\[
-    H(p) \henc
-\]
-while from the viewing angle of $\hash$ we get the entropy:
-\[
-    H(p) + \log_2 N \hhash
-\]
-\end{security}
-
-so which one to pick?  i think people so far just pick $H(p) \henc$ to
-reflect password's entropy, and seem to not pick $H(p) + \log_2 N \hhash$
-as they don't seem to consider it entropy.  but i have two disagreements
-with people:
-\begin{itemize}
-    \item i think not accepting that $H(p) + \log_2 N \hhash$ is entropy is
-    needlessly limiting.  because i think $H(p) + \log_2 N \hhash$ is
-    entropy as much as $H(p) \henc$ is entropy; it's just that they are
-    measured from different viewing angles:  former is measured from the
-    $\hash$ viewing angle, while the latter is measured from the $\enc$
-    viewing angle.
-
-    i don't see any reason why any of them is more true than the other.  i
-    think that both of them are entropies, but of different units.
-
-    \item why do people only pick either one of them?  it's technically
-    false my view.  in my view truth is:  we're just dealing with two
-    entropies measured in different units.  so i think truth is that we
-    have the following number of entropy bits:
-    \begin{alignat*}{2}
-            & H(p)              && \henc \\
-        +{} & H(p) + \log_2 N   && \hhash 
-    \end{alignat*}
-    which obviously looks a bit ugly, since we cannot sum them due to the
-    terms having different units, which also gives our brain a hard time to
-    get a feeling of what that even means.
-\end{itemize}
-
-so what's the solution here to this ugliness?  should we ignore $H(p)\henc
-+ H(p)+\log_2N\hhash$ as an entropy measure that quantifies the security of
-our protection against password brute-forcing, as people currently do, and
-measure it only in terms of the computational cost by surveying the
-industry of asics in order to find a map between
-time and money?
-
-my answer to the questions above is:  
-\begin{itemize}
-    \item no.  the right approach is to just admit that \emph{argon2}'s
-    approach is dragging us into the situation where we end up with two
-    entropies measured in different units.
-    \item \emph{argon2}'s security contribution is measurable as entropy,
-    except that it is ugly since it is made of two entropies in distinct
-    units.  if we ignore this, we won't solve the problem, but end up
-    stashing the dirts under the carpet.
-    \item of course, we are always free to also survey the industry of
-    asics to derive time-money maps, but this doesn't have to be our only
-    approach to quantify our security gain.
-\end{itemize}
-
-\subsection{with \emph{ciphart}}
-adversary evaluates keys from:
-\begin{itemize}
-    \item $\hat v_0 \gets \ciphart(\hat p_0, B, M, \ldots)$,
-    \item $\hat v_1 \gets \ciphart(\hat p_1, B, M, \ldots)$,
-    \item $\vdots$
-    \item $\hat v_{2^{H(p)}-1} \gets \ciphart(\hat p_{2^{H(p)}-1}, B, M,
-    \ldots)$,
-\end{itemize}
-
-mostly similar to $\argon$.  differences related to this section is that
-$\ciphart$ calls $\enc$ instead of $\hash$, and specifies $B$ instead of
-$N$, where $B \approx \log_2 N$.  similar exponential time penalty applies
-with memory less than $M$.
-
-\begin{security}
-your protection against password brute-forcing attacks under the
-\emph{ciphart} protection approach is:
-\begin{align*}
-        & \left(2^{H(p)} + 2^{\hat B}\right) \cost(\enc) + 2^{H(p)}
-            \cost(\enc) \\
-    ={} & \left(2^{H(p)} + 2^{\hat B} + 2^{H(p)}\right) \cost(\enc) \\
-    ={} & \left(2\times2^{H(p)} + 2^{\hat B}\right) \cost(\enc) \\
-    ={} & \left(2^{H(p) + \log_2 2} + 2^{\hat B}\right) \cost(\enc) \\
-    ={} & \left(2^{H(p) + 1} + 2^{\hat B}\right) \cost(\enc)
-\end{align*}
-from the viewing angle of $\enc$ we get the entropy:
-\[
-    H(p) + 1 + \hat B \henc
-\]
-\end{security}
-
-and there is no other viewing angle than $\enc$ since only $\enc$ is used!
-as a result our brain can easily interpret it.  
-
-plus, if we wish to study the industry of asics to obtain time-money maps,
-our job will be much easier as we can simply look at the cost of asics that
-are already implemented for $\enc$\footnote{e.g. if $\enc$ is a popular
-algorithm, such as aes-256, then we can get more specific data from
-manufacturers, ultimately giving us a more accurate time-money maps.  but
-when $\enc$ is not popular, we may need to do rougher calculations based on
-the expected asics area as done in the \emph{scrypt} paper.}.
 
 \section{summary}
 
