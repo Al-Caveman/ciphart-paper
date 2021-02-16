@@ -51,35 +51,45 @@ caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
 \end{center}
 
 argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}} is mostly
-nice, but trying to interpret its contribution to the protection against
-password brute-forcing attacks remains more difficult than it should be.
-this vagueness is a problem that is not limited to \emph{argon2}, but also
-shared with every other key derivation function that i've known so far.
+nice, as it is memory-hard while still being relatively simple to
+understand its contribution to the overall security, which is an
+improvement over \emph{scrypt}.  but i argue that \emph{argon2} is still
+not nice enough, as they can be harder and simpler, respectively.
 
-when one uses \emph{argon2}, his derived key will surely have superior
-protection against password brute-forcing attacks, but by how much?  to
-answer this, one would need to survey the industry that manufactures
-application-specific integrated circuits (asics) to obtain a map between
-\emph{time} and \emph{money}, in order to get an estimation on how much
-would it cost the adversary to discover the password in a given time
-window.
+currently, if you want to know what \emph{argon2} is giving for you
+security-wise, you need to survey the industry of application-specific
+integrated-circuits (asics) in order to obtain a cost-money map, as done in
+the \emph{scrypt} paper.  this has too much housekeeping as the industry is
+constantly changing, plus it remains a heuristic with inadequate
+theoretical guarantees.
 
-while the approach of surveying the asics industry is not wrong, it is
-largely subjective, with expensive housekeeping, and practically leads the
-user to rely on vague foundations to build his security on.  this vagueness
-is not nice, and it would be better if we had an objective measure to
-quantify the security of our memory-hard key derivation functions.
+henceforth, i propose \emph{ciphart} a memory-\emph{harder} key derivation
+function, with a security contribution that is measured in the unit of
+shannon's entropy.  i.e. \emph{ciphart} can say that it is injecting $x$
+many shannon's entropy bits to your password.
 
-resolving this vagueness is not a mere luxury to have, but a necessity for
-maximising survival, because it hinders the process of studying the
-cost-value of memory-hard key derivation functions, which, effectively,
-increases the risk of having a false sense of security.
+\begin{itemize}
+    \item the memory-harder\emph{ness} comes from also utilising disk
+    space.  this is practically conveniently possible thanks to my
+    discovery of the fact that caching keys into disks, is practical for
+    almost every use cases.  
 
-so i propose \emph{ciphart} --- a memory-hard key derivation function with
-a security contribution that is measured in a unit that i call
-\emph{caveman's entropy bits}.  this unit is measured objectively and is
-guaranteed to be true irrespective of whatever alien technology that the
-adversary might have.
+    this disk caching only needs to assume that \emph{root} is trusty,
+    which is not a new assumption for most use cases.  thus, this disk
+    caching does not really reduce our security, but opens doors for us to
+    lead us to memory-\emph{harder} key derivation functions, which
+    increases our security.
+
+    nonetheless, everything in this bullet point is optional, just in case
+    you're feeling uneasy about it.  i personally use it as it
+    significantly enhances my security, and you won't compromise my
+    security, even if you steal my disk.
+
+    \item the simpler security interpretation is thanks to \emph{the
+    perfect lie} theorem that i propose, which allows \emph{ciphart} to
+    claim that it is injecting shannon's entropy bits into input passwords,
+    for as long as the password remains a secret.
+\end{itemize}
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
 is a library that implements \emph{ciphart} very closely to this paper,
@@ -238,7 +248,7 @@ and caveman's entropy becomes:
     C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-\hat M)\log_2 N
 \end{equation}
 
-\subsection{the perfect lie theorem}
+\section{the perfect lie theorem}
 let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
 a more complex password with $H(p) + e(M-\hat M)\log_2 N$ shannon's entropy
 bits, where $M$, $\hat M$ and $N$ are all positive numbers.
@@ -292,7 +302,7 @@ when $p$ is secret and $\hash$ is not broken, then shannon's entropy $H$ of
 the derived key equals caveman's entropy $C$.
 \end{theorem}
 
-i call \cref{theorem_perfect_lie} the \emph{perfect lie theorem} in a sense
+i call \cref{theorem_perfect_lie} \emph{the perfect lie} theorem in a sense
 that a perfect lie is indistinguishable from truth.
 
 the reason this lie is appealing is because it simplifies our
