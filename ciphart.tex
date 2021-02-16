@@ -39,7 +39,7 @@
 
 \begin{center}
 \Huge
-\myrulefill\ ciphart \myrulefill\\
+ciphart\\
 \LARGE
 memory-harder key derivation \\
 with easier measurable security\\
@@ -47,48 +47,46 @@ with easier measurable security\\
 caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
 \footnotesize
 \DTMnow\\
-\rule{1\columnwidth}{2pt}
 \end{center}
 
+\noindent\textbf{synopsis---}
 argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}} is mostly
-nice, as it is memory-hard while still being relatively simple to
-understand its contribution to the overall security, which is an
-improvement over \emph{scrypt}.  but i argue that \emph{argon2} is still
-not nice enough, as they can be harder and simpler, respectively.
+nice, as it is a simple memory-hard key derivation function relative to
+\emph{scrypt}, which makes understanding what it is doing easier.  but i
+argue that \emph{argon2} is still not nice enough, as it can be simpler and
+harder.
 
-currently, if you want to know what \emph{argon2} is giving for you
+currently, if you want to know what \emph{argon2} is giving for your
 security-wise, you need to survey the industry of application-specific
 integrated-circuits (asics) in order to obtain a cost-money map, as done in
-the \emph{scrypt} paper.  this has too much housekeeping as the industry is
-constantly changing, plus it remains a heuristic with inadequate
-theoretical guarantees.
+the \emph{scrypt} paper.  the housekeeping of this approach is too
+expensive as the industry is constantly changing, plus it remains a
+rough estimate with inadequate theoretical guarantees.
 
-henceforth, i propose \emph{ciphart} a memory-\emph{harder} key derivation
+henceforth, i propose \emph{ciphart} --- a memory-\emph{harder} key derivation
 function, with a security contribution that is measured in the unit of
 shannon's entropy.  i.e. \emph{ciphart} can say that it is injecting $x$
 many shannon's entropy bits to your password.
 
 \begin{itemize}
-    \item the memory-harder\emph{ness} comes from also utilising disk
-    space.  this is practically conveniently possible thanks to my
-    discovery of the fact that caching keys into disks, is practical for
-    almost every use cases.  
-
-    this disk caching only needs to assume that \emph{root} is trusty,
-    which is not a new assumption for most use cases.  thus, this disk
-    caching does not really reduce our security, but opens doors for us to
-    lead us to memory-\emph{harder} key derivation functions, which
-    increases our security.
-
-    nonetheless, everything in this bullet point is optional, just in case
-    you're feeling uneasy about it.  i personally use it as it
-    significantly enhances my security, and you won't compromise my
-    security, even if you steal my disk.
-
     \item the simpler security interpretation is thanks to \emph{the
-    perfect lie} theorem that i propose, which allows \emph{ciphart} to
+    perfect lie} theorem that i discovered, which allows \emph{ciphart} to
     claim that it is injecting shannon's entropy bits into input passwords,
     for as long as the password remains a secret.
+
+    the password remaining a secret for the adversary is a fundamental
+    assumption of password-based security, hence the theorem applies
+    against the vestiary, which is the side that it matters.
+
+    \item the memory-harder\emph{ness} allows to require ridiculously large
+    amounts of memory, way beyond our random-access memory.  this is done
+    by utilising hard-disks, and can be done conveniently, in part, thanks
+    to my discovery of the fact that caching derived keys into disks, is
+    practical for almost every use cases.  
+
+    it's optional, but i personally use it as it significantly enhances my
+    security, and an adversary won't compromise my security, even if he
+    steals my hard-disk.
 \end{itemize}
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
@@ -101,9 +99,8 @@ an application for encrypting and decrypting files that makes use of
 \texttt{libciphart}.  this application is intended for use by end-users or
 scripts, henceforth it has some fluff to treat mankind with dignity.
 
+\break
 \tableofcontents
-\noindent
-\rule{1\columnwidth}{2pt}
 
 \section{background}
 we've got password $p$ with $H(p)$ many shannon's entropy bits worth of
@@ -297,13 +294,14 @@ so you have to pick only one of these options:
     symmetric-encryption functions functions do not exist.
 \end{enumerate}
 
-\begin{theorem}[the perfect lie]\label{theorem_perfect_lie}
+\begin{theorem}
+    [the perfect lie\footnote{i call \cref{theorem_perfect_lie} \emph{the
+    perfect lie} theorem in a sense that a perfect lie is indistinguishable
+    from truth.}]
+    \label{theorem_perfect_lie}
 when $p$ is secret and $\hash$ is not broken, then shannon's entropy $H$ of
 the derived key equals caveman's entropy $C$.
 \end{theorem}
-
-i call \cref{theorem_perfect_lie} \emph{the perfect lie} theorem in a sense
-that a perfect lie is indistinguishable from truth.
 
 the reason this lie is appealing is because it simplifies our
 quantification of the amount of security that we have gained by using a
@@ -328,14 +326,120 @@ follows that our model's total error will be reduced if we accept that the
 indistinguishable things are identical (i.e.  which is what
 \cref{theorem_perfect_lie} says).
 
+\section{memory-harder\emph{ness}}
+let's say that $D$ is total number of bytes for hard-disk-based memory
+hardness.  this process goes like this:
+\begin{enumerate}
+    \item starts by recursively encrypting $D$ many bytes of some
+    predefined sequence, such as zeros or \texttt{0xdbdb}\ldots, using a
+    key derived from an cheaply-hashed password $p$.  by the end of this
+    step, we have $D$ many key-based random sequence saved in the an
+    encrypted hard disk partition.
+
+    \item update the derived key to be the last $V$ bytes in the $D$ bytes
+    file.
+
+    \item move on to run a variant of \emph{argon2}, except that, every
+    time $S$ many random-access memory lane segments are completed, some
+    $V$ many bytes from $D$ are chosen randomly, not only based on the
+    content the random-access memory, but also based on the $D$ bytes.
+    this step makes \emph{ciphart} require $D+M$ bytes.
+
+    if $S$ is large enough, this can be done efficiently without blocking
+    the cpu noticeably, as the randomly obtained $V$ bytes can be read by
+    using \texttt{seek} call over the $D$ bytes.
+
+    \item delete the $D$ bytes, just to free up the disk space.
+\end{enumerate}
+
+so far this is a bad idea as it is not usable due to its slowness when $D$
+is large.  but what makes it usable is these points:
+\begin{itemize}
+    \item we assume \texttt{root} user is not compromised.  the vast
+    majority of systems already assume this.  so this is not a practical
+    problem for the vast majority of us.
+
+    \item hard disk partitions where files are saved is properly encrypted
+    by things like \emph{dm-crypt} using a large random key file that is
+    properly secured as whatever suitable standards.  this is technically a
+    simple thing to do.  grandmother might find a difficulty doing this on
+    her own, but she wouldn't need to do it by herself as her, say,
+    \emph{gnu/linux} distribution may take care of this for her.
+
+    \item the whole process of deriving a memory-harder key is done only
+    once, as the derived key is cached in disk in an encrypted form with
+    strict read permission, for long term use.  so subsequent calls of the
+    \texttt{ciphart} executable will simply retrieve the cached object.
+
+    \item the disk, where the cached object lives, is properly encrypted by
+    using, say, \emph{dm-crypt}, and a large random key file.
+
+    \item the \texttt{ciphart} executable has \texttt{SETUID} bit set, with
+    its user being a unique user.  when \texttt{ciphart} writes a cached
+    object, it saves it with permission mask \texttt{600} so that only the
+    unique user can read it.  thanks to the \texttt{SETUID} bit, way any
+    user can execute \texttt{ciphart}, and quickly get the memory-harder
+    key only if he supplies the correct password.
+
+    this way the user will deal with the system with extreme continence as
+    if a cheap key derivation function is used, except for being a
+    memory-harder derived key.  the user will only need to wait for $D$
+    creation if his key caches are deleted, which doesn't happen except for
+    once when the user migrates to a different machine.
+    
+    \item the \texttt{ciphart} executable sleeps if number of attempts
+    exceeds a limit.  this will make brute-forcing the cache file by
+    calling \texttt{ciphart} very expensive.
+\end{itemize}
+
+let's see what can the adversary may try to do:
+\begin{itemize}
+    \item \textbf{adversary strategy 1:} hack into user's system and execute a
+    program as that user that tries to read the password cache file to
+    obtain the memory-harder key inside it.
+
+    \textbf{answer:} he will not be able to read the file due to strict
+    read permissions of the cached files as set earlier.
+
+    \item \textbf{adversary strategy 2:} steal user's hard disk and try to mount it
+    in his system, to login as root and chance permissions of the key cache
+    files.
+
+    \textbf{answer:} the partition where the cached files are saved are
+    properly encrypted, so he can't see the cached files, let alone
+    changing their read permissions.
+
+    \item \textbf{adversary strategy 3:} break into machine's \texttt{root} account.
+
+    \textbf{answer:} he will succeed, but then he can also run a keylogger,
+    which will also break every other key derivation function, even those
+    who do not use key caching, such as \emph{scrypt}, \emph{argon2}, etc.
+\end{itemize}
+
+what we have gained is that the derived key is extremely fast to retrieve,
+yet requires an amount of memory that $D+M$, where $M$ is the amount of
+the required random-access memory.  memory-hard key derivation functions
+can only require $M$, while \emph{ciphart} can require $D+M$ and still be
+faster for later use.
+
+if the system is setup properly, the only assumption that needs to be had
+is that the account \texttt{root} is not compromised, which almost everyone
+is assuming this already anyway.
+
+so the idea of caching derived keys is just neat and allows to inject crazy
+amounts of shannon's entropy bits into otherwise simple passwords, thanks
+to this ridiculous memory-harder\emph{ness}.
+
 \section{ciphart}
 \subsection{parameters}
 \begin{tabularx}{\columnwidth}{lX}
     $p$ & password.\\
     $s$ & salt.\\
-    $M$ & total memory in bytes.\\
+    $M$ & total random-access memory in bytes.\\
+    $D$ & total hard-disk memory in bytes.\\
     $L$ & number of memory lanes for concurrency.\\
     $T$ & number of tasks per lane segment.\\
+    $S$ & number of lane segments per hard-disk read.\\
     $B$ & minimum \emph{caveman's entropy bits} to inject into $p$.\\
     $K$ & output key's size in bytes.\\
 \end{tabularx}
@@ -380,6 +484,8 @@ indistinguishable things are identical (i.e.  which is what
                     that all segments are of equal lengths in order to
                     simplify \emph{ciphart}'s logic.  e.g. it wouldn't be
                     nice if the last segments were of unequal sizes.\\
+    $\hat D$    & $\gets D - (D \bmod C) + C$.  this is to
+                    ensure that it is in multiples of block sizes.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
     $N$    & $\gets 0$.  actual number of times $\enc$ is called,
