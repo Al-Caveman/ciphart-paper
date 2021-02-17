@@ -51,10 +51,10 @@ caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
 
 \noindent\textbf{synopsis---}
 argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}} is mostly
-nice, as it is a simple memory-hard key derivation function relative to
-\emph{scrypt}, which makes understanding what it is doing easier.  but i
-argue that \emph{argon2} is still not nice enough, as it can be simpler and
-harder.
+nice, as it is a simple memory-hard key derivation function in comparison
+to \emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
+which makes understanding what it is doing easier.  but i argue that
+\emph{argon2} is still not nice enough, as it can be simpler and harder.
 
 currently, if you want to know what \emph{argon2} is giving for your
 security-wise, you need to survey the industry of application-specific
@@ -249,7 +249,7 @@ and caveman's entropy becomes:
     C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-\hat M)\log_2 N
 \end{equation}
 
-\section{\emph{the perfect lie} theorem}
+\section{``the perfect lie'' theorem}
 let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
 a more complex password with $H(p) + e(M-\hat M)\log_2 N$ shannon's entropy
 bits, where $M$, $\hat M$ and $N$ are all positive numbers.
@@ -330,9 +330,8 @@ follows that our model's total error will be reduced if we accept that the
 indistinguishable things are identical (i.e.  which is what
 \cref{theorem_perfect_lie} says).
 
-\section{caching derived keys}
-\begin{discovery}
-    \label{discov_key_caching}
+\section{``cacheable keys'' discovery}
+\begin{discovery}[cacheable keys]\label{discov_key_caching}
     caching keys securely is easily doable, and great security utility
     exists in doing so for expensively-derived keys.
 \end{discovery}
@@ -369,7 +368,7 @@ not cache keys, by simply, say, running a keylogger.
 
 so, practically, we are not increasing the assumptions, but we are only
 increasing the value that we can extract from the assumptions that we
-are already following.
+already have.
 
 most importantly, utilising discovery \ref{discov_key_caching} allows us to
 achieve a memory-\emph{harder} key derivation in an extremely  usable way.
