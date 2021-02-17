@@ -9,7 +9,7 @@
 \newtheorem{security}{security interpretation}
 \newtheorem{definition}{definition}
 \newtheorem{theorem}{theorem}
-\newtheorem{note}{note}
+\newtheorem{discovery}{discovery}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
 \DeclareMathOperator{\dec}{\mathtt{dec}}
@@ -41,8 +41,8 @@
 \Huge
 ciphart\\
 \LARGE
-memory-harder key derivation \\
-with easier measurable security\\
+memory-\emph{harder} key derivation \\
+with easier security interpretation\\
 \normalsize
 caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
 \footnotesize
@@ -78,7 +78,7 @@ many shannon's entropy bits to your password.
     assumption of password-based security, hence the theorem applies
     against the vestiary, which is the side that it matters.
 
-    \item the memory-harder\emph{ness} allows to require ridiculously large
+    \item the memory-harderness allows to require ridiculously large
     amounts of memory, way beyond our random-access memory.  this is done
     by utilising hard-disks, and can be done conveniently, in part, thanks
     to my discovery of the fact that caching derived keys into disks, is
@@ -156,6 +156,9 @@ password entropy as a measure of its security.  not because it is the
 quantity of security, but rather because its the quantity of
 \emph{simplified} security.  
 
+i like this shannon's entropy-based simplified security quantity, so i'm
+going to build on it.
+
 \section{caveman's entropy}
 \subsection{recursive $\hash$}
 if the $\hash$ function is replaced by an $N$-deep recursion over $\hash$,
@@ -172,19 +175,20 @@ then, if $\hash$ is not broken,  (\ref{eq_cost_passbruteforce}) becomes:
         N\cost(\hash) + \cost(\text{if } \hat k = k)
     \right)
 \end{equation}
-and (\ref{eq_simplecost_passbruteforce}) becomes:
+(\ref{eq_simplecost_passbruteforce}) becomes:
 \begin{equation}\label{eq_simplecost_passbruteforce_N}
     \begin{split}
     2^{H(p)} (N+0) &= N2^{H(p)} \\
                   &= 2^{H(p) + \log_2 N}
     \end{split}
 \end{equation}
+and the $\log_2$-scaled becomes $H(p) + \log_2 N$.
 
 at this point, thanks to cryptographic guarantees concerning properties of
-hashing functions, there is absolutely no security distinction between a
-password with shannon's $H(p) + \log_2 N$ entropy bits, and a password with
-just $H(p)$ entropy bits that made use of the $N$-deep recursive calls of
-$\hash$.
+hashing functions, there is absolutely no security distinction from
+adversary's point of view between a password with shannon's $H(p) + \log_2
+N$ entropy bits, and a password with just $H(p)$ entropy bits that made use
+of the $N$-deep recursive calls of $\hash$.
 
 shannon's entropy of $p$ remains $H(p)$, but thanks to the recursive calls
 of $\hash$, that password will be as expensive as another password $\hat
@@ -245,7 +249,7 @@ and caveman's entropy becomes:
     C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-\hat M)\log_2 N
 \end{equation}
 
-\section{the perfect lie theorem}
+\section{\emph{the perfect lie} theorem}
 let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
 a more complex password with $H(p) + e(M-\hat M)\log_2 N$ shannon's entropy
 bits, where $M$, $\hat M$ and $N$ are all positive numbers.
@@ -326,73 +330,54 @@ follows that our model's total error will be reduced if we accept that the
 indistinguishable things are identical (i.e.  which is what
 \cref{theorem_perfect_lie} says).
 
-\section{memory-harder\emph{ness}}
-let's say that $D$ is total number of bytes for hard-disk-based memory
-hardness.  this process goes like this:
-\begin{enumerate}
-    \item starts by recursively encrypting $D$ many bytes of some
-    predefined sequence, such as zeros or \texttt{0xdbdb}\ldots, using a
-    key derived from an cheaply-hashed password $p$.  by the end of this
-    step, we have $D$ many key-based random sequence saved in the an
-    encrypted hard disk partition.
+\section{caching derived keys}
+\begin{discovery}
+    \label{discov_key_caching}
+    caching keys securely is easily doable, and great security utility
+    exists in doing so for expensively-derived keys.
+\end{discovery}
 
-    \item update the derived key to be the last $V$ bytes in the $D$ bytes
-    file.
-
-    \item move on to run a variant of \emph{argon2}, except that, every
-    time $S$ many random-access memory lane segments are completed, some
-    $V$ many bytes from $D$ are chosen randomly, not only based on the
-    content the random-access memory, but also based on the $D$ bytes.
-    this step makes \emph{ciphart} require $D+M$ bytes.
-
-    if $S$ is large enough, this can be done efficiently without blocking
-    the cpu noticeably, as the randomly obtained $V$ bytes can be read by
-    using \texttt{seek} call over the $D$ bytes.
-
-    \item delete the $D$ bytes, just to free up the disk space.
-\end{enumerate}
-
-so far this is a bad idea as it is not usable due to its slowness when $D$
-is large.  but what makes it usable is these points:
+\subsection{why it works}
 \begin{itemize}
-    \item we assume \texttt{root} user is not compromised.  the vast
-    majority of systems already assume this.  so this is not a practical
-    problem for the vast majority of us.
+    \item when expensively derived keys are cached, only the first key
+    derivation call will be expensive, while subsequent calls will be
+    semi-instantaneous.  this effectively allows users to tolerate much
+    more expensive, or secure, key derivation as it only happens during the
+    initial, say, login phase.  subsequent use of the extremely expensive
+    key is instantaneous.
 
-    \item hard disk partitions where files are saved is properly encrypted
-    by things like \emph{dm-crypt} using a large random key file that is
-    properly secured as whatever suitable standards.  this is technically a
-    simple thing to do.  grandmother might find a difficulty doing this on
-    her own, but she wouldn't need to do it by herself as her, say,
-    \emph{gnu/linux} distribution may take care of this for her.
+    so instead of having the user use a somewhat expensive key derivation
+    by wayting say, $3$ seconds in each login, he will ---instead--- wait,
+    say $10$ seconds in his initial login in order to utilise a much more
+    expensive key derivation, and then wait near $0$ seconds for every
+    subsequent login as the expensive key is cached.
 
-    \item the whole process of deriving a memory-harder key is done only
-    once, as the derived key is cached in disk in an encrypted form with
-    strict read permission, for long term use.  so subsequent calls of the
-    \texttt{ciphart} executable will simply retrieve the cached object.
+    \item derived keys can be cached securely, without increasing most
+    users' assumptions.  e.g. cached keys can live in a \emph{dm-crypt}
+    partition that is encrypted with a large encryption key that is stored
+    properly, and the cache can have strict read permissions so that only
+    the unique user that runs \texttt{ciphart} executable can read it.
 
-    \item the disk, where the cached object lives, is properly encrypted by
-    using, say, \emph{dm-crypt}, and a large random key file.
-
-    \item the \texttt{ciphart} executable has \texttt{SETUID} bit set, with
-    its user being a unique user.  when \texttt{ciphart} writes a cached
-    object, it saves it with permission mask \texttt{600} so that only the
-    unique user can read it.  thanks to the \texttt{SETUID} bit, way any
-    user can execute \texttt{ciphart}, and quickly get the memory-harder
-    key only if he supplies the correct password.
-
-    this way the user will deal with the system with extreme continence as
-    if a cheap key derivation function is used, except for being a
-    memory-harder derived key.  the user will only need to wait for $D$
-    creation if his key caches are deleted, which doesn't happen except for
-    once when the user migrates to a different machine.
-    
-    \item the \texttt{ciphart} executable sleeps if number of attempts
-    exceeds a limit.  this will make brute-forcing the cache file by
-    calling \texttt{ciphart} very expensive.
+    this only requires to trust the user \texttt{root}, which is already
+    trusted by almost everyone.  so we are not introducing a new
+    assumption.  
 \end{itemize}
 
-let's see what can the adversary may try to do:
+for most people, if \texttt{root} is compromised, then the adversary
+can break every other key derivation function, including those that do
+not cache keys, by simply, say, running a keylogger.
+
+so, practically, we are not increasing the assumptions, but we are only
+increasing the value that we can extract from the assumptions that we
+are already following.
+
+most importantly, utilising discovery \ref{discov_key_caching} allows us to
+achieve a memory-\emph{harder} key derivation in an extremely  usable way.
+more details on memory-harderness later.
+
+\subsection{potential adversary strategies}
+let's see what can the adversary may try to do against a key caching
+system:
 \begin{itemize}
     \item \textbf{adversary strategy 1:} hack into user's system and execute a
     program as that user that tries to read the password cache file to
@@ -401,34 +386,42 @@ let's see what can the adversary may try to do:
     \textbf{answer:} he will not be able to read the file due to strict
     read permissions of the cached files as set earlier.
 
-    \item \textbf{adversary strategy 2:} steal user's hard disk and try to mount it
-    in his system, to login as root and chance permissions of the key cache
-    files.
+    \item \textbf{adversary strategy 2:} steal user's hard disk and try to
+    mount it in his system, to login as root and chance permissions of the
+    key cache files.
 
     \textbf{answer:} the partition where the cached files are saved are
     properly encrypted, so he can't see the cached files, let alone
     changing their read permissions.
 
-    \item \textbf{adversary strategy 3:} break into machine's \texttt{root} account.
+    \item \textbf{adversary strategy 3:} break into machine's \texttt{root}
+    account.
 
     \textbf{answer:} he will succeed, but then he can also run a keylogger,
     which will also break every other key derivation function, even those
     who do not use key caching, such as \emph{scrypt}, \emph{argon2}, etc.
 \end{itemize}
 
-what we have gained is that the derived key is extremely fast to retrieve,
-yet requires an amount of memory that $D+M$, where $M$ is the amount of
-the required random-access memory.  memory-hard key derivation functions
-can only require $M$, while \emph{ciphart} can require $D+M$ and still be
-faster for later use.
+\subsection{user scenario example}
+user has a password manager to generate unique $256$ bit entropy keys for
+each service that he uses.  but user doesn't want to decrypt the password
+manager's database using a physical dongle, so he cannot use a high-entropy
+key for the purpose of unlocking the password manager.
 
-if the system is setup properly, the only assumption that needs to be had
-is that the account \texttt{root} is not compromised, which almost everyone
-is assuming this already anyway.
+why?  several possible reasons.  maybe (1) he tends to lose or forget
+dongles and he doesn't want the delay associated with resolving such
+physical dongle issues, maybe (2) not having a physical dongle will enhance
+his repudiation case, or maybe (3) he wants to be torture-resistant so he
+doesn't want to let the adversary take the physical dongle from him by
+force\footnote{when elon musk's neural-link matures enough, we may end up
+getting keys, and other information, pulled from our heads by force.  but,
+until then, our brain seems to be a pretty secure information store.}.
 
-so the idea of caching derived keys is just neat and allows to inject crazy
-amounts of shannon's entropy bits into otherwise simple passwords, thanks
-to this ridiculous memory-harder\emph{ness}.
+in this case, the user memorises a sensible password that he can remember,
+with enough initial entropy, and then uses \emph{ciphart} with disk caching
+to inject large amounts of entropy bits into his derived keys, way beyond
+the reach of pre-\emph{ciphart} key derivation functions; thanks to
+\cref{theorem_perfect_lie} and discovery \ref{discov_key_caching}.  
 
 \section{ciphart}
 \subsection{parameters}
@@ -494,6 +487,8 @@ to this ridiculous memory-harder\emph{ness}.
                     pad.\\
     $n_l$       & $\gets lG\hat T$.  nonce variable for $l^{th}$ lane with
                     at least $64$ bits.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $f$         & $\gets 0$.  a flag indicating whether the $\hat M$-bytes
                     pad is filled.\\
     $v$         & $\gets *\hash(p \mathbin\Vert s, V)$.  a pointer to the
@@ -569,6 +564,33 @@ cores, specially when segment sizes, $T$, are larger.
     so if \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
 \end{proof}
 
-\section{summary}
+
+\section{memory-\emph{harder}ness}
+thanks to discovery \ref{discov_key_caching}, memory-harderness is
+possible.  this process goes like this:
+\begin{enumerate}
+    \item starts by recursively encrypting $D$ many bytes of some
+    predefined sequence, such as zeros or \texttt{0xdbdb}\ldots, using a
+    key derived from an cheaply-hashed password $p$.  by the end of this
+    step, we have $D$ many key-based random sequence saved in the an
+    encrypted hard disk partition.
+
+    \item update the derived key to be the last $V$ bytes in the $D$ bytes
+    file.
+
+    \item move on to run a variant of \emph{argon2}, except that, every
+    time $S$ many random-access memory lane segments are completed, some
+    $V$ many bytes from $D$ are chosen randomly, not only based on the
+    content the random-access memory, but also based on the $D$ bytes.
+    this step makes \emph{ciphart} require $D+M$ bytes.
+
+    \item delete the $D$ bytes, just to free up the disk space.
+\end{enumerate}
+
+if $S$ is large enough, this can be done efficiently without blocking the
+cpu noticeably, as the randomly obtained $V$ bytes can be read by using
+the $O(1)$ operation \texttt{seek} over the $D$ bytes.
+
+\section{comparison}
 
 \end{document}
