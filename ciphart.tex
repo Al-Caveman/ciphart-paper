@@ -49,7 +49,7 @@ caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
 \DTMnow\\
 \end{center}
 
-\noindent\textbf{synopsis---}argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
+\noindent\textbf{synopsis---}\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
 is mostly a nice memory-hard key derivation function, as it is simple
 compared to
 \emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
@@ -77,13 +77,14 @@ derivation function, with:
     the total quantity of the extra shannon's entropy bits that it has
     injected into your derived key.  this is possible thanks to my
     invention ``the perfect lie'' theorem.
-    \item further, the memory-\emph{harder}ness comes from the fact that
+    \item and a memory-\emph{harder}ness that comes from the fact that
     \emph{ciphart} can require crazy amounts of memory, beyond our
     random-access memory, thanks to it being able to use the hard-disk as
     well.  this is possible thanks to my discovery ``cacheable keys''.
 
-    this is optional, but i extremely like it and use it, and the adversary
-    cannot get my cache even if he steals my hard-disks.
+    this is optional, but i extremely like it as it effectively gives me
+    much more security while eventually becoming much faster as well, and
+    the adversary cannot get my cache even if he steals my hard-disks.
 \end{itemize}
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
