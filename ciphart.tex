@@ -49,44 +49,41 @@ caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com}\\
 \DTMnow\\
 \end{center}
 
-\noindent\textbf{synopsis---}
-argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}} is mostly
-nice, as it is a simple memory-hard key derivation function in comparison
-to \emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
+\noindent\textbf{synopsis---}argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
+is mostly a nice memory-hard key derivation function, as it is simple
+compared to
+\emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
 which makes understanding what it is doing easier.  but i argue that
 \emph{argon2} is still not nice enough, as it can be simpler and harder.
 
-currently, if you want to know what \emph{argon2} is giving for your
-security-wise, you need to survey the industry of application-specific
-integrated-circuits (asics) in order to obtain a cost-money map, as done in
-the \emph{scrypt} paper.  the housekeeping of this approach is too
-expensive as the industry is constantly changing, plus it remains a
-rough estimate with inadequate theoretical guarantees.
+currently, if you want to know \emph{argon2}'s contribution to your
+security against password brute-forcing, you need to survey the industry of
+application-specific integrated-circuits (asics) in order to find the cost
+of breaking your password in a given time frame, as done in the
+\emph{scrypt} paper.  the housekeeping of this approach is too expensive as
+the industry is constantly changing, plus it remains a rough estimate with
+inadequate theoretical guarantees.
 
-henceforth, i propose \emph{ciphart} --- a memory-\emph{harder} key derivation
-function, with a security contribution that is measured in the unit of
-shannon's entropy.  i.e. \emph{ciphart} can say that it is injecting $x$
-many shannon's entropy bits to your password.
+also, \emph{argon2}'s memory-hardness is based on only utilising
+random-access memories, and not, say, hard-disks.  without changing the
+threat model of the vast majority of users, this is an unnecessary
+restriction as i show in this paper.
 
+henceforth, i propose \emph{ciphart} --- a memory-\emph{harder} key
+derivation function, with:
 \begin{itemize}
-    \item the simpler security interpretation is thanks to \emph{the
-    perfect lie} theorem that i discovered, which allows \emph{ciphart} to
-    claim that it is injecting shannon's entropy bits into input passwords,
-    for as long as the password remains a secret.
+    \item a security contribution that is measured in the unit of shannon's
+    entropy.  i.e. when \emph{ciphart} derives its key, it also tells you
+    the total quantity of the extra shannon's entropy bits that it has
+    injected into your derived key.  this is possible thanks to my
+    invention ``the perfect lie'' theorem.
+    \item further, the memory-\emph{harder}ness comes from the fact that
+    \emph{ciphart} can require crazy amounts of memory, beyond our
+    random-access memory, thanks to it being able to use the hard-disk as
+    well.  this is possible thanks to my discovery ``cacheable keys''.
 
-    the password remaining a secret for the adversary is a fundamental
-    assumption of password-based security, hence the theorem applies
-    against the vestiary, which is the side that it matters.
-
-    \item the memory-harderness allows to require ridiculously large
-    amounts of memory, way beyond our random-access memory.  this is done
-    by utilising hard-disks, and can be done conveniently, in part, thanks
-    to my discovery of the fact that caching derived keys into disks, is
-    practical for almost every use cases.  
-
-    it's optional, but i personally use it as it significantly enhances my
-    security, and an adversary won't compromise my security, even if he
-    steals my hard-disk.
+    this is optional, but i extremely like it and use it, and the adversary
+    cannot get my cache even if he steals my hard-disks.
 \end{itemize}
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
@@ -336,7 +333,7 @@ indistinguishable things are identical (i.e.  which is what
     exists in doing so for expensively-derived keys.
 \end{discovery}
 
-\subsection{why it works}
+\subsection{why does it work}
 \begin{itemize}
     \item when expensively derived keys are cached, only the first key
     derivation call will be expensive, while subsequent calls will be
@@ -401,7 +398,7 @@ system:
     who do not use key caching, such as \emph{scrypt}, \emph{argon2}, etc.
 \end{itemize}
 
-\subsection{user scenario example}
+\subsection{an example scenario}
 user has a password manager to generate unique $256$ bit entropy keys for
 each service that he uses.  but user doesn't want to decrypt the password
 manager's database using a physical dongle, so he cannot use a high-entropy
