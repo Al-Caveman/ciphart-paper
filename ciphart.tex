@@ -12,6 +12,9 @@
 \newtheorem{discovery}{discovery}
 \newtheorem{advertisement}{advertisement}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\DeclareMathOperator{\fexists}{exists}
+\DeclareMathOperator{\fread}{read}
+\DeclareMathOperator{\fwrite}{write}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
 \DeclareMathOperator{\dec}{\mathtt{dec}}
 \DeclareMathOperator{\maxf}{max}
@@ -378,8 +381,7 @@ achieve a memory-\emph{harder} key derivation in an extremely  usable way.
 more details on memory-harderness later.
 
 \subsection{potential adversary strategies}
-let's see what can the adversary may try to do against a key caching
-system:
+let's see what may the adversary try to do against a key caching system:
 \begin{itemize}
     \item \textbf{adversary strategy 1:} hack into user's system and execute a
     program as that user that tries to read the password cache file to
@@ -457,10 +459,11 @@ face the need to migrate to a new, say, personal computer.
 \end{advertisement}
 
 \subsection{a later-useful scenario}
-all password fields will internally call \texttt{libciphart} to derive more
-expensive keys.  this way, applications, such as \emph{firefox},
-\emph{mutt}, \ldots, will never send actual passwords, but will only send
-\emph{ciphart}-derived keys with increased shannon's entropy content.
+all input password fields will internally call \texttt{libciphart} to
+derive more expensive keys.  this way, applications, such as
+\emph{firefox}, \emph{mutt}, \ldots, will never send actual passwords, but
+will only send \emph{ciphart}-derived keys with increased shannon's entropy
+content.
 
 thanks to \cref{theorem_perfect_lie}, this will automatically increase
 shannon's entropy of all users password without requiring users to memorise
@@ -484,6 +487,8 @@ better sense when placed on the client side.
     $s$ & salt.\\
     $M$ & total random-access memory in bytes.\\
     $D$ & total hard-disk memory in bytes.\\
+    $F$ & temporary $D$ bytes file.\\
+    $Y$ & whether key caching is enabled.\\
     $L$ & number of memory lanes for concurrency.\\
     $T$ & number of tasks per lane segment.\\
     $S$ & number of lane segments per hard-disk read.\\
@@ -535,6 +540,7 @@ better sense when placed on the client side.
                     nice if the last segments were of unequal sizes.\\
     $\hat D$    & $\gets D - (D \bmod C) + C$.  this is to
                     ensure that it is in multiples of block sizes.\\
+    $Z$         & file where key $k$ is cached.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
     $N$    & $\gets 0$.  actual number of times $\enc$ is called,
@@ -565,10 +571,22 @@ i just didn't do it yet because my threat model currently doesn't benefit
 from a password independent variant.
 
 \begin{algorithm}[tbh]
+\If{$Y$ {\bf and} $\fexists(Z)$}{
+    $k, \hat B = \fread(Z)$\;
+    \Return{$k, \hat B$}
+}
+\While{$1, 2, \ldots, \hat DC^{-1}$}{
+    $m_b \gets \enc(m_a, n_0, v)$\;
+    $\fwrite(F, m_b)$\;
+    $n_0 \gets n_o + 1$\;
+    $\hat m_a \gets m_a$\;
+    $m_a \gets m_b$\;
+    $m_b \gets \hat m_a$\;
+}
 \While{$1$}{
-    \For{$g=0, 1, \ldots, G-1$}{
-        \For{$l=0, 1, \ldots, L-1$}{\label{ciphart_lanes}
-            \For{$t=0, 1, \ldots, T-1$}{
+    \For{$g \gets 0, 1, \ldots, G-1$}{
+        \For{$l \gets 0, 1, \ldots, L-1$}{\label{ciphart_lanes}
+            \For{$t \gets 0, 1, \ldots, T-1$}{
                 $i \gets gLT + lT + t$\;
                 \uIf{$t < T - 1$}{
                     $j \gets i + 1$\;
