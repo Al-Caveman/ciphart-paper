@@ -1,6 +1,7 @@
 \documentclass[twocolumn]{article}
 \usepackage[margin=.7in]{geometry}
 \usepackage[showisoZ=false]{datetime2}
+\usepackage{graphicx}
 \usepackage{url}
 \usepackage{tabularx}
 \usepackage{amsthm}
@@ -15,6 +16,7 @@
 \DeclareMathOperator{\fexists}{exists}
 \DeclareMathOperator{\fread}{read}
 \DeclareMathOperator{\fwrite}{write}
+\DeclareMathOperator{\sizeof}{sizeof}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
 \DeclareMathOperator{\dec}{\mathtt{dec}}
 \DeclareMathOperator{\maxf}{max}
@@ -28,13 +30,6 @@
 \DeclareMathOperator{\henc}{\; HENC}
 \DeclareMathOperator{\hhash}{\; HHASH}
 \renewcommand{\contentsname}{paper's layout}
-\makeatletter
-\def\myrulefill{%
-    \leavevmode\leaders\hrule%
-    height .6ex width 1ex depth -0.4ex%
-    \hfill\kern\z@%
-}
-\makeatother
 \DTMsetdatestyle{iso}
 \usepackage{cleveref} % must be loaded last
 \begin{document}
@@ -48,11 +43,8 @@ ciphart\\
 memory-\emph{harder} key derivation \\
 with easier security interpretation\\
 \normalsize
-caveman\footnote{mail: toraboracaveman [at] protonmail [dot] com.  if you
-like what i did here, and feel like wanting to donate monies, my
-\emph{bitcoin} wallet address is \texttt{DEADBEEFDEADBEEFDEADBEEF}
-(\textbf{note to self:} put real wallet address before distributing the
-paper).}\\
+\emph{caveman}\footnote{mail: \texttt{toraboracaveman [at] protonmail [dot]
+com}.}\\
 \footnotesize
 \DTMnow\\
 \end{center}
@@ -487,7 +479,7 @@ better sense when placed on the client side.
     $s$ & salt.\\
     $M$ & total random-access memory in bytes.\\
     $D$ & total hard-disk memory in bytes.\\
-    $F$ & temporary $D$ bytes file.\\
+    $F$ & temporary file's path.\\
     $Y$ & whether key caching is enabled.\\
     $L$ & number of memory lanes for concurrency.\\
     $T$ & number of tasks per lane segment.\\
@@ -498,8 +490,10 @@ better sense when placed on the client side.
 
 \subsection{internal variables}
 \begin{tabularx}{\columnwidth}{lX}
-    $\enc$ & encryption function.\\
-    $\hash$ & hashing function.\\
+    $\enc$      & encryption function.\\
+    $\hash$     & hashing function.\\
+    $\fread$    & hard-disk file reading function.\\
+    $\fwrite$   & hard-disk file writing function.\\
     $C$         & $\gets \begin{cases}
                         64 \text{ bytes} & \text{if $\enc$ is
                                             \emph{xchacha20}}\\
@@ -540,7 +534,6 @@ better sense when placed on the client side.
                     nice if the last segments were of unequal sizes.\\
     $\hat D$    & $\gets D - (D \bmod C) + C$.  this is to
                     ensure that it is in multiples of block sizes.\\
-    $Z$         & file where key $k$ is cached.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
     $N$    & $\gets 0$.  actual number of times $\enc$ is called,
@@ -549,19 +542,23 @@ better sense when placed on the client side.
                     pad.\\
     $n_l$       & $\gets lG\hat T$.  nonce variable for $l^{th}$ lane with
                     at least $64$ bits.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $f$         & $\gets 0$.  a flag indicating whether the $\hat M$-bytes
                     pad is filled.\\
-    $v$         & $\gets *\hash(p \mathbin\Vert s, V)$.  a pointer to the
-                    first byte where $V$-bytes key is stored.\\
+    $*v$         & $\gets *\hash(p \Vert s \Vert M \Vert D \Vert \ldots
+                    \Vert K, V)$.  a pointer to the first byte where
+                    $V$-bytes key is stored.  $v$ is the key itself.\\
+    $Z$         & $\gets \hash(v \Vert 0, V)$.  file name where output key,
+                    $k$, is expected to be cached, if $k$ was previously
+                    cached.\\
 \end{tabularx}
 
 \subsection{output}
 \begin{tabularx}{\columnwidth}{lX}
 $k$ & $K$-bytes key.\\
-$\hat B$ & actual \emph{caveman's entropy bits} that were injected into
-            $p$, where $\hat B \ge B$.\\
+$N$ & total number of times $\enc$ was actually called.  under the worst
+        case scenario\footnote{adversary has $\hat M + \hat D$ space.},
+        total number of shannon's entropy bits that were injected into $k$
+        by \emph{ciphart} is $\log_2 N$ many bits, where $\log_2 N \ge B$.\\
 \end{tabularx}
 
 \subsection{steps}
@@ -570,19 +567,22 @@ to \emph{argon2d}.  adding a \emph{ciphart-i} variant is a trivial matter,
 i just didn't do it yet because my threat model currently doesn't benefit
 from a password independent variant.
 
-\begin{algorithm}[tbh]
+\begin{algorithm}[!h]
 \If{$Y$ {\bf and} $\fexists(Z)$}{
-    $k, \hat B = \fread(Z)$\;
-    \Return{$k, \hat B$}
+    $k, N = \fread(Z, V + \sizeof(N))$\;
+    \Return{$k, N$}
 }
-\While{$1, 2, \ldots, \hat DC^{-1}$}{
-    $m_b \gets \enc(m_a, n_0, v)$\;
-    $\fwrite(F, m_b)$\;
-    $n_0 \gets n_o + 1$\;
-    $\hat m_a \gets m_a$\;
-    $m_a \gets m_b$\;
-    $m_b \gets \hat m_a$\;
+$i=0, j=1$\;
+\For{$0, 1, \ldots, \hat DC^{-1}-1$}{
+    $m_j \gets \enc(m_i, n_0, *v)$\;
+    $\fwrite(F, m_j)$\;
+    $n_0 \gets n_0 + 1$\;
+    $\hat i \gets i$\;
+    $i \gets j$\;
+    $j \gets \hat i$\;
+    $N \gets N + 1$\;
 }
+$*v \gets 2C - V$\;
 \While{$1$}{
     \For{$g \gets 0, 1, \ldots, G-1$}{
         \For{$l \gets 0, 1, \ldots, L-1$}{\label{ciphart_lanes}
@@ -593,35 +593,37 @@ from a password independent variant.
                 }\ElseIf{$t = T - 1$}{
                     $j \gets i - T + 1$\;
                 }
-                $m_j \gets \enc(m_i, n_l, v)$\;
+                $m_j \gets \enc(m_i, n_l, *v)$\;
                 $n_l \gets n_l + 1$\;
                 \uIf{$f = 0$}{
-                    $v \gets m_j \bmod (gLTC + tC - V)$\;
-                    \If{$v \ge gLTC - V$}{
-                        $v \gets v + lTC$\;
+                    $*v \gets m_j \bmod (gLTC + tC - V)$\;
+                    \If{$*v \ge gLTC - V$}{
+                        $*v \gets *v + lTC$\;
                     }
                 }\Else{
-                    $v \gets m_j \bmod (\hat M - LTC + tC - V)$\;
-                    \uIf{$v \ge gLTC + tC - V$}{
-                        $v \gets v + LTC$\;
-                    }\ElseIf{$v \ge gLTC - V$}{
-                        $v \gets v + lTC$\;
+                    $*v \gets m_j \bmod (\hat M - LTC + tC - V)$\;
+                    \uIf{$*v \ge gLTC + tC - V$}{
+                        $*v \gets *v + LTC$\;
+                    }\ElseIf{$*v \ge gLTC - V$}{
+                        $*v \gets *v + lTC$\;
                     }
                 }
             }
         }
         $N \gets N + LT$\;
-        \If{$N \ge 2^B$}{
+        \If{$f \ge 2$ \bf and $N \ge 2^B$}{
             $g_{\text{last}} \gets g$\;
             \textbf{go to} \cref{ciphart_out}\;
         }
     }
-    $f \gets 1$\;
+    $f \gets f+1$\;
 }
 $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
-$\hat B \gets log_2 N$\;
-\Return{$k$, $\hat B$}
+\If{$Y$ {\bf and not} $\fexists(Z)$}{
+    $\fwrite(Z, v \Vert N)$\;
+}
+\Return{$k$, $N$}
 \caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
@@ -666,5 +668,17 @@ cpu noticeably, as the randomly obtained $V$ bytes can be read by using
 the $O(1)$ operation \texttt{seek} over the $D$ bytes.
 
 \section{comparison}
+
+\vfill
+\break
+\appendix
+\section{donations}
+not a big deal, but if you want to make me feel happy, then one way is to
+donate money to my \emph{bitcon}'s wallet address:
+
+\begin{center}
+    \includegraphics[width=121px]{./pics/btc_wallet_address_trimmed.png}
+    \texttt{bc1qtylzjtgd0yu4v7f8hyfzufn7nu692v9fc88jln}
+\end{center}
 
 \end{document}
