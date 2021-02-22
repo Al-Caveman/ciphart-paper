@@ -15,6 +15,7 @@
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\fexists}{exists}
 \DeclareMathOperator{\fread}{read}
+\DeclareMathOperator{\fseekread}{seekread}
 \DeclareMathOperator{\fwrite}{write}
 \DeclareMathOperator{\sizeof}{sizeof}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
@@ -542,8 +543,10 @@ better sense when placed on the client side.
                     pad.\\
     $n_l$       & $\gets lG\hat T$.  nonce variable for $l^{th}$ lane with
                     at least $64$ bits.\\
-    $f$         & $\gets 0$.  a flag indicating whether the $\hat M$-bytes
-                    pad is filled.\\
+    $f$         & $\gets 0$.  a counter indicating number of times
+                    memory is filled with $\hat M$ many bytes.\\
+    $s$         & $\gets 0$.  a counter indicating number of processed lane
+                    segments since the last disk-read.\\
     $*v$         & $\gets *\hash(p \Vert s \Vert M \Vert D \Vert \ldots
                     \Vert K, V)$.  a pointer to the first byte where
                     $V$-bytes key is stored.  $v$ is the key itself.\\
@@ -567,7 +570,7 @@ to \emph{argon2d}.  adding a \emph{ciphart-i} variant is a trivial matter,
 i just didn't do it yet because my threat model currently doesn't benefit
 from a password independent variant.
 
-\begin{algorithm}[!h]
+\begin{algorithm}
 \If{$Y$ {\bf and} $\fexists(Z)$}{
     $k, N = \fread(Z, V + \sizeof(N))$\;
     \Return{$k, N$}
@@ -611,6 +614,11 @@ $*v \gets 2C - V$\;
             }
         }
         $N \gets N + LT$\;
+        $s \gets s + L$\;
+        \If{$s \ge S$}{
+            $*v \gets *\fseekread(F, v \bmod (\hat D - V), V)$\;
+            $s \gets 0$\;
+        }
         \If{$f \ge 2$ \bf and $N \ge 2^B$}{
             $g_{\text{last}} \gets g$\;
             \textbf{go to} \cref{ciphart_out}\;
@@ -669,13 +677,10 @@ the $O(1)$ operation \texttt{seek} over the $D$ bytes.
 
 \section{comparison}
 
-\vfill
-\break
 \appendix
 \section{donations}
-not a big deal, but if you want to make me feel happy, then one way is to
-donate money to my \emph{bitcon}'s wallet address:
-
+not a big deal, but it makes me happier when i see donations arriving into
+my \emph{bitcon}'s wallet:
 \begin{center}
     \includegraphics[width=121px]{./pics/btc_wallet_address_trimmed.png}
     \texttt{bc1qtylzjtgd0yu4v7f8hyfzufn7nu692v9fc88jln}
