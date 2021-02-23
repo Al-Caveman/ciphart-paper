@@ -13,23 +13,19 @@
 \newtheorem{discovery}{discovery}
 \newtheorem{advertisement}{advertisement}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
-\DeclareMathOperator{\fexists}{exists}
-\DeclareMathOperator{\fread}{read}
-\DeclareMathOperator{\fseekread}{seekread}
-\DeclareMathOperator{\fwrite}{write}
-\DeclareMathOperator{\sizeof}{sizeof}
+\DeclareMathOperator{\fexists}{\mathtt{exists}}
+\DeclareMathOperator{\fread}{\mathtt{read}}
+\DeclareMathOperator{\fwrite}{\mathtt{write}}
+\DeclareMathOperator{\sizeof}{\mathtt{sizeof}}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
 \DeclareMathOperator{\dec}{\mathtt{dec}}
 \DeclareMathOperator{\maxf}{max}
-\DeclareMathOperator{\len}{len}
 \DeclareMathOperator{\hash}{\mathtt{hash}}
 \DeclareMathOperator{\rhash}{\mathtt{rhash}}
 \DeclareMathOperator{\mhash}{\mathtt{mhash}}
 \DeclareMathOperator{\argon}{\mathtt{argon2}}
 \DeclareMathOperator{\ciphart}{\mathtt{ciphart}}
 \DeclareMathOperator{\cost}{\mathtt{cost}}
-\DeclareMathOperator{\henc}{\; HENC}
-\DeclareMathOperator{\hhash}{\; HHASH}
 \renewcommand{\contentsname}{paper's layout}
 \DTMsetdatestyle{iso}
 \usepackage{cleveref} % must be loaded last
@@ -54,8 +50,10 @@ com}.}\\
 is mostly a nice memory-hard key derivation function, as it is simple
 compared to
 \emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
-which makes understanding what it is doing easier.  but i argue that
-\emph{argon2} is still not nice enough, as it can be simpler and harder.
+which makes understanding what it is doing easier.  but i think that
+\emph{argon2} is still not nice enough, as i think that its security
+contribution can be simpler to understand, and i think that it can have
+\emph{harder} memory-hardness.
 
 currently, if you want to know \emph{argon2}'s contribution to your
 security against password brute-forcing, you need to survey the industry of
@@ -74,10 +72,10 @@ henceforth, i propose \emph{ciphart} --- a memory-\emph{harder} key
 derivation function, with:
 \begin{itemize}
     \item a security contribution that is measured in the unit of shannon's
-    entropy.  i.e. when \emph{ciphart} derives its key, it also tells you
-    the total quantity of the extra shannon's entropy bits that it has
-    injected into your derived key.  this is possible thanks to my
-    invention ``the perfect lie'' theorem.
+    entropy.  i.e. when \emph{ciphart} derives a key for you, it tells you
+    that it has \emph{injected} shannon's entropy bits into your derived
+    key, and also tells you its exact quantity.  this is possible thanks to
+    my invention ``perfect lie'' theorem.
     \item and a memory-\emph{harder}ness that comes from the fact that
     \emph{ciphart} can require crazy amounts of memory, beyond our
     random-access memory, thanks to it being able to use the hard-disk as
@@ -217,13 +215,13 @@ really think we need to measure password security in $C$ instead of $H$.
 \subsection{memory-hard $\hash$}
 let $\mhash$ be like $\rhash$, except that it also requires $M$ many memory
 bytes such that, as available memory is linearly reduced from $M$, penalty
-in cpu time grows exponentially.  let $M$ be requested memory, $\hat M$ be
-available memory, and $e(M - \hat M)$ be the exponential penalty value for
+in cpu time grows exponentially.  let $M$ be requested memory, $A$ be
+available memory, and $e(M - A)$ be the exponential penalty value for
 reduction in memory, where $e(0) = 1$.
 \begin{equation}
     \begin{split}
         & \cost\Big(\mhash(p \Vert s, N, M)\Big) \\
-    ={} & \cost\Big(\rhash(p \Vert s, N)\Big)^{e(\hat M - M)}
+    ={} & \cost\Big(\rhash(p \Vert s, N)\Big)^{e(M-A)}
     \end{split}
 \end{equation}
 
@@ -232,26 +230,26 @@ memory-hardened $N$-deep recursion hash function $\mhash$, then
 (\ref{eq_cost_passbruteforce}) becomes:
 \begin{equation}\label{eq_cost_passbruteforce_NM}
     2^{H(p)} \left(
-        N^{e(M-\hat M)}\cost(\hash) + \cost(\text{if } \hat k = k)
+        N^{e(M-A)}\cost(\hash) + \cost(\text{if } \hat k = k)
     \right)
 \end{equation}
 (\ref{eq_simplecost_passbruteforce}) becomes:
 \begin{equation}\label{eq_simplecost_passbruteforce_NM}
     \begin{split}
-    2^{H(p)} (N^{e(M-\hat M)}+0) &= N^{e(M-\hat M)} 2^{H(p)} \\
-                  &= 2^{H(p) + \log_2 N^{e(M-\hat M)}} \\
-                  &= 2^{H(p) + e(M-\hat M)\log_2 N}
+    2^{H(p)} (N^{e(M-A)}+0) &= N^{e(M-A)} 2^{H(p)} \\
+                  &= 2^{H(p) + \log_2 N^{e(M-A)}} \\
+                  &= 2^{H(p) + e(M-A)\log_2 N}
     \end{split}
 \end{equation}
 and caveman's entropy becomes:
 \begin{equation}
-    C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-\hat M)\log_2 N
+    C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-A)\log_2 N
 \end{equation}
 
-\section{``the perfect lie'' theorem}
+\section{``perfect lie'' theorem}
 let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
-a more complex password with $H(p) + e(M-\hat M)\log_2 N$ shannon's entropy
-bits, where $M$, $\hat M$ and $N$ are all positive numbers.
+a more complex password with $H(p) + e(M-A)\log_2 N$ shannon's entropy
+bits, where $M$, $A$ and $N$ are all positive numbers.
 
 then caveman's entropy says that the following keys are information
 theoretically indistinguishable for as long as only $p$ and $\hat p$ remain
@@ -298,12 +296,15 @@ so you have to pick only one of these options:
 \end{enumerate}
 
 \begin{theorem}
-    [the perfect lie\footnote{i call \cref{theorem_perfect_lie} \emph{the
-    perfect lie} theorem in a sense that a perfect lie is indistinguishable
-    from truth.}]
+    [perfect lie\footnote{i call \cref{theorem_perfect_lie} \emph{ perfect
+    lie} in a sense that a perfect lie is indistinguishable from truth.}]
     \label{theorem_perfect_lie}
-when $p$ is secret and $\hash$ is not broken, then shannon's entropy $H$ of
-the derived key equals caveman's entropy $C$.
+    for as long as password $p$ remains a secret and $\hash$ is not broken,
+    derived keys $k_1 = \rhash(p, \ldots, N)$ and $k_2 = \mhash(p, \ldots,
+    N, M)$ will have their shannon's entropies, $H(k_1)$ and $H(k_2)$,
+    increase beyond $H(p)$ in order to equate their caveman's entropies
+    $C(p, \rhash(\ldots, N))$ and $C(p, \mhash(\ldots, N, M))$,
+    respectively.
 \end{theorem}
 
 the reason this lie is appealing is because it simplifies our
@@ -476,15 +477,15 @@ better sense when placed on the client side.
 \section{ciphart}
 \subsection{parameters}
 \begin{tabularx}{\columnwidth}{lX}
-    $p$ & password.\\
-    $s$ & salt.\\
+    $P$ & password.\\
+    $S$ & salt.\\
     $M$ & total random-access memory in bytes.\\
     $D$ & total hard-disk memory in bytes.\\
     $F$ & temporary file's path.\\
     $Y$ & whether key caching is enabled.\\
     $L$ & number of memory lanes for concurrency.\\
     $T$ & number of tasks per lane segment.\\
-    $S$ & number of lane segments per hard-disk read.\\
+    $H$ & number of lane segments per hard-disk read.\\
     $B$ & minimum \emph{caveman's entropy bits} to inject into $p$.\\
     $K$ & output key's size in bytes.\\
 \end{tabularx}
@@ -493,7 +494,9 @@ better sense when placed on the client side.
 \begin{tabularx}{\columnwidth}{lX}
     $\enc$      & encryption function.\\
     $\hash$     & hashing function.\\
-    $\fread$    & hard-disk file reading function.\\
+    $\fread$    & hard-disk file reading function, with seeking.  e.g.
+                    $\fread(x, y, z)$ reads $z$ many bytes from file $x$
+                    after seeking $y$ bytes forward.\\
     $\fwrite$   & hard-disk file writing function.\\
     $C$         & $\gets \begin{cases}
                         64 \text{ bytes} & \text{if $\enc$ is
@@ -533,21 +536,24 @@ better sense when placed on the client side.
                     that all segments are of equal lengths in order to
                     simplify \emph{ciphart}'s logic.  e.g. it wouldn't be
                     nice if the last segments were of unequal sizes.\\
-    $\hat D$    & $\gets D - (D \bmod C) + C$.  this is to
-                    ensure that it is in multiples of block sizes.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
-    $N$    & $\gets 0$.  actual number of times $\enc$ is called,
-                    where $\hat N \ge 2^B$.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
+    $n$    & $\gets 0$.  actual number of times $\enc$ is called.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
     $n_l$       & $\gets lG\hat T$.  nonce variable for $l^{th}$ lane with
                     at least $64$ bits.\\
     $f$         & $\gets 0$.  a counter indicating number of times
                     memory is filled with $\hat M$ many bytes.\\
-    $s$         & $\gets 0$.  a counter indicating number of processed lane
-                    segments since the last disk-read.\\
-    $*v$         & $\gets *\hash(p \Vert s \Vert M \Vert D \Vert \ldots
+    $d$         & $\gets 0$.  a counter indicating total number of saved
+                    blocks into hard-disk.\\
+    $h$         & $\gets 0$.  a counter indicating number of processed lane
+                    segments since the last hard-disk read.\\
+    $q$         & $\gets 0$.  a counter indicating number of times key was
+                    updated from the hard-disk.\\
+    $*v$         & $\gets *\hash(P \Vert S \Vert M \Vert D \Vert \ldots
                     \Vert K, V)$.  a pointer to the first byte where
                     $V$-bytes key is stored.  $v$ is the key itself.\\
     $Z$         & $\gets \hash(v \Vert 0, V)$.  file name where output key,
@@ -558,10 +564,9 @@ better sense when placed on the client side.
 \subsection{output}
 \begin{tabularx}{\columnwidth}{lX}
 $k$ & $K$-bytes key.\\
-$N$ & total number of times $\enc$ was actually called.  under the worst
-        case scenario\footnote{adversary has $\hat M + \hat D$ space.},
-        total number of shannon's entropy bits that were injected into $k$
-        by \emph{ciphart} is $\log_2 N$ many bits, where $\log_2 N \ge B$.\\
+$n$ & total number of times $\enc$ was actually called.  $\log_2 n$ is
+        total number shannon's entropy bits that \emph{ciphart} injected
+        into $k$, such that $\log_2 n \ge B$.\\
 \end{tabularx}
 
 \subsection{steps}
@@ -572,21 +577,8 @@ from a password independent variant.
 
 \begin{algorithm}
 \If{$Y$ {\bf and} $\fexists(Z)$}{
-    $k, N = \fread(Z, V + \sizeof(N))$\;
-    \Return{$k, N$}
-}
-\If{$\hat D$}{
-    $i=0, j=1$\;
-    \For{$0, 1, \ldots, \hat DC^{-1}-1$}{
-        $m_j \gets \enc(m_i, n_0, *v)$\;
-        $\fwrite(F, m_j)$\;
-        $n_0 \gets n_0 + 1$\;
-        $\hat i \gets i$\;
-        $i \gets j$\;
-        $j \gets \hat i$\;
-        $N \gets N + 1$\;
-    }
-    $*v \gets 2C - V$\;
+    $k, n = \fread(Z, 0, V + \sizeof(n))$\;
+    \Return{$k, n$}
 }
 \While{$1$}{
     \For{$g \gets 0, 1, \ldots, G-1$}{
@@ -615,25 +607,34 @@ from a password independent variant.
                 }
             }
         }
-        $N \gets N + LT$\;
-        $s \gets s + L$\;
-        \If{$s \ge S$}{
-            $*v \gets *\fseekread(F, v \bmod (\hat D - V), V)$\;
-            $s \gets 0$\;
-        }
-        \If{$f \ge 2$ \bf and $N \ge 2^B$}{
-            $g_{\text{last}} \gets g$\;
-            \textbf{go to} \cref{ciphart_out}\;
+        $n \gets n + LT$\;
+        \uIf{$d \le D$}{
+            \For{$i \gets gLT, \ldots, gLT+(T-1)$}{
+                $\fwrite(F, m_i)$\;
+                $d \gets d + 1$\;
+                \If{$d \ge D$}{ \textbf{break}\; }
+            }
+        }\Else{
+            $h \gets h + L$\;
+            \If{$h \ge H$}{
+                $*v \gets *\fread(F, v \bmod (d - V), V)$\;
+                $q \gets q + 1$\;
+                $h \gets 0$\;
+            }
+            \If{$f \ge 2$ \bf and $q \ge 1$ \bf and $n \ge 2^B$}{
+                $g_{\text{last}} \gets g$\;
+                \textbf{go to} \cref{ciphart_out}\;
+            }
         }
     }
     $f \gets f+1$\;
 }
 $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
-\If{$Y$ {\bf and not} $\fexists(Z)$}{
-    $\fwrite(Z, v \Vert N)$\;
+\If{$Y$}{
+    $\fwrite(Z, v \Vert n)$\;
 }
-\Return{$k$, $N$}
+\Return{$k$, $n$}
 \caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
@@ -681,8 +682,8 @@ the $O(1)$ operation \texttt{seek} over the $D$ bytes.
 
 \appendix
 \section{donations}
-not a big deal, but it makes me happier when i see donations arriving into
-my \emph{bitcoin}'s wallet:
+not a big deal, but it feels good when i see donations going into my
+\emph{bitcoin}'s wallet:
 \begin{center}
     \includegraphics[width=121px]{./pics/btc_wallet_address_trimmed.png}
     \texttt{bc1qtylzjtgd0yu4v7f8hyfzufn7nu692v9fc88jln}
