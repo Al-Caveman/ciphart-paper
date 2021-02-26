@@ -17,6 +17,7 @@
 \DeclareMathOperator{\fread}{\mathtt{read}}
 \DeclareMathOperator{\fwrite}{\mathtt{write}}
 \DeclareMathOperator{\sizeof}{\mathtt{sizeof}}
+\DeclareMathOperator{\delete}{\mathtt{delete}}
 \DeclareMathOperator{\enc}{\mathtt{enc}}
 \DeclareMathOperator{\dec}{\mathtt{dec}}
 \DeclareMathOperator{\maxf}{max}
@@ -634,6 +635,7 @@ $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
 \If{$Y$}{
     $\fwrite(Z, v \Vert n)$\;
 }
+$\delete(F)$\;
 \Return{$k$, $n$}
 \caption{ciphart}
 \label{alg_ciphart}
@@ -682,9 +684,27 @@ the $O(1)$ operation \texttt{seek} over the $D$ bytes.
 
 \appendix
 \section{donations}
-did you like my work?  do you want to make me feel happier?  if so, then a
-valid course of action is to put some of your money into my
-\emph{bitcoin}'s wallet:
+this work is sponsored by a bright nerdiness that has unexpectedly sparkled
+somewhere in an endless dark space.  nothing here was supposed to happen.
+the cause  remains unknown, so we call it \emph{something random with large
+entropy}.
+
+ancient legend has it that, every time a donation is made for a good cause,
+a beautiful torch is kindled somewhere deep within an otherwise cold and
+dark space.
+
+the torch is pure with an innocent smile every time a spending is committed
+towards good.  but, she drops a tear when the spending is done in excess.
+despite her attempts to maintain a steady light, sometimes her tears force
+her light to flicker, and sometimes the flickering causes her to disappear.
+when she is gone, she is never back again, except in the memories of those
+who have once witnessed her charm\ldots
+
+so, if you opt for a donation, i'd appreciate exercising wisdom, so that
+the sensible balance is not exceeded; lest we want a beautiful torch to be
+born, only to make her disappear in her tears.
+
+\subsection{bitcoin}
 \begin{center}
     \includegraphics[width=121px]{./pics/btc_wallet_address_trimmed.png}
     \texttt{bc1qtylzjtgd0yu4v7f8hyfzufn7nu692v9fc88jln}
