@@ -577,7 +577,7 @@ from a password independent variant.
 
 \begin{algorithm}
 \If{$Y$ {\bf and} $\fexists(Z)$}{
-    $k, n = \fread(Z, 0, V + \sizeof(n))$\;
+    $k, n \gets \fread(Z, 0, V + \sizeof(n))$\;
     \Return{$k, n$}
 }
 \While{$1$}{
@@ -682,9 +682,7 @@ the $O(1)$ operation \texttt{seek} over the $D$ bytes.
 
 \appendix
 \section{donations}
-did you like my work?  do you want to make me feel happier?  if so, then a
-valid course of action is to put some of your money into my
-\emph{bitcoin}'s wallet:
+\subsection{bitcoin}
 \begin{center}
     \includegraphics[width=121px]{./pics/btc_wallet_address_trimmed.png}
     \texttt{bc1qtylzjtgd0yu4v7f8hyfzufn7nu692v9fc88jln}
