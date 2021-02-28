@@ -476,7 +476,8 @@ just that i think \emph{ciphart}, \emph{argon2}, \emph{scrypt}, \ldots make
 better sense when placed on the client side.
 
 \section{ciphart}
-\subsection{parameters}
+\subsection{the algorithm}
+\subsubsection{parameters}
 \begin{tabularx}{\columnwidth}{lX}
     $P$ & password.\\
     $S$ & salt.\\
@@ -491,7 +492,7 @@ better sense when placed on the client side.
     $K$ & output key's size in bytes.\\
 \end{tabularx}
 
-\subsection{internal variables}
+\subsubsection{internal variables}
 \begin{tabularx}{\columnwidth}{lX}
     $\enc$      & encryption function.\\
     $\hash$     & hashing function.\\
@@ -556,13 +557,14 @@ better sense when placed on the client side.
                     updated from the hard-disk.\\
     $*v$         & $\gets *\hash(P \Vert S \Vert M \Vert D \Vert \ldots
                     \Vert K, V)$.  a pointer to the first byte where
-                    $V$-bytes key is stored.  $v$ is the key itself.\\
+                    $V$-bytes key is stored.  $v$ is the key itself, and
+                    $*v$ is a pointer to it.\\
     $Z$         & $\gets \hash(v \Vert 0, V)$.  file name where output key,
                     $k$, is expected to be cached, if $k$ was previously
                     cached.\\
 \end{tabularx}
 
-\subsection{output}
+\subsubsection{output}
 \begin{tabularx}{\columnwidth}{lX}
 $k$ & $K$-bytes key.\\
 $n$ & total number of times $\enc$ was actually called.  $\log_2 n$ is
@@ -570,14 +572,14 @@ $n$ & total number of times $\enc$ was actually called.  $\log_2 n$ is
         into $k$, such that $\log_2 n \ge B$.\\
 \end{tabularx}
 
-\subsection{steps}
+\subsubsection{steps}
 steps of \emph{ciphart} is shown in \cref{alg_ciphart}.  this corresponds
 to \emph{argon2d}.  adding a \emph{ciphart-i} variant is a trivial matter,
 i just didn't do it yet because my threat model currently doesn't benefit
 from a password independent variant.
 
 \begin{algorithm}
-\If{$Y$ {\bf and} $\fexists(Z)$}{
+\If{$Y$ {\bf and} $\fexists(Z)$}{\label{ciphart_cache_hit}
     $k, n \gets \fread(Z, 0, V + \sizeof(n))$\;
     \Return{$k, n$}
 }
@@ -609,7 +611,7 @@ from a password independent variant.
             }
         }
         $n \gets n + LT$\;
-        \uIf{$d \le D$}{
+        \uIf{$d \le D$}{\label{ciphart_D_filling}
             \For{$i \gets gLT, \ldots, gLT+(T-1)$}{
                 $\fwrite(F, m_i)$\;
                 $d \gets d + 1$\;
@@ -617,7 +619,7 @@ from a password independent variant.
             }
         }\Else{
             $h \gets h + L$\;
-            \If{$h \ge H$}{
+            \If{$h \ge H$}{\label{ciphart_D_using}
                 $*v \gets *\fread(F, v \bmod (d - V), V)$\;
                 $q \gets q + 1$\;
                 $h \gets 0$\;
@@ -632,7 +634,7 @@ from a password independent variant.
 }
 $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
-\If{$Y$}{
+\If{$Y$}{\label{ciphart_cache_miss}
     $\fwrite(Z, v \Vert n)$\;
 }
 $\delete(F)$\;
@@ -641,46 +643,75 @@ $\delete(F)$\;
 \label{alg_ciphart}
 \end{algorithm}
 
-\section{parallelism}
+\subsection{notes}
+\subsubsection{parallelism}
 since iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
 are fully independent of one other, they can quite happily utilise $L$ cpu
 cores, specially when segment sizes, $T$, are larger.
 
-\section{memory-hardness}
+\subsubsection{memory-hardness}
 \begin{proof}
     \cref{alg_ciphart} is just a variation of \emph{argon2d}, except that
-    it uses an encryption function, $\enc$, instead of a hashing functionn.
+    it uses an encryption function, $\enc$, instead of a hashing function.
     so if \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
 \end{proof}
 
 
-\section{memory-\emph{harder}ness}
-thanks to discovery \ref{discov_key_caching}, memory-harderness is
-possible.  this process goes like this:
+\subsubsection{memory-\emph{harder}ness}
+thanks to discovery \ref{discov_key_caching}, we can cache keys, as done in
+\cref{ciphart_cache_hit}, without increasing assumptions of the threat
+moodel of the vast majority of users.  then, memory-\emph{harder}ness
+becomes possible.  this process goes like this:
 \begin{enumerate}
-    \item starts by recursively encrypting $D$ many bytes of some
-    predefined sequence, such as zeros or \texttt{0xdbdb}\ldots, using a
-    key derived from an cheaply-hashed password $p$.  by the end of this
-    step, we have $D$ many key-based random sequence saved in the an
-    encrypted hard disk partition.
+    \item starts by running an $\enc$-based variant of \emph{argon2},
+    except that, as it is going, it keeps writing the updated segments into
+    the hard-disk until the size of it satisfies the $D$ bytes limit.  this
+    is shown in \cref{ciphart_D_filling} in \cref{alg_ciphart}.
 
-    \item update the derived key to be the last $V$ bytes in the $D$ bytes
-    file.
+    optimising this hard-disk filling with $D$ bytes is not a big deal,
+    since this feature is probably going to be used only once; thanks to
+    key caching.  that said: 
+    \begin{itemize}
+        \item this feature is optional.  i.e. in case someone doesn't like
+        the hard-disk caching, he can set $D \gets 0$ to disable it.  but,
+        for most people, i don't understand why you would want to disable
+        it.  e.g. if you're already trusting \texttt{root}, then i think
+        that you can use this feature without changing your threat model.
 
-    \item move on to run a variant of \emph{argon2}, except that, every
-    time $S$ many random-access memory lane segments are completed, some
-    $V$ many bytes from $D$ are chosen randomly, not only based on the
-    content the random-access memory, but also based on the $D$ bytes.
-    this step makes \emph{ciphart} require $D+M$ bytes.
+        i personally like it a lot as it allows me to achieve
+        memory-\emph{harder}ness way beyond my random-access memory.  just
+        imagine the look on the face of those asics crackers once they hear
+        that your \emph{ciphart} requires, say, $50$ giga bytes!
 
-    \item delete the $D$ bytes, just to free up the disk space.
+        \item when key caching is enabled, i.e. $Y \gets 1$, this hard-disk
+        writing is done only initially, and subsequent uses appear as
+        almost instantaneous.
+
+        \item this hard-disk writing can be slightly optimised by using a
+        non-blocking write operation.  but i think that the trivial
+        reduction in this time may not justify increasing  code's
+        complexity, so i don't plan to implement non-blocking writes in
+        \texttt{libciphart}.
+    \end{itemize}
+
+    \item then, once the $D$ bytes hard-disk requirement is satisfied, the
+    process continues to run the modified $\enc$-based variant of
+    \emph{argon2} except that it updates the key $v$ from those $D$ bytes
+    every time $S$ many segments are solved.  this step makes
+    \emph{ciphart} require $D+M$ bytes.  this is shown in
+    \cref{ciphart_D_using} in \cref{alg_ciphart}.
+
+    if $S$ is large enough, this can be done efficiently without blocking
+    the cpu noticeably, as the randomly obtained $V$ bytes can be read by
+    using the $O(1)$ operation, \texttt{seek}, over the $D$ bytes.
+
+    \item delete the $D$ bytes, just to free up the disk space.  no need to
+    securely delete those $D$ bytes since we can save them using a
+    temporary random key that's forgotten later on.
 \end{enumerate}
 
-if $S$ is large enough, this can be done efficiently without blocking the
-cpu noticeably, as the randomly obtained $V$ bytes can be read by using
-the $O(1)$ operation \texttt{seek} over the $D$ bytes.
 
-\section{comparison}
+\subsubsection{comparison}
 
 \appendix
 \section{donations}
