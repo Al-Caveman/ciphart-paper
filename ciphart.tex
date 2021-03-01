@@ -37,8 +37,8 @@
 \begin{center}
 \Huge
 ciphart\\
-\LARGE
-memory-\emph{harder} key derivation \\
+\Large
+faster memory-\emph{harder} key derivation \\
 with easier security interpretation\\
 \normalsize
 \emph{caveman}\footnote{mail: \texttt{toraboracaveman [at] protonmail [dot]
@@ -48,13 +48,11 @@ com}.}\\
 \end{center}
 
 \noindent\textbf{synopsis---}\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
-is mostly a nice memory-hard key derivation function, as it is simple
-compared to
+is a fast and simple memory-hard key derivation function.  compared to
 \emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
-which makes understanding what it is doing easier.  but i think that
-\emph{argon2} is still not nice enough, as i think that its security
-contribution can be simpler to understand, and i think that it can have
-\emph{harder} memory-hardness.
+\emph{argon2} is better, specially for its simplicity.  but i argue that
+\emph{argon2} is not fast enough, not memory-hard enough, and its
+contribution to our security is not simple enough to understand.
 
 currently, if you want to know \emph{argon2}'s contribution to your
 security against password brute-forcing, you need to survey the industry of
@@ -643,7 +641,7 @@ $\delete(F)$\;
 \label{alg_ciphart}
 \end{algorithm}
 
-\subsection{notes}
+\subsection{comments}
 \subsubsection{parallelism}
 since iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
 are fully independent of one other, they can quite happily utilise $L$ cpu
@@ -720,9 +718,9 @@ somewhere in an endless dark space.  nothing here was supposed to happen.
 the cause  remains unknown, so we call it \emph{something random with large
 entropy}.
 
-ancient legend has it that, every time a donation is made for a good cause,
-a beautiful torch is kindled somewhere deep within an otherwise cold and
-dark space.
+ancient mythology has it that, every time a donation is made for a good
+cause, a beautiful torch is kindled somewhere deep within an otherwise cold
+and dark space.
 
 the torch is pure with an innocent smile every time a spending is committed
 towards good.  but, she drops a tear when the spending is done in excess.
