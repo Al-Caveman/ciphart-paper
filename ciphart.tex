@@ -54,35 +54,37 @@ is a fast and simple memory-hard key derivation function.  compared to
 \emph{argon2} is not fast enough, not memory-hard enough, and its
 contribution to our security is not simple enough to understand.
 
-currently, if you want to know \emph{argon2}'s contribution to your
-security against password brute-forcing, you need to survey the industry of
-application-specific integrated-circuits (asics) in order to find the cost
-of breaking your password in a given time frame, as done in the
-\emph{scrypt} paper.  the housekeeping of this approach is too expensive as
-the industry is constantly changing, plus it remains a rough estimate with
-inadequate theoretical guarantees.
-
-also, \emph{argon2}'s memory-hardness is based on only utilising
-random-access memories, and not, say, hard-disks.  without changing the
-threat model of the vast majority of users, this is an unnecessary
-restriction as i show in this paper.
-
-henceforth, i propose \emph{ciphart} --- a memory-\emph{harder} key
-derivation function, with:
+so i propose \emph{ciphart}, which is:
 \begin{itemize}
-    \item a security contribution that is measured in the unit of shannon's
-    entropy.  i.e. when \emph{ciphart} derives a key for you, it tells you
-    that it has \emph{injected} shannon's entropy bits into your derived
-    key, and also tells you its exact quantity.  this is possible thanks to
-    my invention ``perfect lie'' theorem.
-    \item and a memory-\emph{harder}ness that comes from the fact that
-    \emph{ciphart} can require crazy amounts of memory, beyond our
-    random-access memory, thanks to it being able to use the hard-disk as
-    well.  this is possible thanks to my discovery ``cacheable keys''.
+    \item easier --- because its security contribution is measured in the
+    unit of shannon's entropy.  i.e. when \emph{ciphart} derives a key for
+    you, it has the capacity to tell you that it has \emph{injected} a
+    specific quantity of shannon's entropy bits into your derived key.
+    this is possible thanks to my invention ``perfect lie'' theorem.
+
+    this offers a great help as it gives us yet another much simpler
+    approach to quantify our security gain as opposed to being limited to
+    surveying the industry of application-specific integrated circuits as
+    done in the \emph{scrypt} paper.
+
+    \item harder --- because it can require crazy-large amounts of memory,
+    beyond our random-access memory, thanks to it being able to use the
+    hard-disk as well.  this is possible thanks to my discovery ``cacheable
+    keys''.
 
     this is optional, but i extremely like it as it effectively gives me
     much more security while eventually becoming much faster as well, and
     the adversary cannot get my cache even if he steals my hard-disks.
+
+    \item faster --- because it does not abuse hashing functions.
+    it uses hashing functions when using them is more suited, and uses
+    encryption functions when encryption functions are more suited.  this
+    is thanks to my ``purification'' initiative.
+
+    \emph{argon2} incorrectly limits itself to use only a hashing function.
+    at the surface it may appear simpler, but it is actually more wasteful
+    of resources, requires re-inventing more wheels, and needlessly
+    increases function's total assumptions.
 \end{itemize}
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
@@ -459,9 +461,10 @@ will only send \emph{ciphart}-derived keys with increased shannon's entropy
 content.
 
 thanks to \cref{theorem_perfect_lie}, this will automatically increase
-shannon's entropy of all users password without requiring users to memorise
-harder passwords.  thanks to discovery \ref{discov_key_caching}, the user
-will not face any delay in his daily use.
+shannon's entropy of all users' passwords without requiring users to
+memorise harder passwords.  thanks to discovery \ref{discov_key_caching},
+the user will not face any delay in his daily use, except only an initial
+delay to create the cache entry.
 
 i also think that it is \emph{generally} better to have expensive key
 derivation functions in the client side as opposed to the server side.
@@ -641,7 +644,7 @@ $\delete(F)$\;
 \label{alg_ciphart}
 \end{algorithm}
 
-\subsection{comments}
+\subsection{noteworthy features}
 \subsubsection{parallelism}
 since iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
 are fully independent of one other, they can quite happily utilise $L$ cpu
@@ -709,8 +712,10 @@ becomes possible.  this process goes like this:
 \end{enumerate}
 
 
-\subsubsection{comparison}
+\subsection{comparison}
 
+\vfill
+\break
 \appendix
 \section{donations}
 this work is sponsored by a bright nerdiness that has unexpectedly sparkled
