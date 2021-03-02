@@ -11,6 +11,7 @@
 \newtheorem{definition}{definition}
 \newtheorem{theorem}{theorem}
 \newtheorem{discovery}{discovery}
+\newtheorem{attempt}{attempt}
 \newtheorem{advertisement}{advertisement}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\fexists}{\mathtt{exists}}
@@ -79,7 +80,7 @@ so i propose \emph{ciphart}, which is:
     \item faster --- because it does not abuse hashing functions.
     it uses hashing functions when using them is more suited, and uses
     encryption functions when encryption functions are more suited.  this
-    is thanks to my ``purification'' initiative.
+    is thanks to my ``simplification'' attempt.
 
     \emph{argon2} incorrectly limits itself to use only a hashing function.
     at the surface it may appear simpler, but it is actually more wasteful
@@ -157,8 +158,9 @@ quantity of security, but rather because its the quantity of
 i like this shannon's entropy-based simplified security quantity, so i'm
 going to build on it.
 
-\section{caveman's entropy}
-\subsection{recursive $\hash$}
+\section{fundamental ideas}
+\subsection{caveman's entropy}
+\subsubsection{recursive $\hash$: $\rhash$}
 if the $\hash$ function is replaced by an $N$-deep recursion over $\hash$,
 like:
 \[
@@ -213,7 +215,7 @@ security-wise, there is no distinction between the more complex password
 $\hat p$, and the simpler password $p$ that used $\rhash(\ldots, N)$.  so i
 really think we need to measure password security in $C$ instead of $H$.
 
-\subsection{memory-hard $\hash$}
+\subsubsection{memory-hard $\hash$: $\mhash$}
 let $\mhash$ be like $\rhash$, except that it also requires $M$ many memory
 bytes such that, as available memory is linearly reduced from $M$, penalty
 in cpu time grows exponentially.  let $M$ be requested memory, $A$ be
@@ -247,7 +249,7 @@ and caveman's entropy becomes:
     C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-A)\log_2 N
 \end{equation}
 
-\section{``perfect lie'' theorem}
+\subsection{``perfect lie'' theorem}
 let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
 a more complex password with $H(p) + e(M-A)\log_2 N$ shannon's entropy
 bits, where $M$, $A$ and $N$ are all positive numbers.
@@ -331,13 +333,13 @@ follows that our model's total error will be reduced if we accept that the
 indistinguishable things are identical (i.e.  which is what
 \cref{theorem_perfect_lie} says).
 
-\section{``cacheable keys'' discovery}
+\subsection{``cacheable keys'' discovery}
 \begin{discovery}[cacheable keys]\label{discov_key_caching}
     caching keys securely is easily doable, and great security utility
     exists in doing so for expensively-derived keys.
 \end{discovery}
 
-\subsection{why does it work}
+\subsubsection{why does it work}
 \begin{itemize}
     \item when expensively derived keys are cached, only the first key
     derivation call will be expensive, while subsequent calls will be
@@ -375,7 +377,7 @@ most importantly, utilising discovery \ref{discov_key_caching} allows us to
 achieve a memory-\emph{harder} key derivation in an extremely  usable way.
 more details on memory-harderness later.
 
-\subsection{potential adversary strategies}
+\subsubsection{potential adversary strategies}
 let's see what may the adversary try to do against a key caching system:
 \begin{itemize}
     \item \textbf{adversary strategy 1:} hack into user's system and execute a
@@ -401,80 +403,59 @@ let's see what may the adversary try to do against a key caching system:
     who do not use key caching, such as \emph{scrypt}, \emph{argon2}, etc.
 \end{itemize}
 
-\section{application scenarios}
-\subsection{a currently-useful scenario}
-user has a password manager which generates unique $256$ bit entropy keys for
-each online service that he uses.  the user also renews keys for his online
-services every now and then.   so his online accounts generally have high
-security.  
-
-but user's problem is how to lock and unlock his password manager's
-passwords database.  should he use a physical usb-stick key that types a
-high-entropy key that encrypts and decrypts the database?   the user
-doesn't want this physical key because of several reasons:
+\subsection{``simplification'' attempt}
+which one is simpler when, say, building a wooden house?  
 \begin{itemize}
-    \item he tends to lose his keys a lot, and, for certain tasks, the risk
-    of needing to wait for until he gets a backup usb-stick key is too
-    much.
-
-    \item he doesn't want to be caught having cryptographic usb-stick keys,
-    because as such is an evidence that he has encrypted content.  the user
-    wants to have the choice to lie that he has no clue.  so not having
-    usb-stick keys with him helps his case to lie.
-
-    \item he wants to be torture-resistant so that an adversary cannot
-    forcefully take his keys from him in order to login into his services.
-    he may rather want to die than to give the password to the adversary.
-    this works because, so far, the brain is a pretty private information
-    store.
+    \item option 1 --- use only a nail and, when you need a screw,
+    modify the nail into a screw. 
+    \item option 2 --- use a nail and a screw.
 \end{itemize}
 
-in this scenario, the user memorises a sensible password that he can
-remember, with enough initial entropy, and then uses \emph{ciphart},
-preferably with disk caching, to inject large amounts of entropy bits into
-his derived keys, way beyond the reach of pre-\emph{ciphart} key derivation
-functions; thanks to \cref{theorem_perfect_lie} and discovery
-\ref{discov_key_caching}.  
+on the surface, option 1 may appear as the simpler choice as it only uses
+nails, while \emph{option 2} uses both nails ans crews.
 
-here, the expensively derived key is only used to unlock a local password
-manager, which offers a protection against situations where a backup copy
-of the passwords database is stolen.  this may enable the user to store his
-passwords manager in an online file synchronisation service for more
-convenient system migrations to further reduce his login delays should he
-face the need to migrate to a new, say, personal computer.
+but a deeper look shows that option 1 is actually a lie, as it is also
+using a nail and a screw, except that the screw is re-invented by modifying
+a nail.  so, my answer is that \emph{option 2} is the simpler choice.
 
-\begin{advertisement}
-    in case you're interested in such a passwords manager, i've also made
-    \emph{nsapass}\footnote{\url{https://github.com/Al-Caveman/nsapass}}
-    --- a flexible and a simple passwords manager in a few hundreds of
-    python lines of code, that uses \emph{ciphart} by default.  i think
-    this is the best command-line interfacing passwords manager by far, for
-    its usability, and for the fact that auditing it is easy, thanks for it
-    being only in a few hundreds of python lines.
-\end{advertisement}
+similarly, i think \emph{argon2}'s use of only a hashing function is rather
+a lie, as it effectively ends up re-inventing a symmetric block encryption
+algorithm off a hashing function for as far as a key derivation function is
+concerned.  here is how:
+\begin{itemize}
+    \item when \emph{argon2} uses a hashing function to compress
+    potentially large amounts of data to derive the final output key,
+    that's a fine use of a hashing function, because one of the tasks of a
+    hashing is to do such compression.
 
-\subsection{a later-useful scenario}
-all input password fields will internally call \texttt{libciphart} to
-derive more expensive keys.  this way, applications, such as
-\emph{firefox}, \emph{mutt}, \ldots, will never send actual passwords, but
-will only send \emph{ciphart}-derived keys with increased shannon's entropy
-content.
+    \item but when \emph{argon2} uses a hashing function to solve tasks in
+    the memory pad, it tries to use a hashing function to emulate the
+    behavior of a symmetric block encryption function, for as long as a key
+    derivation function is concerned.
 
-thanks to \cref{theorem_perfect_lie}, this will automatically increase
-shannon's entropy of all users' passwords without requiring users to
-memorise harder passwords.  thanks to discovery \ref{discov_key_caching},
-the user will not face any delay in his daily use, except only an initial
-delay to create the cache entry.
+    i.e. when \emph{argon2} concatenates previous task's hash against a
+    randomly picked task's hash in order to compute next task's hash, it is
+    effectively trying to re-invent the idea of a pre-shared key, for as
+    long as a key derivation function is concerned.
 
-i also think that it is \emph{generally} better to have expensive key
-derivation functions in the client side as opposed to the server side.
-because remote servers always have the incentive to reduce the complexity
-of the key derivation function in order to free more resources for other
-things that bring them money.
+    why so?  because there is no compression here, so why use a hashing
+    function?  why not use a symmetric block cipher, and randomly pick the
+    key instead of emulating a key using concatenation?
+\end{itemize}
 
-either  way, \emph{ciphart} is perfectly usable on the server side.  it is
-just that i think \emph{ciphart}, \emph{argon2}, \emph{scrypt}, \ldots make
-better sense when placed on the client side.
+but why bother?  because:
+\begin{itemize}
+    \item re-inventing things are more expensive than not.
+    \item hashing functions are generally more expensive than symmetric
+    block encryption functions.  i think this is because hashing functions
+    also have the duty of compression, shile symmetric block encryption
+    functions don't.
+\end{itemize}
+
+\begin{attempt}[simplification]\label{attempt_simplification}
+    use hashing functions only when compression happens.  when no
+    compression takes place, use a block encryption function instead.
+\end{attempt}
 
 \section{ciphart}
 \subsection{the algorithm}
@@ -509,8 +490,6 @@ better sense when placed on the client side.
                      \end{cases}$\\
                 & this to reflect the block size of the encryption
                     algorithm that implements $\enc$.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $V$ & $\gets \begin{cases}
                         32 \text{ bytes} & \text{if $\enc$ is
                                             \emph{xchacha20}}\\
@@ -522,10 +501,9 @@ better sense when placed on the client side.
                      \end{cases}$\\
                 & this is the size of the encryption key that's used to
                     solve \emph{ciphart}'s tasks.  this is different than
-                    the $\enc$-independent $K$ which is
-                    possibly used by other encryption algorithms in later
-                    stages\footnote{at the expense of losing the meaning of
-                    \emph{caveman's entropy bits}.}.\\
+                    output key's size, $K$, which is $\enc$-independent.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $\hat T$    & $\gets \maxf(\lceil V C^{-1}\rceil, T)$.  this
                     is to ensure that we have enough encrypted bytes for
                     new keys.\\
@@ -661,7 +639,7 @@ cores, specially when segment sizes, $T$, are larger.
 \subsubsection{memory-\emph{harder}ness}
 thanks to discovery \ref{discov_key_caching}, we can cache keys, as done in
 \cref{ciphart_cache_hit}, without increasing assumptions of the threat
-moodel of the vast majority of users.  then, memory-\emph{harder}ness
+model of the vast majority of users.  then, memory-\emph{harder}ness
 becomes possible.  this process goes like this:
 \begin{enumerate}
     \item starts by running an $\enc$-based variant of \emph{argon2},
@@ -714,11 +692,87 @@ becomes possible.  this process goes like this:
 
 \subsection{comparison}
 
+\section{application scenarios}
+\subsection{a currently-useful scenario}
+user has a password manager which generates unique $256$ bit entropy keys for
+each online service that he uses.  the user also renews keys for his online
+services every now and then.   so his online accounts generally have high
+security.  
+
+but user's problem is how to lock and unlock his password manager's
+passwords database.  should he use a physical usb-stick key that types a
+high-entropy key that encrypts and decrypts the database?   the user
+doesn't want this physical key because of several reasons:
+\begin{itemize}
+    \item he tends to lose his keys a lot, and, for certain tasks, the risk
+    of needing to wait for until he gets a backup usb-stick key is too
+    much.
+
+    \item he doesn't want to be caught having cryptographic usb-stick keys,
+    because as such is an evidence that he has encrypted content.  the user
+    wants to have the choice to lie that he has no clue.  so not having
+    usb-stick keys with him helps his case to lie.
+
+    \item he wants to be torture-resistant so that an adversary cannot
+    forcefully take his keys from him in order to login into his services.
+    he may rather want to die than to give the password to the adversary.
+    this works because, so far, the brain is a pretty private information
+    store.
+\end{itemize}
+
+in this scenario, the user memorises a sensible password that he can
+remember, with enough initial entropy, and then uses \emph{ciphart},
+preferably with disk caching, to inject large amounts of entropy bits into
+his derived keys, way beyond the reach of pre-\emph{ciphart} key derivation
+functions; thanks to \cref{theorem_perfect_lie} and discovery
+\ref{discov_key_caching}.  
+
+here, the expensively derived key is only used to unlock a local password
+manager, which offers a protection against situations where a backup copy
+of the passwords database is stolen.  this may enable the user to store his
+passwords manager in an online file synchronisation service for more
+convenient system migrations to further reduce his login delays should he
+face the need to migrate to a new, say, personal computer.
+
+\begin{advertisement}
+    in case you're interested in such a passwords manager, i've also made
+    \emph{nsapass}\footnote{\url{https://github.com/Al-Caveman/nsapass}}
+    --- a flexible and a simple passwords manager in a few hundreds of
+    python lines of code, that uses \emph{ciphart} by default.  i think
+    this is the best command-line interfacing passwords manager by far, for
+    its usability, and for the fact that auditing it is easy, thanks for it
+    being only in a few hundreds of python lines.
+\end{advertisement}
+
+\subsection{a later-useful scenario}
+all input password fields will internally call \texttt{libciphart} to
+derive more expensive keys.  this way, applications, such as
+\emph{firefox}, \emph{mutt}, \ldots, will never send actual passwords, but
+will only send \emph{ciphart}-derived keys with increased shannon's entropy
+content.
+
+thanks to \cref{theorem_perfect_lie}, this will automatically increase
+shannon's entropy of all users' passwords without requiring users to
+memorise harder passwords.  thanks to discovery \ref{discov_key_caching},
+the user will not face any delay in his daily use, except only an initial
+delay to create the cache entry.
+
+i also think that it is \emph{generally} better to have expensive key
+derivation functions in the client side as opposed to the server side.
+because remote servers always have the incentive to reduce the complexity
+of the key derivation function in order to free more resources for other
+things that bring them money.
+
+either  way, \emph{ciphart} is perfectly usable on the server side.  it is
+just that i think \emph{ciphart}, \emph{argon2}, \emph{scrypt}, \ldots make
+better sense when placed on the client side.
+
+
 \vfill
 \break
 \appendix
 \section{donations}
-this work is sponsored by a bright nerdiness that has unexpectedly sparkled
+this work is sponsored by a bright nerdiness that has unexpectedly sparked
 somewhere in an endless dark space.  nothing here was supposed to happen.
 the cause  remains unknown, so we call it \emph{something random with large
 entropy}.
