@@ -380,22 +380,22 @@ more details on memory-harderness later.
 \subsubsection{potential adversary strategies}
 let's see what may the adversary try to do against a key caching system:
 \begin{itemize}
-    \item \textbf{adversary strategy 1:} hack into user's system and execute a
+    \item adversary strategy 1 --- hack into user's system and execute a
     program as that user that tries to read the password cache file to
     obtain the memory-harder key inside it.
 
     \textbf{answer:} he will not be able to read the file due to strict
     read permissions of the cached files as set earlier.
 
-    \item \textbf{adversary strategy 2:} steal user's hard disk and try to
-    mount it in his system, to login as root and chance permissions of the
-    key cache files.
+    \item adversary strategy 2 --- steal user's hard disk and try to mount
+    it in his system, to login as root and chance permissions of the key
+    cache files.
 
     \textbf{answer:} the partition where the cached files are saved are
     properly encrypted, so he can't see the cached files, let alone
     changing their read permissions.
 
-    \item \textbf{adversary strategy 3:} break into machine's \texttt{root}
+    \item adversary strategy 3 --- break into machine's \texttt{root}
     account.
 
     \textbf{answer:} he will succeed, but then he can also run a keylogger,
@@ -406,55 +406,108 @@ let's see what may the adversary try to do against a key caching system:
 \subsection{``simplification'' attempt}
 which one is simpler when, say, building a wooden house?  
 \begin{itemize}
-    \item option 1 --- use only a nail and, when you need a screw,
-    modify the nail into a screw. 
-    \item option 2 --- use a nail and a screw.
+    \item option 1 --- use only nails and, when you need screws,
+    modify some nails into screws.
+    \item option 2 --- use nails and screws.
 \end{itemize}
 
 on the surface, option 1 may appear as the simpler choice as it only uses
-nails, while \emph{option 2} uses both nails ans crews.
+nails, while option 2 uses both nails ans crews.
 
 but a deeper look shows that option 1 is actually a lie, as it is also
-using a nail and a screw, except that the screw is re-invented by modifying
-a nail.  so, my answer is that \emph{option 2} is the simpler choice.
+using screws alongside nails, except that the screws are re-invented by
+modifying nails.
 
-similarly, i think \emph{argon2}'s use of only a hashing function is rather
-a lie, as it effectively ends up re-inventing a symmetric block encryption
-algorithm off a hashing function for as far as a key derivation function is
-concerned.  here is how:
+my answer with \emph{ciphart} is that option 2 is the simpler choice
+because it removes the re-invention aspect, specially if the re-invented
+screws were worse than screws that were made as screws from the start.
+
+on the other hand, \emph{argon2} acts as if option 1 is better, which i
+think is wrong at every level.
+
+before i talk about how \emph{argon2} is an example of adopting the mistake
+in option 1, i want to define the nails and the screws of a key derivation
+function, strictly from the perspective of key derivation functions.  i.e.
+ignoring unrelated aspects, such as ability to decrypt.
+
+\begin{definition}[hashing functions as seen by key derivation
+functions]\label{def_kdf_hash}
+    a function that maps input to output such that:
+    \begin{itemize}
+        \item unlimited input --- input is an unbounded number of
+        concatenated data chunks.
+        \item compression --- input's shannon's entropy bits could be
+        larger than the total bit size of the output.
+        \item preserving entropy is tried --- output should have as much
+        entropy bits from the input, but entropy loss is possible.
+        \item walking backwards is extremely hard --- analysing the output
+        to find the input is computationally too hard.
+    \end{itemize}
+\end{definition}
+
+\begin{definition}[symmetric block encryption functions as seen by key
+derivation functions]\label{def_kdf_enc}
+    a function that maps input to output such that:
+    \begin{itemize}
+        \item limited input --- fixed sized data and a fixed sized
+        key.
+        \item preserving entropy is guaranteed --- no entropy loss is
+        possible.  the proof is that, if the encryption key is known, we
+        can bring back every input bit from the output by decryption.
+        \item walking backwards is extremely hard --- analysing the output
+        to find the input is computationally too hard.
+    \end{itemize}
+\end{definition}
+
+when \emph{argon2} completes solving the tasks in its memory pad, it
+derives the output key by hashing certain chunks of bytes in the pad.  the
+number of hashed chunks depends on pad's size, so it's not of a fixed size,
+and henceforth meets the properties of a hashing function shown in
+\cref{def_kdf_hash}.  therefore, \emph{argon2} using a hashing function at
+this stage is justified.
+
+when \emph{argon2} is solving tasks in the memory pad, it still uses a
+hashing function, despite the fact that it is strictly dealing with inputs
+of fixed lengths, which also meets the properties of a symmetric block
+encryption function in \cref{def_kdf_enc}.  here, \emph{argon2} better use
+a symmetric block encryption function instead of a hashing function.  using
+a hashing function here is a problem due to:
 \begin{itemize}
-    \item when \emph{argon2} uses a hashing function to compress
-    potentially large amounts of data to derive the final output key,
-    that's a fine use of a hashing function, because one of the tasks of a
-    hashing is to do such compression.
+    \item re-invention of wheels --- having \emph{argon2} concatenate two
+    inputs of a fixed size in order to derive an output of the same size is
+    effectively an attempt to re-invent a symmetric block encryption
+    function.  i.e. the concatenation is used to emulate the effect of
+    having a pre-shared key which exists in symmetric block encryption
+    functions.  why re-invent keys by concatenation when there exists
+    functions that already have keys?
 
-    \item but when \emph{argon2} uses a hashing function to solve tasks in
-    the memory pad, it tries to use a hashing function to emulate the
-    behavior of a symmetric block encryption function, for as long as a key
-    derivation function is concerned.
+    \item needless risk of entropy loss --- using a hashing function when
+    dealing with fixed input sizes needlessly increases the probability of
+    having potential entropy losses.  this is due to the fact that hashing
+    functions \emph{try} to preserve input's entropy, but cannot guarantee
+    it, while symmetric block ciphers \emph{do} guarantee it.  so why have
+    the possibility of losing entropy bits when you don't have to?
 
-    i.e. when \emph{argon2} concatenates previous task's hash against a
-    randomly picked task's hash in order to compute next task's hash, it is
-    effectively trying to re-invent the idea of a pre-shared key, for as
-    long as a key derivation function is concerned.
+    \item slower memory filling rate --- generally speaking, hashing
+    functions tend to be slower than symmetric block encryption functions.
+    this is because of dealing with compression is harder than not.
 
-    why so?  because there is no compression here, so why use a hashing
-    function?  why not use a symmetric block cipher, and randomly pick the
-    key instead of emulating a key using concatenation?
-\end{itemize}
+    symmetric block ciphers guarantee preserving input's entropy in the
+    output with much less effort thanks to the fact that the output is at
+    least as large as the input.  
 
-but why bother?  because:
-\begin{itemize}
-    \item re-inventing things are more expensive than not.
-    \item hashing functions are generally more expensive than symmetric
-    block encryption functions.  i think this is because hashing functions
-    also have the duty of compression, shile symmetric block encryption
-    functions don't.
+    but hashing functions don't have the luxury of having an output that's
+    as large as the input, thus they need to work a lot more in order to
+    ensure that no input entropy is needlessly lost.
+
+    this slowness is bad as it reduces number of passes over the memory pad in
+    a unit of time.  more passes over the memory pad are important for
+    strengthening the memory hardness.
 \end{itemize}
 
 \begin{attempt}[simplification]\label{attempt_simplification}
-    use hashing functions only when compression happens.  when no
-    compression takes place, use a block encryption function instead.
+    use hashing functions only when compression happens.  otherwise, use
+    symmetric block encryption functions.
 \end{attempt}
 
 \section{ciphart}
@@ -502,11 +555,11 @@ but why bother?  because:
                 & this is the size of the encryption key that's used to
                     solve \emph{ciphart}'s tasks.  this is different than
                     output key's size, $K$, which is $\enc$-independent.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $\hat T$    & $\gets \maxf(\lceil V C^{-1}\rceil, T)$.  this
                     is to ensure that we have enough encrypted bytes for
                     new keys.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $\hat T$    & $\gets \hat T - (\hat T \bmod 2) + 2$.  this is to ensure
                     that there is an even number of tasks in a segment.
                     why?  because we need a buffer for storing the
@@ -519,8 +572,6 @@ but why bother?  because:
                     nice if the last segments were of unequal sizes.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $n$    & $\gets 0$.  actual number of times $\enc$ is called.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
@@ -767,9 +818,6 @@ either  way, \emph{ciphart} is perfectly usable on the server side.  it is
 just that i think \emph{ciphart}, \emph{argon2}, \emph{scrypt}, \ldots make
 better sense when placed on the client side.
 
-
-\vfill
-\break
 \appendix
 \section{donations}
 this work is sponsored by a bright nerdiness that has unexpectedly sparked
