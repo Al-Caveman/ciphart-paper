@@ -51,11 +51,11 @@ com}.}\\
 \noindent\textbf{synopsis---}\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
 is a fast and simple memory-hard key derivation function.  compared to
 \emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
-\emph{argon2} is better, specially for its simplicity.  but i argue that
+\emph{argon2} is better, specially for its simplicity.  but i claim that
 \emph{argon2} is not fast enough, not memory-hard enough, and its
 contribution to our security is not simple enough to understand.
 
-so i propose \emph{ciphart}, which is:
+henceforth, i propose \emph{ciphart}, which is:
 \begin{itemize}
     \item easier --- because its security contribution is measured in the
     unit of shannon's entropy.  i.e. when \emph{ciphart} derives a key for
@@ -82,10 +82,11 @@ so i propose \emph{ciphart}, which is:
     encryption functions when encryption functions are more suited.  this
     is thanks to my ``simplification'' attempt.
 
-    \emph{argon2} incorrectly limits itself to use only a hashing function.
-    at the surface it may appear simpler, but it is actually more wasteful
-    of resources, requires re-inventing more wheels, and needlessly
-    increases function's total assumptions.
+    \emph{argon2} incorrectly limits itself to only use a hashing function.
+    at the surface it may appear simpler, but it is actually more complex
+    as it ends up re-inventing what resembles a symmetric block encryption
+    function off the hashing function, except for being slower and with
+    potential entropy loss.
 \end{itemize}
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
@@ -182,7 +183,7 @@ then, if $\hash$ is not broken,  (\ref{eq_cost_passbruteforce}) becomes:
                   &= 2^{H(p) + \log_2 N}
     \end{split}
 \end{equation}
-and the $\log_2$-scaled becomes $H(p) + \log_2 N$.
+and the $\log_2$-scaled version becomes $H(p) + \log_2 N$.
 
 at this point, thanks to cryptographic guarantees concerning properties of
 hashing functions, there is absolutely no security distinction from
@@ -415,20 +416,22 @@ on the surface, option 1 may appear as the simpler choice as it only uses
 nails, while option 2 uses both nails ans crews.
 
 but a deeper look shows that option 1 is actually a lie, as it is also
-using screws alongside nails, except that the screws are re-invented by
-modifying nails.
+using screws alongside nails, except that the screws are constrained by
+being re-invented by modifying nails.  in other words, option 1 has the
+extra assumption that its screws must be made using nails, while option 2
+does not have this extra assumption.  hence option 2 is actually simpler.
 
 my answer with \emph{ciphart} is that option 2 is the simpler choice
 because it removes the re-invention aspect, specially if the re-invented
 screws were worse than screws that were made as screws from the start.
 
-on the other hand, \emph{argon2} acts as if option 1 is better, which i
-think is wrong at every level.
+on the other hand, when \emph{argon2} acts as if option 1 is better, which
+is wrong at every level.
 
-before i talk about how \emph{argon2} is an example of adopting the mistake
-in option 1, i want to define the nails and the screws of a key derivation
-function, strictly from the perspective of key derivation functions.  i.e.
-ignoring unrelated aspects, such as ability to decrypt.
+before i write about how \emph{argon2} is an example of adopting the
+mistake in option 1, i want to define the nails and the screws of a key
+derivation function, strictly from the perspective of key derivation
+functions.
 
 \begin{definition}[hashing functions as seen by key derivation
 functions]\label{def_kdf_hash}
@@ -575,8 +578,7 @@ a hashing function here is a problem due to:
     $n$    & $\gets 0$.  actual number of times $\enc$ is called.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
-    $n_l$       & $\gets lG\hat T$.  nonce variable for $l^{th}$ lane with
-                    at least $64$ bits.\\
+    $n_l$       & $\gets \maxf(\text{nonce})L^{-1}l$.  nonce variable for $l^{th}$ lane.\\
     $f$         & $\gets 0$.  a counter indicating number of times
                     memory is filled with $\hat M$ many bytes.\\
     $d$         & $\gets 0$.  a counter indicating total number of saved
@@ -600,6 +602,9 @@ $k$ & $K$-bytes key.\\
 $n$ & total number of times $\enc$ was actually called.  $\log_2 n$ is
         total number shannon's entropy bits that \emph{ciphart} injected
         into $k$, such that $\log_2 n \ge B$.\\
+$\hat M$ & actual number of bytes required to exist in random-access
+            memory.\\
+$d$     & actual number of bytes required to exist in hard-disk.\\
 \end{tabularx}
 
 \subsubsection{steps}
@@ -610,8 +615,8 @@ from a password independent variant.
 
 \begin{algorithm}
 \If{$Y$ {\bf and} $\fexists(Z)$}{\label{ciphart_cache_hit}
-    $k, n \gets \fread(Z, 0, V + \sizeof(n))$\;
-    \Return{$k, n$}
+    $k, n, d \gets \fread(Z, 0, V + \sizeof(k\Vert n\Vert d))$\;
+    \Return{$k, n, d$}
 }
 \While{$1$}{
     \For{$g \gets 0, 1, \ldots, G-1$}{
@@ -654,7 +659,7 @@ from a password independent variant.
                 $q \gets q + 1$\;
                 $h \gets 0$\;
             }
-            \If{$f \ge 2$ \bf and $q \ge 1$ \bf and $n \ge 2^B$}{
+            \If{$f \ge 1$ \bf and $q \ge 1$ \bf and $n \ge 2^B$}{
                 $g_{\text{last}} \gets g$\;
                 \textbf{go to} \cref{ciphart_out}\;
             }
@@ -665,10 +670,10 @@ from a password independent variant.
 $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
 \If{$Y$}{\label{ciphart_cache_miss}
-    $\fwrite(Z, v \Vert n)$\;
+    $\fwrite(Z, k \Vert n \Vert d)$\;
 }
 $\delete(F)$\;
-\Return{$k$, $n$}
+\Return{$k, n, d$}
 \caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
@@ -681,9 +686,8 @@ cores, specially when segment sizes, $T$, are larger.
 
 \subsubsection{memory-hardness}
 \begin{proof}
-    \cref{alg_ciphart} is just a variation of \emph{argon2d}, except that
-    it uses an encryption function, $\enc$, instead of a hashing function.
-    so if \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
+    \cref{alg_ciphart} is just a variation of \emph{argon2d}.  so if
+    \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
 \end{proof}
 
 
@@ -818,12 +822,13 @@ either  way, \emph{ciphart} is perfectly usable on the server side.  it is
 just that i think \emph{ciphart}, \emph{argon2}, \emph{scrypt}, \ldots make
 better sense when placed on the client side.
 
+\vfill
+\break
 \appendix
 \section{donations}
-this work is sponsored by a bright nerdiness that has unexpectedly sparked
-somewhere in an endless dark space.  nothing here was supposed to happen.
-the cause  remains unknown, so we call it \emph{something random with large
-entropy}.
+this work is sponsored by a bright nerdiness that sparked unexpectedly.
+nothing here was supposed to happen.  the cause  remains unknown, so we
+call it \emph{something random with large entropy}.
 
 ancient mythology has it that, every time a donation is made for a good
 cause, a beautiful torch is kindled somewhere deep within an otherwise cold
