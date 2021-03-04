@@ -11,7 +11,7 @@
 \newtheorem{definition}{definition}
 \newtheorem{theorem}{theorem}
 \newtheorem{discovery}{discovery}
-\newtheorem{attempt}{attempt}
+\newtheorem{law}{law}
 \newtheorem{advertisement}{advertisement}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\fexists}{\mathtt{exists}}
@@ -80,7 +80,7 @@ henceforth, i propose \emph{ciphart}, which is:
     \item faster --- because it does not abuse hashing functions.
     it uses hashing functions when using them is more suited, and uses
     encryption functions when encryption functions are more suited.  this
-    is thanks to my ``simplification'' attempt.
+    is thanks to my ``hashing is only for compression'' law.
 
     \emph{argon2} incorrectly limits itself to only use a hashing function.
     at the surface it may appear simpler, but it is actually more complex
@@ -257,8 +257,9 @@ bits, where $M$, $A$ and $N$ are all positive numbers.
 
 then caveman's entropy says that the following keys are information
 theoretically indistinguishable for as long as only $p$ and $\hat p$ remain
-unknown (everything else is known, such as the distribution from which $p$
-and $\hat p$ was sampled), and for as long as $\hash$ is not broken:
+unknown\footnote{everything else is known, such as the distribution from
+which $p$ and $\hat p$ was randomly sampled.}, and for as long as $\hash$
+is not broken:
 \begin{itemize}
     \item $k \gets \mhash(p \Vert s, N, M)$
     \item $\hat k \gets \hash(\hat p \Vert s)$
@@ -300,8 +301,8 @@ so you have to pick only one of these options:
 \end{enumerate}
 
 \begin{theorem}
-    [perfect lie\footnote{i call \cref{theorem_perfect_lie} \emph{ perfect
-    lie} in a sense that a perfect lie is indistinguishable from truth.}]
+    [perfect lie\footnote{a lie is perfect if it is indistinguishable from
+    truth.}]
     \label{theorem_perfect_lie}
     for as long as password $p$ remains a secret and $\hash$ is not broken,
     derived keys $k_1 = \rhash(p, \ldots, N)$ and $k_2 = \mhash(p, \ldots,
@@ -404,7 +405,7 @@ let's see what may the adversary try to do against a key caching system:
     who do not use key caching, such as \emph{scrypt}, \emph{argon2}, etc.
 \end{itemize}
 
-\subsection{``simplification'' attempt}
+\subsection{``hashing is only for compression'' law}
 which one is simpler when, say, building a wooden house?  
 \begin{itemize}
     \item option 1 --- use only nails and, when you need screws,
@@ -508,10 +509,10 @@ a hashing function here is a problem due to:
     strengthening the memory hardness.
 \end{itemize}
 
-\begin{attempt}[simplification]\label{attempt_simplification}
+\begin{law}[hashing is only for compression]\label{law_simplification}
     use hashing functions only when compression happens.  otherwise, use
     symmetric block encryption functions.
-\end{attempt}
+\end{law}
 
 \section{ciphart}
 \subsection{the algorithm}
@@ -826,9 +827,9 @@ better sense when placed on the client side.
 \break
 \appendix
 \section{donations}
-this work is sponsored by a bright nerdiness that sparked unexpectedly.
+this work is sponsored by a bright nerdiness that has unexpectedly sparked.
 nothing here was supposed to happen.  the cause  remains unknown, so we
-call it \emph{something random with large entropy}.
+call it \emph{something random with a large entropy}.
 
 ancient mythology has it that, every time a donation is made for a good
 cause, a beautiful torch is kindled somewhere deep within an otherwise cold
