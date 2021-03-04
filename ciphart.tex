@@ -9,6 +9,7 @@
 \usepackage{amssymb}
 \newtheorem{security}{security interpretation}
 \newtheorem{definition}{definition}
+\newtheorem{lemma}{lemma}
 \newtheorem{theorem}{theorem}
 \newtheorem{discovery}{discovery}
 \newtheorem{law}{law}
@@ -61,7 +62,7 @@ henceforth, i propose \emph{ciphart}, which is:
     unit of shannon's entropy.  i.e. when \emph{ciphart} derives a key for
     you, it tells you that it has \emph{injected} a specific guaranteed
     quantity of shannon's entropy bits into your derived key.  this is
-    possible thanks to my invention, the ``perfect lie'' theorem.
+    possible thanks to my invention, the ``entropy injection'' theorem.
 
     this offers a great help as it gives us yet another much simpler
     approach to quantify our security gain as opposed to being limited to
@@ -77,10 +78,10 @@ henceforth, i propose \emph{ciphart}, which is:
     much more security while eventually becoming much faster as well, and
     the adversary cannot get my cache even if he steals my hard-disks.
 
-    \item faster --- because it does not abuse hashing functions.
-    it uses hashing functions when using them is more suited, and uses
-    encryption functions when encryption functions are more suited.  this
-    is thanks to my ``hashing is only for compression'' law.
+    \item faster --- because it does not abuse hashing functions.  it uses
+    hashing functions when using them is more suited, and uses encryption
+    functions when encryption functions are more suited.  this is thanks to
+    my ``hashing is only for compression'' law.
 
     \emph{argon2} incorrectly limits itself to only use a hashing function.
     at the surface it may appear simpler, but it is actually more complex
@@ -103,8 +104,11 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \tableofcontents
 
 \section{background}
+\subsection{shannon's entropy}
 we've got password $p$ with $H(p)$ many shannon's entropy bits worth of
-information in it.  so what does this mean?
+information in it.  so what does this mean\footnote{say that $H(p)$ was
+calculated using the base $2$ logarithm, $\log_2$.  all shannon's entropies
+in this paper are calculated this way.}?
 
 fundamentally, it means that, on average, we'd need to ask $H(p)$ many
 perfect binary questions\footnote{one which, if answered, and on average,
@@ -151,15 +155,18 @@ becomes just:
 \end{equation}
 
 further, for convenience, it seems that people report it in the $\log_2$
-scale.  i.e. $\log_2 2^{H(p)} = H(p)$.  i think this is why people use
-password entropy as a measure of its security.  not because it is the
-quantity of security, but rather because its the quantity of
-\emph{simplified} security.  
+scale.  i.e.:
+\begin{equation}\label{eq_pass_entropy}
+    \log_2 2^{H(p)} = H(p)
+\end{equation}
 
-i like this shannon's entropy-based simplified security quantity, so i'm
-going to build on it.
+i think this is why people use shannon's entropy of passwords as a measure
+of their security.  not because it is the quantity of security, but rather
+because its the quantity of \emph{simplified} security.
 
-\section{fundamental ideas}
+i like using shannon's entropy as a measure of simplified security
+quantity, so i'm going to build on it.
+
 \subsection{caveman's entropy}
 \subsubsection{recursive $\hash$: $\rhash$}
 if the $\hash$ function is replaced by an $N$-deep recursion over $\hash$,
@@ -183,38 +190,26 @@ then, if $\hash$ is not broken,  (\ref{eq_cost_passbruteforce}) becomes:
                   &= 2^{H(p) + \log_2 N}
     \end{split}
 \end{equation}
-and the $\log_2$-scaled version becomes $H(p) + \log_2 N$.
+and the $\log_2$ scaled version becomes:
+\begin{equation}\label{eq_pass_cavemanentropy_mhash}
+    H(p) + \log_2 N
+\end{equation}
 
-at this point, thanks to cryptographic guarantees concerning properties of
-hashing functions, there is absolutely no security distinction from
-adversary's point of view between a password with shannon's $H(p) + \log_2
-N$ entropy bits, and a password with just $H(p)$ entropy bits that made use
-of the $N$-deep recursive calls of $\hash$.
+obviously (\ref{eq_pass_cavemanentropy_mhash}), which represents the log
+scaled version of the simplified security of password $p$ when hashed using
+$\mhash$, is no longer equivalent to $p$'s shannon's entropy as was the
+case in (\ref{eq_pass_entropy}) when the same password $p$ was hashed by
+using just $\hash$.
 
-shannon's entropy of $p$ remains $H(p)$, but thanks to the recursive calls
-of $\hash$, that password will be as expensive as another password $\hat
-p$, such that $H(\hat p) = H(p) + \log_2 N$.
-
-i think it will be simpler if we introduce the function-dependent caveman's
-entropy $C$ as a measure.  it goes like this:
+i think (\ref{eq_pass_cavemanentropy_mhash}) better have a name.  i propose
+to call it caveman's entropy, $C$, which i define to be function dependent.
+it goes like this:
 \begin{equation}
     C\Big(p, \hash(\ldots)\Big) = H(p)
 \end{equation}
-
 \begin{equation}
-    C\Big(\hat p, \hash(\ldots)\Big) = H(p) + \log_2 N
+    C\Big(p, \rhash(\ldots, N)\Big) = H(p) + \log_2 N
 \end{equation}
-
-\begin{equation}
-    \begin{split}
-        C\Big(p, \rhash(\ldots, N)\Big) &= H(p) + \log_2 N \\
-                                &= H(\hat p) \\
-    \end{split}
-\end{equation}
-
-security-wise, there is no distinction between the more complex password
-$\hat p$, and the simpler password $p$ that used $\rhash(\ldots, N)$.  so i
-really think we need to measure password security in $C$ instead of $H$.
 
 \subsubsection{memory-hard $\hash$: $\mhash$}
 let $\mhash$ be like $\rhash$, except that it also requires $M$ many memory
@@ -250,10 +245,39 @@ and caveman's entropy becomes:
     C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-A)\log_2 N
 \end{equation}
 
-\subsection{``perfect lie'' theorem}
-let $p$ be a password with $H(p)$ shannon's entropy bits.  let $\hat p$ be
-a more complex password with $H(p) + e(M-A)\log_2 N$ shannon's entropy
-bits, where $M$, $A$ and $N$ are all positive numbers.
+\section{fundamental ideas}
+
+\subsection{``entropy injection'' theorem}
+\subsubsection{mental warm up}
+say that $x$ is something that all ambiguities about it are resolved after
+getting $100$ perfect binary questions, $q_0, q_1, \ldots, q_{99}$,
+answered.  we say that that's its $\log_2$-based shannon's entropy, right?
+i.e. $H(x) = 100$.
+
+what about another thing $y$, which all ambiguities about it are resolved
+after getting $10$ questions, $\hat q_0, \hat q_1, \ldots, \hat q_{9}$,
+answered, such that each question $\hat q_i$ is made of $10$ perfect binary
+questions $q_{i10+0}, q_{i10+1}, \ldots, q_{i10+9}$?  what's the entropy of
+$y$?
+
+$H(y) = 100$, because simply bundling $10$ perfect binary questions
+together, and calling them $\hat q_i$ won't change the fact that the total
+perfect number of perfect binary questions that need to be answered is
+still $10 \times 10 = 100$.
+
+so, $H(x) = H(y) = 100$ because question bundling doesn't reduce the
+information content.
+
+\begin{lemma}
+    bundling perfect binary questions, about a thing, into fewer super
+    questions, doesn't reduce thing's information content.
+\end{lemma}
+
+\subsubsection{the real deal}
+
+let $p$ be a password with $H(p)$ many shannon's entropy bits.  let $\hat
+p$ be a more complex password with $H(p) + e(M-A)\log_2 N$ many shannon's
+entropy bits, where $M$, $A$ and $N$ are positive numbers, and $M > A$.
 
 then caveman's entropy says that the following keys are information
 theoretically indistinguishable for as long as only $p$ and $\hat p$ remain
@@ -300,10 +324,7 @@ so you have to pick only one of these options:
     symmetric-encryption functions functions do not exist.
 \end{enumerate}
 
-\begin{theorem}
-    [perfect lie\footnote{a lie is perfect if it is indistinguishable from
-    truth.}]
-    \label{theorem_perfect_lie}
+\begin{theorem}[entropy injection] \label{theorem_perfect_lie}
     for as long as password $p$ remains a secret and $\hash$ is not broken,
     derived keys $k_1 = \rhash(p, \ldots, N)$ and $k_2 = \mhash(p, \ldots,
     N, M)$ will have their shannon's entropies, $H(k_1)$ and $H(k_2)$,
@@ -586,7 +607,7 @@ a hashing function here is a problem due to:
                     blocks into hard-disk.\\
     $h$         & $\gets 0$.  a counter indicating number of processed lane
                     segments since the last hard-disk read.\\
-    $q$         & $\gets 0$.  a counter indicating number of times key was
+    $u$         & $\gets 0$.  a counter indicating number of times key was
                     updated from the hard-disk.\\
     $*v$         & $\gets *\hash(P \Vert S \Vert M \Vert D \Vert \ldots
                     \Vert K, V)$.  a pointer to the first byte where
@@ -657,10 +678,10 @@ from a password independent variant.
             $h \gets h + L$\;
             \If{$h \ge H$}{\label{ciphart_D_using}
                 $*v \gets *\fread(F, v \bmod (d - V), V)$\;
-                $q \gets q + 1$\;
+                $u \gets u + 1$\;
                 $h \gets 0$\;
             }
-            \If{$f \ge 1$ \bf and $q \ge 1$ \bf and $n \ge 2^B$}{
+            \If{$f \ge 1$ \bf and $u \ge 1$ \bf and $n \ge 2^B$}{
                 $g_{\text{last}} \gets g$\;
                 \textbf{go to} \cref{ciphart_out}\;
             }
