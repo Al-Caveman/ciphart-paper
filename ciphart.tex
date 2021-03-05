@@ -113,7 +113,7 @@ in this paper are calculated this way.}?
 fundamentally, it means that, on average, we'd need to ask $H(p)$ many
 perfect binary questions\footnote{one which, if answered, and on average,
 gets the search space reduced in half.} in order to fully resolve all
-ambiguities about $p$; i.e.  to fully get every bit of $p$.  
+ambiguities about $p$; i.e.  to fully get every bit of $p$.
 
 but people use it to do less orthodox things, such as quantifying the
 amount of security $p$ has against, say, brute-forcing attacks.
@@ -250,15 +250,15 @@ and caveman's entropy becomes:
 \subsection{``entropy injection'' theorem}
 \subsubsection{mental warm up}
 say that $x$ is something that all ambiguities about it are resolved after
-getting $100$ perfect binary questions, $q_0, q_1, \ldots, q_{99}$,
-answered.  we say that that's its $\log_2$-based shannon's entropy, right?
-i.e. $H(x) = 100$.
+getting, on average, $100$ many perfect binary questions, $q_0, q_1,
+\ldots, q_{99}$, answered.  we say that that's its $\log_2$-based shannon's
+entropy, right?  i.e. $H(x) = 100$.
 
 what about another thing $y$, which all ambiguities about it are resolved
-after getting $10$ questions, $\hat q_0, \hat q_1, \ldots, \hat q_{9}$,
-answered, such that each question $\hat q_i$ is made of $10$ perfect binary
-questions $q_{i10+0}, q_{i10+1}, \ldots, q_{i10+9}$?  what's the entropy of
-$y$?
+after getting, on average, $10$ many questions, $\hat q_0, \hat q_1,
+\ldots, \hat q_{9}$, answered, such that each question $\hat q_i$ is made
+of $10$ perfect binary questions $q_{i10+0}, q_{i10+1}, \ldots, q_{i10+9}$?
+what's the entropy of $y$?
 
 $H(y) = 100$, because simply bundling $10$ perfect binary questions
 together, and calling them $\hat q_i$ won't change the fact that the total
@@ -274,87 +274,83 @@ information content.
 \end{lemma}
 
 \subsubsection{the real deal}
+say that $p$ is a password that all ambiguities about it are resolved after
+getting, on average, $H(p)$ many perfect binary questions, $q_0, q_1,
+\ldots, q_{H(p)-1}$, answered.
 
-let $p$ be a password with $H(p)$ many shannon's entropy bits.  let $\hat
-p$ be a more complex password with $H(p) + e(M-A)\log_2 N$ many shannon's
-entropy bits, where $M$, $A$ and $N$ are positive numbers, and $M > A$.
-
-then caveman's entropy says that the following keys are information
-theoretically indistinguishable for as long as only $p$ and $\hat p$ remain
-unknown\footnote{everything else is known, such as the distribution from
-which $p$ and $\hat p$ was randomly sampled.}, and for as long as $\hash$
-is not broken:
+case 1 --- say that the adversary got $p$'s hash, $k \gets \hash(p \Vert s,
+8V)$, and that his goal is to find out $p$ by brute-forcing.  in this case,
+the adversary will be considering password candidates $p_0, p_, \ldots,
+p_{H(p)-1}$, and tests them by asking the following binary questions in
+order to guarantee finding $p$:
 \begin{itemize}
-    \item $k \gets \mhash(p \Vert s, N, M)$
-    \item $\hat k \gets \hash(\hat p \Vert s)$
+    \item $q_0$: is $\hash(p_0 \Vert s, 8V) = k$?
+    \item $q_1$: is $\hash(p_1 \Vert s, 8V) = k$?
+
+    $\vdots$
+
+    \item $q_{H(p)-1}$: is $\hash(p_{H(p)-1} \Vert s, 8V) = k$?
 \end{itemize}
 
-in other words:
-\begin{equation}
-    C\Big(p, \mhash(\ldots, N, M)\Big) = H(\hat p)
-\end{equation}
+case 2 --- say that $\mhash$,was used instead of just $\hash$;  i.e. the
+adversary got $\hat k \gets \rhash(p \Vert s, 8V, N)$ instead.  in this
+case, the adversary will seek to answer the following binary questions:
+\begin{itemize}
+    \item $\hat q_0$: is $\rhash(p_0 \Vert s, 8V, N) = k$?
+    \item $\hat q_1$: is $\rhash(p_1 \Vert s, 8V, N) = k$?
 
-since the assumption that passwords are kept away from the adversary is
-fundamental in a symmetric encryption context, i think it makes since that
-we measure our security with memory-hard key derivation functions using the
-caveman's entropy $C$ instead of shannon's entropy $H$.
+    $\vdots$
 
-from a security point of view, it will feel absolutely identical to as if
-the password got injected with extra shannon's entropy bits.  no one can
-tell the difference for as long as the fundamental assumption of hiding
-passwords is honoured, as well as the hashing function $\hash$ is not
-broken.
+    \item $\hat q_{H(p)-1}$: is $\rhash(p_{H(p)-1} \Vert s, 8V, N) = k$?
+\end{itemize}
 
-in other words, we can say, if password $p$ is unknown, and $\hash$ is not
-broken, then we have injected into $p$ extra shannon's entropy bits.  this
-lie will be only discovered after $p$ is revealed.
+so, you may say that we're still in need to ask, on average, $H(p)$ many
+perfect binary questions, right?  i disagree.
 
-if you think that it is impossible for this \emph{lie} to be \emph{truth}
-under the secrecy of $p$, then i've done an even better job: proving that
-cryptographically secure hashing functions do not exist.  likewise, same
-can be trivially extended to: cryptographically symmetric ciphers do not
-exist.
+i think what is happening with $\rhash$ is that each question $\hat q_0,
+\hat q_1, \ldots \hat q_{H(p)-1}$ is a \emph{bundled} question, each,
+containing $N$ many perfect binary questions.
 
-so you have to pick only one of these options:
-\begin{enumerate}
-    \item either accept that the lie is truth.  i.e. accept that we've
-    injected shannon's entropy bits into $p$, for as long as only $p$ is
-    not revealed.
-    \item or, accept that cryptographically-secure hashing and
-    symmetric-encryption functions functions do not exist.
-\end{enumerate}
+i.e., for any question $\hat q_i$, answering it is equivalent to answering
+the $N$-deep recursion over $\hash$:
+\[
+    \text{$\hat q_i$: is }\hash(\hash(\ldots\hash(p_i \Vert s, 8V), \ldots,
+    8V), 8V) = k \text{?}
+\]
+which its answer is ``yes'' if and only if all of the following $N$ many
+questions are answered by ``yes'':
+\begin{itemize}
+    \item is $\hash(p_i \Vert s, 8V) = k_0$?
+    \item is $\hash(k_0 \Vert s, 8V) = k_1$?
+    \item is $\hash(k_1 \Vert s, 8V) = k_2$?
 
-\begin{theorem}[entropy injection] \label{theorem_perfect_lie}
-    for as long as password $p$ remains a secret and $\hash$ is not broken,
-    derived keys $k_1 = \rhash(p, \ldots, N)$ and $k_2 = \mhash(p, \ldots,
-    N, M)$ will have their shannon's entropies, $H(k_1)$ and $H(k_2)$,
-    increase beyond $H(p)$ in order to equate their caveman's entropies
-    $C(p, \rhash(\ldots, N))$ and $C(p, \mhash(\ldots, N, M))$,
-    respectively.
+    $\vdots$
+
+    \item is $\hash(k_{N-1} \Vert s, 8V) = k$?
+\end{itemize}
+
+meaning, if any $\hat q_i$ question is answered, it necessarily means that
+we have answered $N$ many $q_i$-like questions.  if answer to $\hat q_i$ is
+``yes'', it means that the answer to each of those $N$ many $q_i$-like
+questions is also ``yes''.  if answer to $\hat q_i$ is ``no'', it also
+means that the answer to each of those $N$ many questions is also
+``no''\footnote{unless hashing collisions happen, which is very unlikely.}.
+
+in other words, functions $\rhash$ and $\mhash$ are using cryptography to
+force the adversary to need to answer more questions beyond $H(p)$.
+$\rhash$ increases questions by a factor of $N$.  $\mhash$ increases
+questions by a factor of $N^{e(M-A)}$.
+
+\begin{theorem}[entropy injection] \label{theorem_entropy_injection}
+    for any password $p$, and any positive numbers $V$, $N$ and $M$:
+    \[
+        H\Big(\rhash(p\Vert s, 8V, N)\Big) = C\Big(p, \rhash(\ldots, N)\Big)
+    \]
+    \[
+        H\Big(\mhash(p\Vert s, 8V, N, M)\Big) = C\Big(p, \mhash(\ldots, N,
+        M)\Big)
+    \]
 \end{theorem}
-
-the reason this lie is appealing is because it simplifies our
-quantification of the amount of security that we have gained by using a
-given key derivation function, such as $\rhash$ or $\mhash$.
-
-without treating this lie as truth, our only hope would be surveying the
-asics industry.  but with this lie, we have one more approach to get a feel
-of the gained security quantity by just accepting caveman's entropy $C$ as
-shannon's entropy $H$, and move on as if the lie is truth, and no one can
-notice it.
-
-we can also look at it from the perspective of \emph{occam's razor}.  i.e.
-if two things are not distinguishable from one another, then assuming that
-they are just the same thing is simpler than assuming otherwise.  
-
-to be more specific about \emph{occam's razor}: (1) each assumption bit has
-a positive probability of error by definition, (2) since assuming that
-indistinguishable things are different than one another is more complex
-(i.e. more assumption bits) than assuming not, and (3) since there is no
-observable difference between the two things, therefore it necessarily
-follows that our model's total error will be reduced if we accept that the
-indistinguishable things are identical (i.e.  which is what
-\cref{theorem_perfect_lie} says).
 
 \subsection{``cacheable keys'' discovery}
 \begin{discovery}[cacheable keys]\label{discov_key_caching}
@@ -385,7 +381,7 @@ indistinguishable things are identical (i.e.  which is what
 
     this only requires to trust the user \texttt{root}, which is already
     trusted by almost everyone.  so we are not introducing a new
-    assumption.  
+    assumption.
 \end{itemize}
 
 for most people, if \texttt{root} is compromised, then the adversary
@@ -427,7 +423,7 @@ let's see what may the adversary try to do against a key caching system:
 \end{itemize}
 
 \subsection{``hashing is only for compression'' law}
-which one is simpler when, say, building a wooden house?  
+which one is simpler when, say, building a wooden house?
 \begin{itemize}
     \item option 1 --- use only nails and, when you need screws,
     modify some nails into screws.
@@ -519,7 +515,7 @@ a hashing function here is a problem due to:
 
     symmetric block ciphers guarantee preserving input's entropy in the
     output with much less effort thanks to the fact that the output is at
-    least as large as the input.  
+    least as large as the input.
 
     but hashing functions don't have the luxury of having an output that's
     as large as the input, thus they need to work a lot more in order to
@@ -564,7 +560,7 @@ a hashing function here is a problem due to:
                         64 \text{ bytes} & \text{if $\enc$ is
                                             \emph{xchacha20}}\\
                         16 \text{ bytes} & \text{if $\enc$ is \emph{aes}}\\
-                        \ldots & \\
+                        \vdots & \\
                      \end{cases}$\\
                 & this to reflect the block size of the encryption
                     algorithm that implements $\enc$.\\
@@ -575,7 +571,7 @@ a hashing function here is a problem due to:
                             \emph{aes-128}}\\
                         32 \text{ bytes} & \text{if $\enc$ is
                             \emph{aes-256}}\\
-                        \ldots & \\
+                        \vdots & \\
                      \end{cases}$\\
                 & this is the size of the encryption key that's used to
                     solve \emph{ciphart}'s tasks.  this is different than
@@ -726,7 +722,7 @@ becomes possible.  this process goes like this:
 
     optimising this hard-disk filling with $D$ bytes is not a big deal,
     since this feature is probably going to be used only once; thanks to
-    key caching.  that said: 
+    key caching.  that said:
     \begin{itemize}
         \item this feature is optional.  i.e. in case someone doesn't like
         the hard-disk caching, he can set $D \gets 0$ to disable it.  but,
@@ -774,7 +770,7 @@ becomes possible.  this process goes like this:
 user has a password manager which generates unique $256$ bit entropy keys for
 each online service that he uses.  the user also renews keys for his online
 services every now and then.   so his online accounts generally have high
-security.  
+security.
 
 but user's problem is how to lock and unlock his password manager's
 passwords database.  should he use a physical usb-stick key that types a
@@ -801,8 +797,8 @@ in this scenario, the user memorises a sensible password that he can
 remember, with enough initial entropy, and then uses \emph{ciphart},
 preferably with disk caching, to inject large amounts of entropy bits into
 his derived keys, way beyond the reach of pre-\emph{ciphart} key derivation
-functions; thanks to \cref{theorem_perfect_lie} and discovery
-\ref{discov_key_caching}.  
+functions; thanks to \cref{theorem_entropy_injection} and discovery
+\ref{discov_key_caching}.
 
 here, the expensively derived key is only used to unlock a local password
 manager, which offers a protection against situations where a backup copy
@@ -828,11 +824,11 @@ derive more expensive keys.  this way, applications, such as
 will only send \emph{ciphart}-derived keys with increased shannon's entropy
 content.
 
-thanks to \cref{theorem_perfect_lie}, this will automatically increase
-shannon's entropy of all users' passwords without requiring users to
-memorise harder passwords.  thanks to discovery \ref{discov_key_caching},
-the user will not face any delay in his daily use, except only an initial
-delay to create the cache entry.
+thanks to \cref{theorem_entropy_injection}, this will automatically
+increase shannon's entropy of all users' passwords without requiring users
+to memorise harder passwords.  thanks to discovery
+\ref{discov_key_caching}, the user will not face any delay in his daily
+use, except only an initial delay to create the cache entry.
 
 i also think that it is \emph{generally} better to have expensive key
 derivation functions in the client side as opposed to the server side.
