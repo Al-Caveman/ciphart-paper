@@ -111,7 +111,7 @@ calculated using the base $2$ logarithm, $\log_2$.  all shannon's entropies
 in this paper are calculated this way.}?
 
 fundamentally, it means that, on average, we'd need to ask $H(p)$ many
-perfect binary questions\footnote{one which, if answered, and on average,
+balanced binary questions\footnote{one which, if answered, and on average,
 gets the search space reduced in half.} in order to fully resolve all
 ambiguities about $p$; i.e.  to fully get every bit of $p$.
 
@@ -250,38 +250,34 @@ and caveman's entropy becomes:
 \subsection{``entropy injection'' theorem}
 \subsubsection{mental warm up}
 say that $x$ is something that all ambiguities about it are resolved after
-getting, on average, $100$ many perfect binary questions, $q_0, q_1,
-\ldots, q_{99}$, answered.  we say that that's its $\log_2$-based shannon's
-entropy, right?  i.e. $H(x) = 100$.
+getting, on average, $4$ many balanced binary questions, $q_0, q_1, \ldots,
+q_3$, answered.  we say that that's its $\log_2$-based shannon's entropy,
+right?  i.e. $H(x) = 4$.
 
 what about another thing $y$, which all ambiguities about it are resolved
-after getting, on average, $10$ many questions, $\hat q_0, \hat q_1,
-\ldots, \hat q_{9}$, answered, such that each question $\hat q_i$ is made
-of $10$ perfect binary questions $q_{i10+0}, q_{i10+1}, \ldots, q_{i10+9}$?
-what's the entropy of $y$?
+after getting, on average, $3$ many questions, $\hat q_0, \hat q_1, \hat
+q_2$, answered, such that each question $\hat q_i$ is made of $2$ balanced
+binary questions $q_{i2+0}, q_{i2+1}$?  what's the entropy of $y$?
 
-$H(y) = 100$, because simply bundling $10$ perfect binary questions
-together, and calling them $\hat q_i$ won't change the fact that the total
-perfect number of perfect binary questions that need to be answered is
-still $10 \times 10 = 100$.
-
-so, $H(x) = H(y) = 100$ because question bundling doesn't reduce the
-information content.
+$H(y) = \log_2(2 \times 2^3) = 4$, because simply bundling $2$ balanced
+binary questions together, and calling them $\hat q_0, \hat q_1, \hat q_2$
+won't change the fact that the total number of balanced binary questions
+that need to be answered is $2 \times 3 = 6$.
 
 \begin{lemma}
-    bundling perfect binary questions, about a thing, into fewer super
-    questions, doesn't reduce thing's information content.
+    bundling questions, about a thing, into fewer super questions, doesn't
+    change thing's information content.
 \end{lemma}
 
 \subsubsection{the real deal}
 say that $p$ is a password that all ambiguities about it are resolved after
-getting, on average, $H(p)$ many perfect binary questions, $q_0, q_1,
+getting, on average, $H(p)$ many balanced binary questions, $q_0, q_1,
 \ldots, q_{H(p)-1}$, answered.
 
 case 1 --- say that the adversary got $p$'s hash, $k \gets \hash(p \Vert s,
 8V)$, and that his goal is to find out $p$ by brute-forcing.  in this case,
 the adversary will be considering password candidates $p_0, p_, \ldots,
-p_{H(p)-1}$, and tests them by asking the following binary questions in
+p_{2^{H(p)-1}}$, and tests them by asking the following binary questions in
 order to guarantee finding $p$:
 \begin{itemize}
     \item $q_0$: is $\hash(p_0 \Vert s, 8V) = k$?
@@ -305,11 +301,11 @@ case, the adversary will seek to answer the following binary questions:
 \end{itemize}
 
 so, you may say that we're still in need to ask, on average, $H(p)$ many
-perfect binary questions, right?  i disagree.
+balanced binary questions, right?  i disagree.
 
 i think what is happening with $\rhash$ is that each question $\hat q_0,
 \hat q_1, \ldots \hat q_{H(p)-1}$ is a \emph{bundled} question, each,
-containing $N$ many perfect binary questions.
+containing $N$ many balanced binary questions.
 
 i.e., for any question $\hat q_i$, answering it is equivalent to answering
 the $N$-deep recursion over $\hash$:
