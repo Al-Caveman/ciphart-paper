@@ -128,7 +128,7 @@ the password space in order to find $p$ that gives $k$.  his cost is:
     \right)
 \end{equation}
 
-\begin{definition}
+\begin{definition}[systems' security]
 the security of a system is the cost of the cheapest method that can break
 it.
 \end{definition}
@@ -248,28 +248,120 @@ and caveman's entropy becomes:
 \section{fundamental ideas}
 
 \subsection{``entropy injection'' theorem}
-\subsubsection{mental warm up}
+\subsubsection{specification bundling}
+\begin{definition}[specifications' set]
+    the specifications set of a thing $x$ is a set $\mathcal{S}$ that
+    contains binary specifications, where for any specification $s \in
+    \mathcal{S}$, $s \in \{0,1\}$, such that $x$ becomes fully known if,
+    and only if, the value for every specification in $\mathcal{S}$ is
+    known.
+\end{definition}
+
+say that $\mathcal{S}$ is the specifications set of thing $x$.  generally,
+a scalable way to reveal those specifications is to ask questions, such
+that if each one of them is answered, the quantity of unknown
+specifications shrinks in half or more.  let's stick to shrinkage in half;
+i.e. balanced binary trees.  this means that the total number of such
+balanced binary questions is $\log_2 |\mathcal{S}|$, where $|\mathcal{S}|$
+is the quantity of total specifications in $\mathcal{S}$ about $x$.
+
+but is that scalable approach, also the most efficient one in extracting
+information about $x$'s specifications?  the answer is: it depends.  the
+reason is that a binary search tree is not necessarily the most informative
+one in revealing information about the specifications in $\mathcal{S}$.
+e.g. is it better to reveal, say $10$ specifications that we already sort
+of knew their value for a probability of, say, $0.9999$ than to reveal,
+say, $5$ specifications that their their values completely blew our minds
+with a probability of, say, $0.0001$?
+
+shannon's entropy tells us the minimum number of questions to be asked in
+order to extract information fastest possible about $x$'s specifications,
+$\mathcal{S}$:
+\begin{equation}
+    H(\mathcal{S}) = \sum_{s \in \mathcal{S}}
+        \Pr(s=0) \log_2 \Pr(s=0)^{-1}
+\end{equation}
+
+so when is $\log_2 |\mathcal{S}|$ optimal?  $H(\mathcal{S}) = \log_2
+|\mathcal{S}|$ if every specification in $\mathcal{S}$ is equally
+informative to us.  i.e.  for any $s \in \mathcal{S}$, $\Pr(s=0) =
+|\mathcal{S}|^{-1}$:
+\begin{equation}
+\begin{split}
+    H(\mathcal{S}) 
+    &= \sum_{s \in \mathcal{S}} |\mathcal{S}|^{-1} \log_2
+        (|\mathcal{S}|^{-1})^{-1} \\
+    &= \sum_{s \in \mathcal{S}} |\mathcal{S}|^{-1} \log_2
+        |\mathcal{S}| \\
+    &= |\mathcal{S}| |\mathcal{S}|^{-1} \log_2 |\mathcal{S}| \\
+    &= \log_2 |\mathcal{S}| \\
+\end{split}
+\end{equation}
+
+let's say that $|\mathcal{S}| = 16$, so $H(x) = \log_2 16 = 4$.
+
 say that $x$ is something that all ambiguities about it are resolved after
 getting, on average, $4$ many balanced binary questions, $q_0, q_1, \ldots,
-q_3$, answered.  we say that that's its $\log_2$-based shannon's entropy,
-right?  i.e. $H(x) = 4$.
+q_3$, answered.  we say that number is its $\log_2$-based shannon's
+entropy, right?  i.e. $H(x) = 4$.  another way to put it is to say that,
+the most efficient way to reveal the full specification of $x$ is by asking
+$H(x)=4$ many balanced binary questions.
 
-what about another thing $y$, which all ambiguities about it are resolved
-after getting, on average, $3$ many questions, $\hat q_0, \hat q_1, \hat
-q_2$, answered, such that each question $\hat q_i$ is made of $2$ balanced
-binary questions $q_{i2+0}, q_{i2+1}$?  what's the entropy of $y$?
+$H(x) = 4$ also means that the hypotheses set, where $x$ is an element in,
+has $2^4=16$ elements in it.  let $\mathcal{H} = \{h_0, h_1, \ldots,
+h_{16-1}\}$ be this hypotheses set, where $x \in \mathcal{H}$.  initially,
+we don't know which of those hypotheses in $\mathcal{H}$ is $x$, but, on
+average, after getting those $H(x) = 4$ balanced binary questions answered,
+we will know exactly which specific $h_i$ is $x$.
 
-$H(y) = \log_2(2 \times 2^3) = 4$, because simply bundling $2$ balanced
-binary questions together, and calling them $\hat q_0, \hat q_1, \hat q_2$
-won't change the fact that the total number of balanced binary questions
-that need to be answered is $2 \times 3 = 6$.
+now, suppose that we modify the hypotheses set $\mathcal{H}$ into
+$\mathcal{\hat H} = \{\hat h_0, \hat h_1, \ldots, \hat h_{8-1}\}$, where,
+for any $\hat h_i \in \mathcal{\hat H}$, $\hat h_i = \{h_{2i + 0}, h_{2i +
+1}\}$.  i.e. $\mathcal{\hat H}$ is $\mathcal{H}$, except for bundling
+hypotheses pairs $h_{2i+0}$ and $h_{2i+1}$ together into a single
+super-hypothesis $\hat h_i$.  this is why $\mathcal{\hat H}$ has half the
+amount of elements $16/2 = 8$, where each element is a super-hypothesis
+comprised of two normal hypotheses.
+
+if we ask balanced binary questions over $\mathcal{\hat H}$, we will need
+to ask $\log_2 8 = 3$ many such questions in order to find the
+super-hypothesis that $x$ is inside of it.  someone may rush and say that
+$H(x)=3$, but this is obviously false, because simply finding the
+super-hypothesis in $\mathcal{\hat H}$ does not mean finding $x$ yet, as we
+still don't know the specific hypothesis that explains $x$.  
+
+i.e. let's say that we asked $\log_2 8 = 3$ many balanced binary questions,
+and found that $x$ exists in the super-hypothesis, say, $\hat h_j \in
+\mathcal{\hat H}$.   do we know $x$ yet?  no, because the super-hypothesis
+$\hat h_j = \{h_{2j+0}, h_{2j+1}\}$ contains two normal hypothesis that
+explain $x$, and we still don't know which of them is $x$.  i.e. we still
+don't know whether $x = h_{2j+0}$?  or is it $h_{2j+1}$?
+
+so, in order to find out the hypothesis that fully explains $x$, we will
+still need to ask one more question to find the normal hypothesis inside
+the super-hypothesis $h_j$.  i.e. after asking $\log_2 8 = 3$ many balanced
+questions to find $h_j$, we will need to ask $\log_2 2 = 1$ more balanced
+question to finally identify the hypothesis that explains $x$.  e.g. the
+final balanced question might be like ``is $x = h_{2j+0}$?''.
+
+so, hypothesis bundling didn't reduce the hypothesis space, and didn't
+reduce number of balanced questions that need to be answered in order to
+identify $x$.  entropy of $x$ remained the same, but we calculated
+differently; instead of saying $H(x)=\log_2 16 = 4$, we made it into
+$H(x)=\log_2 8 + \log_2 1 = 3 + 1 = 4$.
 
 \begin{lemma}
-    bundling questions, about a thing, into fewer super questions, doesn't
-    change thing's information content.
+    bundling hypotheses in the hypotheses set about a thing $x$ into fewer
+    super-hypotheses, doesn't actually reduce the size of the hypotheses
+    set of $x$.
 \end{lemma}
 
-\subsubsection{the real deal}
+\begin{lemma}
+    if the size of the hypotheses set of $x$ didn't change, $H(x)$ won't
+    change either.
+\end{lemma}
+
+\subsubsection{$\rhash$ and $\mhash$ bundle hypotheses}
 say that $p$ is a password that all ambiguities about it are resolved after
 getting, on average, $H(p)$ many balanced binary questions, $q_0, q_1,
 \ldots, q_{H(p)-1}$, answered.
