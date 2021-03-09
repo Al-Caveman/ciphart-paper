@@ -52,9 +52,9 @@ com}.}\\
 \noindent\textbf{synopsis---}\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
 is a fast and simple memory-hard key derivation function.  compared to
 \emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
-\emph{argon2} is better, specially for its simplicity.  but i claim that
-\emph{argon2} is not fast enough, not memory-hard enough, and its
-contribution to our security is not simple enough to understand.
+\emph{argon2} is better.  but i claim that \emph{argon2} is not fast
+enough, not memory-hard enough, and its contribution to our security is not
+simple enough to understand.
 
 henceforth, i propose \emph{ciphart}, which is:
 \begin{itemize}
@@ -87,7 +87,7 @@ henceforth, i propose \emph{ciphart}, which is:
     at the surface it may appear simpler, but it is actually more complex
     as it ends up re-inventing what resembles a symmetric block encryption
     function off the hashing function, except for being slower and with
-    potential entropy loss.
+    needless potential entropy loss.
 \end{itemize}
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
@@ -104,34 +104,106 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \tableofcontents
 
 \section{background}
-\subsection{shannon's entropy}
-we've got password $p$ with $H(p)$ many shannon's entropy bits worth of
-information in it.  so what does this mean\footnote{say that $H(p)$ was
-calculated using the base $2$ logarithm, $\log_2$.  all shannon's entropies
-in this paper are calculated this way.}?
+\subsection{passwords' entropy}
+\begin{definition}[specifications set]
+    the specifications set of a thing $x$ is a set $\mathcal{S}_x$ that
+    contains binary specifications, where for any specification $s \in
+    \mathcal{S}_x$, $s \in \{0,1\}$, such that $x$ becomes fully known if,
+    and only if, the value for every specification in $\mathcal{S}_x$ is
+    known.
+\end{definition}
 
-fundamentally, it means that, on average, we'd need to ask $H(p)$ many
-balanced binary questions\footnote{one which, if answered, and on average,
-gets the search space reduced in half.} in order to fully resolve all
-ambiguities about $p$; i.e.  to fully get every bit of $p$.
+say that $\mathcal{S}_x$ is the specifications set of thing $x$.  generally,
+a scalable way to reveal those specifications is to ask questions, such
+that if each one of them is answered, the quantity of unknown
+specifications shrinks in half or more.  let's stick to shrinkage in half;
+i.e. balanced binary trees.  this means that the total number of such
+balanced binary questions is $\log_2 |\mathcal{S}_x|$, where $|\mathcal{S}_x|$
+is the quantity of total specifications in $\mathcal{S}_x$ about $x$.
 
-but people use it to do less orthodox things, such as quantifying the
-amount of security $p$ has against, say, brute-forcing attacks.
+but is that scalable approach, also the most efficient one in extracting
+information about $x$'s specifications?  the answer is: it depends.  the
+reason is that a binary search tree is not necessarily the most informative
+one in revealing information about the specifications in $\mathcal{S}_x$.
+e.g. is it better to reveal, say $10$ specifications that we already sort
+of knew their value for a probability of, say, $0.9999$ than to reveal,
+say, $5$ specifications that their their values completely blew our minds
+with a probability of, say, $0.0001$?
 
-say that we've got a $8V$ bit key $k \gets \hash(p \Vert s, 8V)$, derived
-from password $p$, where $s$ is a salt.  say that the attacker has $s$ and
-$k$ but wants to figure out $p$.  in this case, he will need to brute-force
-the password space in order to find $p$ that gives $k$.  his cost is:
-\begin{equation}\label{eq_cost_passbruteforce}
-    2^{H(p)} \left(
-        \cost(\hash) + \cost(\text{if } \hat k = k)
-    \right)
+shannon's entropy tells us the minimum number of questions to be asked in
+order to extract all information about $x$'s specifications,
+$\mathcal{S}_x$:
+\begin{equation}
+    H(\mathcal{S}_x) = \sum_{s \in \mathcal{S}_x}
+        \Pr(s=0) \log_2 \Pr(s=0)^{-1}
 \end{equation}
 
+so when is $\log_2 |\mathcal{S}_x|$ optimal?  $H(\mathcal{S}_x) = \log_2
+|\mathcal{S}_x|$ if every specification in $\mathcal{S}_x$ is equally
+informative to us, which is the case when there is no redundancy in the
+specifications.  i.e.  for any $s \in \mathcal{S}_x$, $\Pr(s=0) =
+|\mathcal{S}_x|^{-1}$.
+\begin{proof}
+\begin{equation}
+\begin{split}
+    H(\mathcal{S}_x)
+    &= \sum_{s \in \mathcal{S}_x} |\mathcal{S}_x|^{-1} \log_2
+        (|\mathcal{S}_x|^{-1})^{-1} \\
+    &= \sum_{s \in \mathcal{S}_x} |\mathcal{S}_x|^{-1} \log_2
+        |\mathcal{S}_x| \\
+    &= |\mathcal{S}_x| |\mathcal{S}_x|^{-1} \log_2 |\mathcal{S}_x| \\
+    &= \log_2 |\mathcal{S}_x| \\
+\end{split}
+\end{equation}
+\end{proof}
+
+in other words, $H(\mathcal{S}_x) = \log_2 |\mathcal{S}_x|$ if
+$\mathcal{S}_x$ is optimally compressed with no redundancy at all.  say
+that $\mathcal{S}_x^*$ is the same as $\mathcal{S}_x$, except that the
+former is optimally compressed to be totally free of any redundancy.  in
+this case, it must follow that $H(\mathcal{S}_x^*) = H(\mathcal{S}_x) =
+\log_2 |\mathcal{S}_x^*|$.
+
+let's say that $p$ is a password with an entropy of, say, $20$ bits.  what
+this means is that $H(\mathcal{S}_p) = H(\mathcal{S}_p^*) = \log_2
+|\mathcal{S}_p^*| = 20$.  also let's say that the adversary has an $8V$
+bits hash $k \gets \hash(p, 8V)$ of the password $p$, and that he wants to
+find $p$ that gave $k$.
+
+when we talk about brute-forcing to find password $p$, we talk about
+performing the most efficient brute-forcing, which is brute-forcing against
+the redundancy-free specifications set $\mathcal{S}_p^*$.  we certainly do
+not talk about brute-forcing $\mathcal{S}_x$, because it contains
+redundancies in its specifications, which is needlessly wasteful.
+
+this is also why we say that the total number of password candidates to
+test is $2^{H(\mathcal{S}_p)} = |\mathcal{S}_p^*|$, because this is the
+number of binary specifications in the optimally compressed specifications
+set $\mathcal{S}_p^*$.  for any $s^* \in \mathcal{S}_p^*$, $s^*$ looks
+something like ``is $\hash(\hat p, 8V) = k$?'', where $\hat p$ is a
+candidate password.  there are $2^{H(\mathcal{S}_p)}$ many such password
+candidates, each represented in a binary question in $\mathcal{S}_p^*$.
+
+\subsection{passwords' security}
 \begin{definition}[systems' security]
 the security of a system is the cost of the cheapest method that can break
 it.
 \end{definition}
+
+say that we've got a $8V$ bit key $k \gets \hash(p, 8V)$, derived from
+password $p$.  say that the attacker has $k$ but wants to figure out $p$.
+
+in this case, he will need to brute-force the password space in order to
+find $p$ that gives $k$.  in order to make his brute-forcing cheapest
+possible, he will need to brute-force the redundancy-free specifications
+set $\mathcal{S}_p^*$, which contains $2^{H(\mathcal{S}_p)}$ many binary
+tests, each of which asks whether a password candidate $\hat p$ gives given
+a key candidate $\hat k$ that matches $k$.  his cost is:
+\begin{equation}\label{eq_cost_passbruteforce}
+    2^{H(\mathcal{S}_p)} \left(
+        \cost(\hash) + \cost(\text{if } \hat k = k)
+    \right)
+\end{equation}
 
 one way to estimate $\cost$ is to survey the asics industry.  by surveying
 the asics industry to get an idea how much money it costs to get a given
@@ -144,20 +216,20 @@ have.
 another way is to ignore anything that has no cryptographic guarantee.  so,
 in (\ref{eq_cost_passbruteforce}), cryptography
 guarantees\footnote{statistically by confidence earned through peer review
-and attempts to break encryption algorithms.} that $2^{H(p)}$ many $\hash$
+and attempts to break encryption algorithms.} that $2^{H(\mathcal{S}_p)}$ many $\hash$
 calls are performed and that many equality tests.  the $\hash$ call needs
 to be done once, so let's give it a unit of time $1$.  the equality test
 also needs to be called once, but since since it's so cheap it's easier to
 just assume that its cost is free.  this way (\ref{eq_cost_passbruteforce})
 becomes just:
 \begin{equation}\label{eq_simplecost_passbruteforce}
-    2^{H(p)} (1+0) = 2^{H(p)}
+    2^{H(\mathcal{S}_p)} (1+0) = 2^{H(\mathcal{S}_p)}
 \end{equation}
 
 further, for convenience, it seems that people report it in the $\log_2$
 scale.  i.e.:
 \begin{equation}\label{eq_pass_entropy}
-    \log_2 2^{H(p)} = H(p)
+    \log_2 2^{H(\mathcal{S}_p)} = H(\mathcal{S}_p)
 \end{equation}
 
 i think this is why people use shannon's entropy of passwords as a measure
@@ -173,26 +245,26 @@ if the $\hash$ function is replaced by an $N$-deep recursion over $\hash$,
 like:
 \[
     \begin{split}
-        & \rhash(p \Vert s, 8V, N) \\
-    ={} &  \hash(\hash(\ldots\hash(p \Vert s, 8V), \ldots, 8V), 8V)
+        & \rhash(p, 8V, N) \\
+    ={} &  \hash(\hash(\ldots\hash(p, 8V), \ldots, 8V), 8V)
     \end{split}
 \]
 then, if $\hash$ is not broken,  (\ref{eq_cost_passbruteforce}) becomes:
 \begin{equation}\label{eq_cost_passbruteforce_N}
-    2^{H(p)} \left(
+    2^{H(\mathcal{S}_p)} \left(
         N\cost(\hash) + \cost(\text{if } \hat k = k)
     \right)
 \end{equation}
 (\ref{eq_simplecost_passbruteforce}) becomes:
 \begin{equation}\label{eq_simplecost_passbruteforce_N}
     \begin{split}
-    2^{H(p)} (N+0) &= N2^{H(p)} \\
-                  &= 2^{H(p) + \log_2 N}
+    2^{H(\mathcal{S}_p)} (N+0) &= N2^{H(\mathcal{S}_p)} \\
+                  &= 2^{H(\mathcal{S}_p) + \log_2 N}
     \end{split}
 \end{equation}
 and the $\log_2$ scaled version becomes:
 \begin{equation}\label{eq_pass_cavemanentropy_mhash}
-    H(p) + \log_2 N
+    H(\mathcal{S}_p) + \log_2 N
 \end{equation}
 
 obviously (\ref{eq_pass_cavemanentropy_mhash}), which represents the log
@@ -205,10 +277,10 @@ i think (\ref{eq_pass_cavemanentropy_mhash}) better have a name.  i propose
 to call it caveman's entropy, $C$, which i define to be function dependent.
 it goes like this:
 \begin{equation}
-    C\Big(p, \hash(\ldots)\Big) = H(p)
+    C\Big(p, \hash(\ldots)\Big) = H(\mathcal{S}_p)
 \end{equation}
 \begin{equation}
-    C\Big(p, \rhash(\ldots, N)\Big) = H(p) + \log_2 N
+    C\Big(p, \rhash(\ldots, N)\Big) = H(\mathcal{S}_p) + \log_2 N
 \end{equation}
 
 \subsubsection{memory-hard $\hash$: $\mhash$}
@@ -219,8 +291,8 @@ available memory, and $e(M - A)$ be the exponential penalty value for
 reduction in memory, where $e(0) = 1$.
 \begin{equation}
     \begin{split}
-        & \cost\Big(\mhash(p \Vert s, N, M)\Big) \\
-    ={} & \cost\Big(\rhash(p \Vert s, N)\Big)^{e(M-A)}
+        & \cost\Big(\mhash(p, N, M)\Big) \\
+    ={} & \cost\Big(\rhash(p, N)\Big)^{e(M-A)}
     \end{split}
 \end{equation}
 
@@ -228,148 +300,46 @@ if $\hash$ in (\ref{eq_cost_passbruteforce}) is replaced by the $M$-bytes
 memory-hardened $N$-deep recursion hash function $\mhash$, then
 (\ref{eq_cost_passbruteforce}) becomes:
 \begin{equation}\label{eq_cost_passbruteforce_NM}
-    2^{H(p)} \left(
+    2^{H(\mathcal{S}_p)} \left(
         N^{e(M-A)}\cost(\hash) + \cost(\text{if } \hat k = k)
     \right)
 \end{equation}
 (\ref{eq_simplecost_passbruteforce}) becomes:
 \begin{equation}\label{eq_simplecost_passbruteforce_NM}
     \begin{split}
-    2^{H(p)} (N^{e(M-A)}+0) &= N^{e(M-A)} 2^{H(p)} \\
-                  &= 2^{H(p) + \log_2 N^{e(M-A)}} \\
-                  &= 2^{H(p) + e(M-A)\log_2 N}
+    2^{H(\mathcal{S}_p)} (N^{e(M-A)}+0) &= N^{e(M-A)} 2^{H(\mathcal{S}_p)} \\
+                  &= 2^{H(\mathcal{S}_p) + \log_2 N^{e(M-A)}} \\
+                  &= 2^{H(\mathcal{S}_p) + e(M-A)\log_2 N}
     \end{split}
 \end{equation}
 and caveman's entropy becomes:
 \begin{equation}
-    C\Big(p, \mhash(\ldots, N, M)\Big) = H(p) + e(M-A)\log_2 N
+    C\Big(p, \mhash(\ldots, N, M)\Big) = H(\mathcal{S}_p) + e(M-A)\log_2 N
 \end{equation}
 
 \section{fundamental ideas}
 
 \subsection{``entropy injection'' theorem}
-\subsubsection{specification bundling}
-\begin{definition}[specifications' set]
-    the specifications set of a thing $x$ is a set $\mathcal{S}$ that
-    contains binary specifications, where for any specification $s \in
-    \mathcal{S}$, $s \in \{0,1\}$, such that $x$ becomes fully known if,
-    and only if, the value for every specification in $\mathcal{S}$ is
-    known.
-\end{definition}
-
-say that $\mathcal{S}$ is the specifications set of thing $x$.  generally,
-a scalable way to reveal those specifications is to ask questions, such
-that if each one of them is answered, the quantity of unknown
-specifications shrinks in half or more.  let's stick to shrinkage in half;
-i.e. balanced binary trees.  this means that the total number of such
-balanced binary questions is $\log_2 |\mathcal{S}|$, where $|\mathcal{S}|$
-is the quantity of total specifications in $\mathcal{S}$ about $x$.
-
-but is that scalable approach, also the most efficient one in extracting
-information about $x$'s specifications?  the answer is: it depends.  the
-reason is that a binary search tree is not necessarily the most informative
-one in revealing information about the specifications in $\mathcal{S}$.
-e.g. is it better to reveal, say $10$ specifications that we already sort
-of knew their value for a probability of, say, $0.9999$ than to reveal,
-say, $5$ specifications that their their values completely blew our minds
-with a probability of, say, $0.0001$?
-
-shannon's entropy tells us the minimum number of questions to be asked in
-order to extract information fastest possible about $x$'s specifications,
-$\mathcal{S}$:
-\begin{equation}
-    H(\mathcal{S}) = \sum_{s \in \mathcal{S}}
-        \Pr(s=0) \log_2 \Pr(s=0)^{-1}
-\end{equation}
-
-so when is $\log_2 |\mathcal{S}|$ optimal?  $H(\mathcal{S}) = \log_2
-|\mathcal{S}|$ if every specification in $\mathcal{S}$ is equally
-informative to us.  i.e.  for any $s \in \mathcal{S}$, $\Pr(s=0) =
-|\mathcal{S}|^{-1}$:
-\begin{equation}
-\begin{split}
-    H(\mathcal{S}) 
-    &= \sum_{s \in \mathcal{S}} |\mathcal{S}|^{-1} \log_2
-        (|\mathcal{S}|^{-1})^{-1} \\
-    &= \sum_{s \in \mathcal{S}} |\mathcal{S}|^{-1} \log_2
-        |\mathcal{S}| \\
-    &= |\mathcal{S}| |\mathcal{S}|^{-1} \log_2 |\mathcal{S}| \\
-    &= \log_2 |\mathcal{S}| \\
-\end{split}
-\end{equation}
-
-let's say that $|\mathcal{S}| = 16$, so $H(x) = \log_2 16 = 4$.
-
-say that $x$ is something that all ambiguities about it are resolved after
-getting, on average, $4$ many balanced binary questions, $q_0, q_1, \ldots,
-q_3$, answered.  we say that number is its $\log_2$-based shannon's
-entropy, right?  i.e. $H(x) = 4$.  another way to put it is to say that,
-the most efficient way to reveal the full specification of $x$ is by asking
-$H(x)=4$ many balanced binary questions.
-
-$H(x) = 4$ also means that the hypotheses set, where $x$ is an element in,
-has $2^4=16$ elements in it.  let $\mathcal{H} = \{h_0, h_1, \ldots,
-h_{16-1}\}$ be this hypotheses set, where $x \in \mathcal{H}$.  initially,
-we don't know which of those hypotheses in $\mathcal{H}$ is $x$, but, on
-average, after getting those $H(x) = 4$ balanced binary questions answered,
-we will know exactly which specific $h_i$ is $x$.
-
-now, suppose that we modify the hypotheses set $\mathcal{H}$ into
-$\mathcal{\hat H} = \{\hat h_0, \hat h_1, \ldots, \hat h_{8-1}\}$, where,
-for any $\hat h_i \in \mathcal{\hat H}$, $\hat h_i = \{h_{2i + 0}, h_{2i +
-1}\}$.  i.e. $\mathcal{\hat H}$ is $\mathcal{H}$, except for bundling
-hypotheses pairs $h_{2i+0}$ and $h_{2i+1}$ together into a single
-super-hypothesis $\hat h_i$.  this is why $\mathcal{\hat H}$ has half the
-amount of elements $16/2 = 8$, where each element is a super-hypothesis
-comprised of two normal hypotheses.
-
-if we ask balanced binary questions over $\mathcal{\hat H}$, we will need
-to ask $\log_2 8 = 3$ many such questions in order to find the
-super-hypothesis that $x$ is inside of it.  someone may rush and say that
-$H(x)=3$, but this is obviously false, because simply finding the
-super-hypothesis in $\mathcal{\hat H}$ does not mean finding $x$ yet, as we
-still don't know the specific hypothesis that explains $x$.  
-
-i.e. let's say that we asked $\log_2 8 = 3$ many balanced binary questions,
-and found that $x$ exists in the super-hypothesis, say, $\hat h_j \in
-\mathcal{\hat H}$.   do we know $x$ yet?  no, because the super-hypothesis
-$\hat h_j = \{h_{2j+0}, h_{2j+1}\}$ contains two normal hypothesis that
-explain $x$, and we still don't know which of them is $x$.  i.e. we still
-don't know whether $x = h_{2j+0}$?  or is it $h_{2j+1}$?
-
-so, in order to find out the hypothesis that fully explains $x$, we will
-still need to ask one more question to find the normal hypothesis inside
-the super-hypothesis $h_j$.  i.e. after asking $\log_2 8 = 3$ many balanced
-questions to find $h_j$, we will need to ask $\log_2 2 = 1$ more balanced
-question to finally identify the hypothesis that explains $x$.  e.g. the
-final balanced question might be like ``is $x = h_{2j+0}$?''.
-
-so, hypothesis bundling didn't reduce the hypothesis space, and didn't
-reduce number of balanced questions that need to be answered in order to
-identify $x$.  entropy of $x$ remained the same, but we calculated
-differently; instead of saying $H(x)=\log_2 16 = 4$, we made it into
-$H(x)=\log_2 8 + \log_2 1 = 3 + 1 = 4$.
-
+\subsubsection{specifications bundling}
 \begin{lemma}
-    bundling hypotheses in the hypotheses set about a thing $x$ into fewer
-    super-hypotheses, doesn't actually reduce the size of the hypotheses
-    set of $x$.
+    bundling specifications in the specifications set $\mathcal{S}_x^*$
+    about a thing $x$ into super-specifications, doesn't actually reduce
+    the size of the specification set of $x$.
 \end{lemma}
-
 \begin{lemma}
-    if the size of the hypotheses set of $x$ didn't change, $H(x)$ won't
+    if the $|\mathcal{S}_x^*|$ didn't change, $H(\mathcal{S}_x)$ won't
     change either.
 \end{lemma}
 
 \subsubsection{$\rhash$ and $\mhash$ bundle hypotheses}
 say that $p$ is a password that all ambiguities about it are resolved after
-getting, on average, $H(p)$ many balanced binary questions, $q_0, q_1,
-\ldots, q_{H(p)-1}$, answered.
+getting, on average, $H(\mathcal{S}_p)$ many balanced binary questions, $q_0, q_1,
+\ldots, q_{H(\mathcal{S}_p)-1}$, answered.
 
 case 1 --- say that the adversary got $p$'s hash, $k \gets \hash(p \Vert s,
 8V)$, and that his goal is to find out $p$ by brute-forcing.  in this case,
 the adversary will be considering password candidates $p_0, p_, \ldots,
-p_{2^{H(p)-1}}$, and tests them by asking the following binary questions in
+p_{2^{H(\mathcal{S}_p)-1}}$, and tests them by asking the following binary questions in
 order to guarantee finding $p$:
 \begin{itemize}
     \item $q_0$: is $\hash(p_0 \Vert s, 8V) = k$?
@@ -377,7 +347,7 @@ order to guarantee finding $p$:
 
     $\vdots$
 
-    \item $q_{H(p)-1}$: is $\hash(p_{H(p)-1} \Vert s, 8V) = k$?
+    \item $q_{H(\mathcal{S}_p)-1}$: is $\hash(p_{H(\mathcal{S}_p)-1} \Vert s, 8V) = k$?
 \end{itemize}
 
 case 2 --- say that $\mhash$,was used instead of just $\hash$;  i.e. the
@@ -389,14 +359,14 @@ case, the adversary will seek to answer the following binary questions:
 
     $\vdots$
 
-    \item $\hat q_{H(p)-1}$: is $\rhash(p_{H(p)-1} \Vert s, 8V, N) = k$?
+    \item $\hat q_{H(\mathcal{S}_p)-1}$: is $\rhash(p_{H(\mathcal{S}_p)-1} \Vert s, 8V, N) = k$?
 \end{itemize}
 
-so, you may say that we're still in need to ask, on average, $H(p)$ many
+so, you may say that we're still in need to ask, on average, $H(\mathcal{S}_p)$ many
 balanced binary questions, right?  i disagree.
 
 i think what is happening with $\rhash$ is that each question $\hat q_0,
-\hat q_1, \ldots \hat q_{H(p)-1}$ is a \emph{bundled} question, each,
+\hat q_1, \ldots \hat q_{H(\mathcal{S}_p)-1}$ is a \emph{bundled} question, each,
 containing $N$ many balanced binary questions.
 
 i.e., for any question $\hat q_i$, answering it is equivalent to answering
@@ -425,7 +395,7 @@ means that the answer to each of those $N$ many questions is also
 ``no''\footnote{unless hashing collisions happen, which is very unlikely.}.
 
 in other words, functions $\rhash$ and $\mhash$ are using cryptography to
-force the adversary to need to answer more questions beyond $H(p)$.
+force the adversary to need to answer more questions beyond $H(\mathcal{S}_p)$.
 $\rhash$ increases questions by a factor of $N$.  $\mhash$ increases
 questions by a factor of $N^{e(M-A)}$.
 
