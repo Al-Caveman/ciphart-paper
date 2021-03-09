@@ -190,6 +190,7 @@ the security of a system is the cost of the cheapest method that can break
 it.
 \end{definition}
 
+\subsubsection{$\hash$}
 say that we've got a $8V$ bit key $k \gets \hash(p, 8V)$, derived from
 password $p$.  say that the attacker has $k$ but wants to figure out $p$.
 
@@ -226,8 +227,8 @@ becomes just:
     2^{H(\mathcal{S}_p)} (1+0) = 2^{H(\mathcal{S}_p)}
 \end{equation}
 
-further, for convenience, it seems that people report it in the $\log_2$
-scale.  i.e.:
+further, for convenience i guess, it seems that people report it in the
+$\log_2$ scale.  i.e.:
 \begin{equation}\label{eq_pass_entropy}
     \log_2 2^{H(\mathcal{S}_p)} = H(\mathcal{S}_p)
 \end{equation}
@@ -239,7 +240,6 @@ because its the quantity of \emph{simplified} security.
 i like using shannon's entropy as a measure of simplified security
 quantity, so i'm going to build on it.
 
-\subsection{caveman's entropy}
 \subsubsection{recursive $\hash$: $\rhash$}
 if the $\hash$ function is replaced by an $N$-deep recursion over $\hash$,
 like:
@@ -263,24 +263,8 @@ then, if $\hash$ is not broken,  (\ref{eq_cost_passbruteforce}) becomes:
     \end{split}
 \end{equation}
 and the $\log_2$ scaled version becomes:
-\begin{equation}\label{eq_pass_cavemanentropy_mhash}
+\begin{equation}\label{eq_pass_cavemanentropy_rhash}
     H(\mathcal{S}_p) + \log_2 N
-\end{equation}
-
-obviously (\ref{eq_pass_cavemanentropy_mhash}), which represents the log
-scaled version of the simplified security of password $p$ when hashed using
-$\mhash$, is no longer equivalent to $p$'s shannon's entropy as was the
-case in (\ref{eq_pass_entropy}) when the same password $p$ was hashed by
-using just $\hash$.
-
-i think (\ref{eq_pass_cavemanentropy_mhash}) better have a name.  i propose
-to call it caveman's entropy, $C$, which i define to be function dependent.
-it goes like this:
-\begin{equation}
-    C\Big(p, \hash(\ldots)\Big) = H(\mathcal{S}_p)
-\end{equation}
-\begin{equation}
-    C\Big(p, \rhash(\ldots, N)\Big) = H(\mathcal{S}_p) + \log_2 N
 \end{equation}
 
 \subsubsection{memory-hard $\hash$: $\mhash$}
@@ -312,13 +296,29 @@ memory-hardened $N$-deep recursion hash function $\mhash$, then
                   &= 2^{H(\mathcal{S}_p) + e(M-A)\log_2 N}
     \end{split}
 \end{equation}
-and caveman's entropy becomes:
+and $\log_2$ scaled version becomes:
+\begin{equation}\label{eq_pass_cavemanentropy_mhash}
+    H(\mathcal{S}_p) + e(M-A)\log_2 N
+\end{equation}
+
+\subsubsection{caveman's entropy}
+\begin{definition}[caveman's entropy]\label{def_cavemanentropy}
+it is clear that (\ref{eq_pass_entropy}) is entropy, but i didn't make it
+clear yet what (\ref{eq_pass_cavemanentropy_rhash}) and
+(\ref{eq_pass_cavemanentropy_mhash}) are, so i will give them a temporary
+name until i tell you what they are later in this paper:
+\begin{equation}
+    C\Big(p, \hash(\ldots)\Big) = H(\mathcal{S}_p)
+\end{equation}
+\begin{equation}
+    C\Big(p, \rhash(\ldots, N)\Big) = H(\mathcal{S}_p) + \log_2 N
+\end{equation}
 \begin{equation}
     C\Big(p, \mhash(\ldots, N, M)\Big) = H(\mathcal{S}_p) + e(M-A)\log_2 N
 \end{equation}
+\end{definition}
 
 \section{fundamental ideas}
-
 \subsection{``entropy injection'' theorem}
 \subsubsection{specifications bundling}
 \begin{lemma}
