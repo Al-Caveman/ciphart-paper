@@ -104,7 +104,7 @@ scripts, henceforth it has some fluff to treat mankind with dignity.
 \tableofcontents
 
 \section{background}
-\subsection{passwords' entropy}
+\subsection{passwords' entropy}\label{sec_pass_entropy}
 \begin{definition}[specifications set]
     the specifications set of a thing $x$ is a set $\mathcal{S}_x$ that
     contains binary specifications, where for any specification $s \in
@@ -336,6 +336,22 @@ C\Big(p, \mhash(\ldots, N, M)\Big) &= H(\mathcal{S}_p) + e(M-A)\log_2 N \\
     bundling merely groups certain specifications inside a
     super-specification, and such grouping does not delete information.
 \end{lemma}
+
+say that we've got a password $p$.  we know from \cref{sec_pass_entropy}
+that $p$'s specifications set is $\mathcal{S}_p$ and its redundancy-free
+specifications set is $\mathcal{S}_p^*$, which can be fully revealed after
+asking no less than $\log_2 \mathcal{S}_s^*$ many balanced binary
+questions.  i.e. $H(\mathcal{S}_p) = \log_2 \mathcal{S}_s^*$.
+
+say that we've got a key $k_h \gets \hash(p, 8V)$.  what is $k$'s entropy?
+the answer is $H(\mathcal{S}_k) = H(\mathcal{S}_p) = \log_2
+|\mathcal{S}_p^*|$ for as long as $|\mathcal{S}_p^*| \le 2^{8V}$, because
+the process of hashing is a 1-to-1 mapping between password candidates and
+key candidates.  so the size of the redundancy-free specifications set does
+not change.  i.e.  $|\mathcal{S}_k^*| = |\mathcal{S}_p^*|$.  hence, $k$'s
+entropy has to equal $p$'s.
+
+\hrule
 
 say that $p$ is a password that all ambiguities about it are resolved after
 getting, on average, $H(\mathcal{S}_p)$ many balanced binary questions,
