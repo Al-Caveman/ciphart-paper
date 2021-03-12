@@ -10,6 +10,7 @@
 \newtheorem{security}{security interpretation}
 \newtheorem{definition}{definition}
 \newtheorem{lemma}{lemma}
+\newtheorem{note}{note}
 \newtheorem{theorem}{theorem}
 \newtheorem{discovery}{discovery}
 \newtheorem{law}{law}
@@ -146,7 +147,8 @@ binary tree that doesn't take such probabilities into account.
 effectively, we will end up knowing what $x$ is with less questions.
 
 shannon's entropy tells us the minimum number of questions to be asked in
-order to extract all information about $x$:
+order to extract all information about $x$, while also considering the
+probability of each option being $x$:
 \begin{equation}
     H(\mathcal{O}_x) = \sum_{o \in \mathcal{O}_x}
         \Pr(o=x) \log_2 \Pr(o=x)^{-1}
@@ -195,7 +197,7 @@ trees.
 
 but these binary questions are theoretical, and may not exist in reality.
 specially for password hashes, it wouldn't make sense to ask ``is $p \ge
-\text{``password123''?}$, because passwords are non-numerical but
+\text{password123}$?'', because passwords are non-numerical but
 categorical values, and because password hashes change completely for any
 change in the password, so ranges do not apply.  so we cannot ask a single
 binary question to test a range of hashes.  instead, we are forced to test
@@ -351,36 +353,72 @@ C\Big(p, \mhash(\ldots, N, M)\Big) &= H(\mathcal{O}_p) + e(M-A)\log_2 N \\
 
 \section{fundamental ideas}
 \subsection{``entropy injection'' theorem}
-\begin{definition}[bundled specifications set]
-    $\mathcal{\hat S}_x = \{\hat s_0, \hat s_1, \ldots\}$ is a bundled
-    specifications set of $x$'s specifications set $\mathcal{O}_x = \{s_0,
-    s_1, \ldots\}$ if there exists $\hat s_i \in \mathcal{\hat S}_x$ and $j
-    \ge 1$ such that $\hat s_i = \{s_{ji+0}, s_{ji+1}, \ldots,
-    s_{ji+j-1}\}$.
+the information content of a thing $x$, also known as its entropy
+$H(\mathcal{O}_x)$, is the minimum number of binary questions that, if
+answered, $x$ would be found.  in other words, for any $o \in \mathcal{O}$,
+we will know the answer of ``is $o=x$?''.
+
+entropy originates from randomness.  e.g. password $p$ has some entropy
+because the process that generated it contain some randomness.  an example
+of such process is a process that uniformly and randomly samples, with
+replacement, say, $5$ many words from a bag containing, say, $100$ words.
+in this example, adversary's options of what $p$ might be, given his
+knowledge of this randomised process, is in the options set
+$\mathcal{O}_p$, which contains all possible combinations of $5$ words,
+with cardinality $|\mathcal{O}_p| = 100^{5}$.  since this process is using
+uniform random distribution to sample the words, $H(\mathcal{O}_p) = \log_2
+100^5 = 33.22$.  meaning, asymptotically on average, the adversary has to
+ask, at least, $33.22$ binary questions.
+
+the key to inject entropy into a thing, is a matter of defining a process
+that forces the adversary to ask more questions.  in the example above, the
+process used randomness to force the adversary to ask questions about its
+sampled words.
+
+the key point of this section is to answer the question:  can cryptographic
+functions be used to force the adversary to ask more questions about a
+thing?  to which my answer is ``yes, we can'', and my proof will show it.
+but first, we have to define what a question means in our context.
+
+\subsubsection{what is a question}
+\begin{definition}[a question in password
+brute-forcing]\label{def_question}
+    if $p$ is an unknown password that the adversary got its key $k \gets
+    \hash(p, 8V)$, then a question is: whether a candidate password $\hat
+    p$ satisfies $\hash(\hat p, 8V) = k$.  which means that a question is
+    comprised of two things only:  
+    \begin{enumerate}
+        \item calculating a hash,
+        \item and then testing an equality.  
+    \end{enumerate}
+    if the adversary is forced to do (1) and (2), in order, then he has
+    asked a question, and got its answer.
 \end{definition}
 
-\begin{lemma}[specifications bundling is lossless]
-    if $\mathcal{\hat S}_x$ is a bundled specifications set of
-    $\mathcal{O}_x$, then $H(\mathcal{\hat S}_x) = H(\mathcal{O}_x)$
-    because bundling does not reduce number of questions that need to be
-    asked in order to reveal information about the specifications, as such
-    bundling merely groups certain specifications inside a
-    super-specification, and such grouping does not delete information.
-\end{lemma}
+\begin{note}
+    this question in \cref{def_question} is different than the theoretical
+    binary question given by shannon's entropy.  the question in
+    \cref{def_question} is what causes the cardinality $|\mathcal{O}_k|$ to
+    increase, while the theoretical binary question of shannon's entropy is
+    the $\log_2$ of this cardinality.
+\end{note}
 
-say that we've a password $p$.  we know from \cref{sec_pass_entropy} that
-$p$'s specifications set is $\mathcal{O}_p$ and its redundancy-free
-specifications set is $\mathcal{O}_p^*$, which can be fully revealed after
-asking no less than $\log_2 \mathcal{O}_s^*$ many balanced binary
-questions.  i.e. $H(\mathcal{O}_p) = \log_2 \mathcal{O}_s^*$.
+in other words, question asking and answering is very physical, as it
+requires measurable physical changes, such as executing cpu instructions.
+when the adversary does (1) and (2), in order, then he has asked a
+question.
 
-say that we've got a key $k_h \gets \hash(p, 8V)$.  what is $k$'s entropy?
-the answer is $H(\mathcal{O}_k) = H(\mathcal{O}_p) = \log_2
-|\mathcal{O}_p^*|$ for as long as $|\mathcal{O}_p^*| \le 2^{8V}$, because
-the process of hashing is a 1-to-1 mapping between password candidates and
-key candidates.  so the size of the redundancy-free specifications set does
-not change.  i.e.  $|\mathcal{O}_k^*| = |\mathcal{O}_p^*|$.  hence, $k$'s
-entropy has to equal $p$'s.
+if the adversary did (1) and (2), he cannot reject that he asked a question
+by simply saying that he didn't have the \emph{intention} to ask.  his
+intentions are irrelevant.  the fact remains that he \emph{physically did}
+(1) and (2), and that \emph{is} the \emph{act} of asking a question and
+getting its answer.
+
+so, in order to force the adversary to ask more questions, all we have to
+do is to force him to \emph{physically} do more of (1) and (2).  once he
+does the act, he asked the questions and got their answers.
+
+\subsubsection{an algorithm that forces questions}
 
 \hrule
 
