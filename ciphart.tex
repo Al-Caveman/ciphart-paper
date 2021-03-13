@@ -10,7 +10,6 @@
 \newtheorem{security}{security interpretation}
 \newtheorem{definition}{definition}
 \newtheorem{lemma}{lemma}
-\newtheorem{note}{note}
 \newtheorem{theorem}{theorem}
 \newtheorem{discovery}{discovery}
 \newtheorem{law}{law}
@@ -27,6 +26,8 @@
 \DeclareMathOperator{\hash}{\mathtt{hash}}
 \DeclareMathOperator{\rhash}{\mathtt{rhash}}
 \DeclareMathOperator{\mhash}{\mathtt{mhash}}
+\DeclareMathOperator{\irhash}{\mathtt{irhash}}
+\DeclareMathOperator{\imhash}{\mathtt{imhash}}
 \DeclareMathOperator{\argon}{\mathtt{argon2}}
 \DeclareMathOperator{\ciphart}{\mathtt{ciphart}}
 \DeclareMathOperator{\cost}{\mathtt{cost}}
@@ -63,7 +64,7 @@ henceforth, i propose \emph{ciphart}, which is:
     unit of shannon's entropy.  i.e. when \emph{ciphart} derives a key for
     you, it tells you that it has \emph{injected} a specific guaranteed
     quantity of shannon's entropy bits into your derived key.  this is
-    possible thanks to my invention, the ``entropy injection'' theorem.
+    possible thanks to my invention, the ``perfect lie'' theorem.
 
     this offers a great help as it gives us yet another much simpler
     approach to quantify our security gain as opposed to being limited to
@@ -209,18 +210,19 @@ we cannot ask in the case of passwords hashing, then why do we use this
 number?  the answer is, to obtain the total number of individual candidate
 tests that we need to perform asymptotically on average, because this
 number is $2^{H(\mathcal{O}_p)}$.   i.e. the adversary would end up,
-asymptotically on average, testing $2^{H(\mathcal{O}_p)}$ many password
-candidates.
+asymptotically on average, testing no less than $2^{H(\mathcal{O}_p)}$ many
+password candidates.
 
 \begin{lemma}[walking backwards to
 entropy]\label{theorem_back_to_entropy}
-    if, asymptotically on average, the minimum number of candidate password
-    tests to find a key that matches $p$'s key is $x$ many tests, then we
-    know that $H(\mathcal{O}_p) = \log_2 x$.
+    in the context of password brute-forcing, if, asymptotically on
+    average, the minimum number of options that need to be tested to find a
+    target key is $x$ many options, then we know that the entropy of that
+    target key is $\log_2 x$.
 \end{lemma}
 
 \subsection{passwords' security}
-\begin{definition}[systems' security]
+\begin{definition}[systems' security]\label{def_system_security}
 the security of a system is the cost of the cheapest method that can break
 it.
 \end{definition}
@@ -353,154 +355,137 @@ C\Big(p, \mhash(\ldots, N, M)\Big) &= H(\mathcal{O}_p) + e(M-A)\log_2 N \\
 
 \section{fundamental ideas}
 \subsection{``entropy injection'' theorem}
-the information content of a thing $x$, also known as its entropy
-$H(\mathcal{O}_x)$, is the minimum number of binary questions that, if
-answered, $x$ would be found.  in other words, for any $o \in \mathcal{O}$,
-we will know the answer of ``is $o=x$?''.
-
-entropy originates from randomness.  e.g. password $p$ has some entropy
-because the process that generated it contain some randomness.  an example
-of such process is a process that uniformly and randomly samples, with
-replacement, say, $5$ many words from a bag containing, say, $100$ words.
-in this example, adversary's options of what $p$ might be, given his
-knowledge of this randomised process, is in the options set
-$\mathcal{O}_p$, which contains all possible combinations of $5$ words,
-with cardinality $|\mathcal{O}_p| = 100^{5}$.  since this process is using
-uniform random distribution to sample the words, $H(\mathcal{O}_p) = \log_2
-100^5 = 33.22$.  meaning, asymptotically on average, the adversary has to
-ask, at least, $33.22$ binary questions.
-
-the key to inject entropy into a thing, is a matter of defining a process
-that forces the adversary to ask more questions.  in the example above, the
-process used randomness to force the adversary to ask questions about its
-sampled words.
-
-the key point of this section is to answer the question:  can cryptographic
-functions be used to force the adversary to ask more questions about a
-thing?  to which my answer is ``yes, we can'', and my proof will show it.
-but first, we have to define what a question means in our context.
-
-\subsubsection{what is a question}
-\begin{definition}[a question in password
-brute-forcing]\label{def_question}
-    if $p$ is an unknown password that the adversary got its key $k \gets
-    \hash(p, 8V)$, then a question is: whether a candidate password $\hat
-    p$ satisfies $\hash(\hat p, 8V) = k$.  which means that a question is
-    comprised of two things only:  
-    \begin{enumerate}
-        \item calculating a hash,
-        \item and then testing an equality.  
-    \end{enumerate}
-    if the adversary is forced to do (1) and (2), in order, then he has
-    asked a question, and got its answer.
+\begin{definition}[option testing]\label{def_option_testing}
+    an option is tested if a hash is calculated, and then checked for
+    equality against a value.
 \end{definition}
 
-\begin{note}
-    this question in \cref{def_question} is different than the theoretical
-    binary question given by shannon's entropy.  the question in
-    \cref{def_question} is what causes the cardinality $|\mathcal{O}_k|$ to
-    increase, while the theoretical binary question of shannon's entropy is
-    the $\log_2$ of this cardinality.
-\end{note}
+so, option testing is very physical.  if the adversary ended up calculating
+more hashes of things, and then checked if the hashes matched some output,
+then he has effectively tested more options.
 
-in other words, question asking and answering is very physical, as it
-requires measurable physical changes, such as executing cpu instructions.
-when the adversary does (1) and (2), in order, then he has asked a
-question.
+then, combining this fact with \cref{theorem_back_to_entropy}, testing more
+options necessarily means that the adversary has suffered more entropy; aka
+needed to ask more questions.
 
-if the adversary did (1) and (2), he cannot reject that he asked a question
-by simply saying that he didn't have the \emph{intention} to ask.  his
-intentions are irrelevant.  the fact remains that he \emph{physically did}
-(1) and (2), and that \emph{is} the \emph{act} of asking a question and
-getting its answer.
+the adversary cannot deny asking more questions by stating that his
+intention wasn't to ask them.  his intentions are irrelevant.  when he
+commits the physical action of hashing something and then testing it for
+equality, he has physically increased the number of questions that he has
+asked so far.
 
-so, in order to force the adversary to ask more questions, all we have to
-do is to force him to \emph{physically} do more of (1) and (2).  once he
-does the act, he asked the questions and got their answers.
+\cref{alg_irhash} shows an example of a function that uses cryptography to
+force the adversary to calculate more hashes and test them for equality.
+i.e.  effectively forcing the adversary to ask more questions.  in
+\cref{irhash_forced_hashing} the adversary is forced to calculate a hash,
+and in \cref{irhash_forced_equality} the adversary is forced to perform an
+equality test to see whether the calculated hash equals any of the
+elements in $\mathcal{H}$.
 
-\subsubsection{an algorithm that forces questions}
+\begin{algorithm}
+let $i=0, j=1$\;
+allocate $8V$ bits variables, $k_i$ and $k_j$\;
+$k_i \gets \hash(p, 8V)$\;
+let $\mathcal{H}$ be a set containing half the $8V$ hash space\;
+\For{$0, 1, \ldots, N-1$}{
+    $k_j \gets \hash(k_i, 8V)$\;\label{irhash_forced_hashing}
+    \If{$k_j \in \mathcal{H}$}{\label{irhash_forced_equality}
+        $k_j \gets k_j + 1$\;
+    }
+    $\hat i \gets i$\;
+    $i \gets j$\;
+    $j \gets \hat i$\;
+}
+\Return{$k_j$}
+\caption{$\irhash(p, 8V, N)$}
+\label{alg_irhash}
+\end{algorithm}
 
-\hrule
+unless the function $\hash$ is broken, when the adversary wants to
+brute-force to find $p$ that gave $k$, he has no choice but to perform at
+least $N$ many hash calculations and at least $N$ many equality tests,
+which, by \cref{theorem_back_to_entropy} and \cref{def_option_testing}, the
+adversary has effectively asked $\log_2 N$ many more theoretical binary
+questions in addition to $H(\mathcal{O}_p)$.  so \cref{alg_irhash}
+effectively causes the entropy of the derived key $k$ to increase to:
+\begin{equation}
+    H(\mathcal{O}_k) = H(\mathcal{O}_p) + \log_2 N
+\end{equation}
 
-say that $p$ is a password that all ambiguities about it are resolved after
-getting, on average, $H(\mathcal{O}_p)$ many balanced binary questions,
-$q_0, q_1, \ldots, q_{H(\mathcal{O}_p)-1}$, answered.
+in other words, $\irhash$ in \cref{alg_irhash} is a variation of $\rhash$,
+except that the former uses cryptography to inject $\log_2 N$ many entropy
+bits into the derived key.
 
-case 1 --- say that the adversary got $p$'s hash, $k \gets \hash(p \Vert s,
-8V)$, and that his goal is to find out $p$ by brute-forcing.  in this case,
-the adversary will be considering password candidates $p_0, p_, \ldots,
-p_{2^{H(\mathcal{O}_p)-1}}$, and tests them by asking the following binary
-questions in order to guarantee finding $p$:
-\begin{itemize}
-    \item $q_0$: is $\hash(p_0 \Vert s, 8V) = k$?
-    \item $q_1$: is $\hash(p_1 \Vert s, 8V) = k$?
+$\irhash$ can be trivially extended to a memory-hard variant, $\imhash$,
+which will give the following entropy:
+\begin{equation}
+    H(\mathcal{O}_k) = H(\mathcal{O}_p) + e(M-A)\log_2 N
+\end{equation}
 
-    $\vdots$
-
-    \item $q_{H(\mathcal{O}_p)-1}$: is $\hash(p_{H(\mathcal{O}_p)-1} \Vert
-    s, 8V) = k$?
-\end{itemize}
-
-case 2 --- say that $\mhash$,was used instead of just $\hash$;  i.e. the
-adversary got $\hat k \gets \rhash(p \Vert s, 8V, N)$ instead.  in this
-case, the adversary will seek to answer the following binary questions:
-\begin{itemize}
-    \item $\hat q_0$: is $\rhash(p_0 \Vert s, 8V, N) = k$?
-    \item $\hat q_1$: is $\rhash(p_1 \Vert s, 8V, N) = k$?
-
-    $\vdots$
-
-    \item $\hat q_{H(\mathcal{O}_p)-1}$: is $\rhash(p_{H(\mathcal{O}_p)-1}
-    \Vert s, 8V, N) = k$?
-\end{itemize}
-
-so, you may say that we're still in need to ask, on average,
-$H(\mathcal{O}_p)$ many balanced binary questions, right?  i disagree.
-
-i think what is happening with $\rhash$ is that each question $\hat q_0,
-\hat q_1, \ldots \hat q_{H(\mathcal{O}_p)-1}$ is a \emph{bundled} question,
-each, containing $N$ many balanced binary questions.
-
-i.e., for any question $\hat q_i$, answering it is equivalent to answering
-the $N$-deep recursion over $\hash$:
-\[
-    \text{$\hat q_i$: is }\hash(\hash(\ldots\hash(p_i \Vert s, 8V), \ldots,
-    8V), 8V) = k \text{?}
-\]
-which its answer is ``yes'' if and only if all of the following $N$ many
-questions are answered by ``yes'':
-\begin{itemize}
-    \item is $\hash(p_i \Vert s, 8V) = k_0$?
-    \item is $\hash(k_0 \Vert s, 8V) = k_1$?
-    \item is $\hash(k_1 \Vert s, 8V) = k_2$?
-
-    $\vdots$
-
-    \item is $\hash(k_{N-1} \Vert s, 8V) = k$?
-\end{itemize}
-
-meaning, if any $\hat q_i$ question is answered, it necessarily means that
-we have answered $N$ many $q_i$-like questions.  if answer to $\hat q_i$ is
-``yes'', it means that the answer to each of those $N$ many $q_i$-like
-questions is also ``yes''.  if answer to $\hat q_i$ is ``no'', it also
-means that the answer to each of those $N$ many questions is also
-``no''\footnote{unless hashing collisions happen, which is very unlikely.}.
-
-in other words, functions $\rhash$ and $\mhash$ are using cryptography to
-force the adversary to need to answer more questions beyond
-$H(\mathcal{O}_p)$.  $\rhash$ increases questions by a factor of $N$.
-$\mhash$ increases questions by a factor of $N^{e(M-A)}$.
-
-\begin{theorem}[entropy injection] \label{theorem_entropy_injection}
-    for any password $p$, and any positive numbers $V$, $N$ and $M$:
-    \[
-        H\Big(\rhash(p\Vert s, 8V, N)\Big) = C\Big(p, \rhash(\ldots, N)\Big)
-    \]
-    \[
-        H\Big(\mhash(p\Vert s, 8V, N, M)\Big) = C\Big(p, \mhash(\ldots, N,
-        M)\Big)
-    \]
+\begin{theorem}[entropy injection]\label{theorem_entropy_injection}
+    $\irhash$ and $\imhash$ inject $\log_2 N$ and $e(M-A)\log_2 N$ bits
+    into their derived keys, respectively, in addition to the entropy
+    already in the input password $H(\mathcal{O}_p)$.
 \end{theorem}
+
+i think, if anyone rejects the possibility of
+\cref{theorem_entropy_injection}, then he has necessarily rejected that
+hashing functions, as well as symmetric ciphers\footnote{because symmetric
+ciphers can be used to create hashing functions}, can exist.  because, if
+$\hash$ is not broken, then \cref{theorem_entropy_injection} demonstrates a
+way by which the adversary is forced to ask more questions, hence
+increasing entropy.
+
+\subsection{``perfect lie'' theorem}
+equality testing is usually cheap.  e.g. the $\texttt{CMP}$ cpu assembly
+instruction usually takes $1$ cpu cycle.  each $\hash$ call may perform
+hundreds of cpu cycles.  meaning the number of cpu cycles done by
+performing an equality test is relatively nothing compared to what $\hash$
+is doing.  so why not ignore the cycles due to the equality test, and lie
+that it is already done when calling $\hash$?
+
+\begin{definition}[the lie]
+    out of the total cpu cycles that are required to be performed by
+    $\hash$, $99\%$ of them are to calculate the hash, and $1\%$ of them
+    are to test whether the calculated hash equals some desired hash.  so,
+    a single $\hash$ call is doing both: hashing and equality testing.
+\end{definition}
+
+as far as the security of a system in \cref{def_system_security} is
+concerned, ``the lie'' is not distinguishable from truth, because either
+way we obtain the same amount of security from the view of the adversary.
+
+so, if ``the lie'' is as good as not lying, except that not lying requires
+a more complex code base as shown in $\irhash$ in \cref{alg_irhash}, or its
+memory-hard variant $\imhash$, then why not lie and have a simpler code
+base?  i'd say this lie is totally worth it.
+
+\begin{theorem}[perfect lie] \label{theorem_perfect_lie}
+    for any password $p$, and any positive numbers $V$, $N$, $M$ and $A$,
+    such that $M \ge A$:
+    \[\begin{split}
+        H(\mathcal{O}_{k_h}) 
+            &= C\Big(p, \hash(\ldots)\Big) \\
+            &= H(\mathcal{O}_p) \\
+        H(\mathcal{O}_{k_r}) 
+            &= C\Big(p, \rhash(\ldots, N)\Big) \\
+            &= H(\mathcal{O}_p) + \log_2 N \\
+        H(\mathcal{O}_{k_m}) 
+            &= C\Big(p, \mhash(\ldots, N, M)\Big) \\
+            &= H(\mathcal{O}_p) + e(M-A)\log_2 N \\
+    \end{split}\]
+    where:
+    \[\begin{split}
+        k_h &= \hash(p, 8V) \\
+        k_r &= \rhash(p, 8V, N) \\
+        k_m &= \mhash(p, 8V, N, M) \\
+    \end{split}\]
+\end{theorem}
+
+thanks to the ``perfect lie'' theorem, we can now move on and use regular
+$\rhash$ and $\mhash$, and ---at the same time--- dare to have a very
+simple security interpretation, of their contribution to our security, in
+the unit of shannon's entropy.
 
 \subsection{``cacheable keys'' discovery}
 \begin{discovery}[cacheable keys]\label{discov_key_caching}
@@ -767,13 +752,8 @@ a hashing function here is a problem due to:
 
 \subsubsection{output}
 \begin{tabularx}{\columnwidth}{lX}
-$k$ & $K$-bytes key.\\
-$n$ & total number of times $\enc$ was actually called.  $\log_2 n$ is
-        total number shannon's entropy bits that \emph{ciphart} injected
-        into $k$, such that $\log_2 n \ge B$.\\
-$\hat M$ & actual number of bytes required to exist in random-access
-            memory.\\
-$d$     & actual number of bytes required to exist in hard-disk.\\
+$k$ & $K$-bytes key, with $H(\mathcal{O}_p) + \log_2 n$ many entropy
+        bits.\\
 \end{tabularx}
 
 \subsubsection{steps}
@@ -784,8 +764,8 @@ from a password independent variant.
 
 \begin{algorithm}
 \If{$Y$ {\bf and} $\fexists(Z)$}{\label{ciphart_cache_hit}
-    $k, n, d \gets \fread(Z, 0, V + \sizeof(k\Vert n\Vert d))$\;
-    \Return{$k, n, d$}
+    $k \gets \fread(Z, 0, V)$\;
+    \Return{$k$}
 }
 \While{$1$}{
     \For{$g \gets 0, 1, \ldots, G-1$}{
@@ -839,10 +819,10 @@ from a password independent variant.
 $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
 \If{$Y$}{\label{ciphart_cache_miss}
-    $\fwrite(Z, k \Vert n \Vert d)$\;
+    $\fwrite(Z, k)$\;
 }
 $\delete(F)$\;
-\Return{$k, n, d$}
+\Return{$k$}
 \caption{ciphart}
 \label{alg_ciphart}
 \end{algorithm}
@@ -948,7 +928,7 @@ in this scenario, the user memorises a sensible password that he can
 remember, with enough initial entropy, and then uses \emph{ciphart},
 preferably with disk caching, to inject large amounts of entropy bits into
 his derived keys, way beyond the reach of pre-\emph{ciphart} key derivation
-functions; thanks to \cref{theorem_entropy_injection} and discovery
+functions; thanks to \cref{theorem_perfect_lie} and discovery
 \ref{discov_key_caching}.
 
 here, the expensively derived key is only used to unlock a local password
@@ -975,7 +955,7 @@ derive more expensive keys.  this way, applications, such as
 will only send \emph{ciphart}-derived keys with increased shannon's entropy
 content.
 
-thanks to \cref{theorem_entropy_injection}, this will automatically
+thanks to \cref{theorem_perfect_lie}, this will automatically
 increase shannon's entropy of all users' passwords without requiring users
 to memorise harder passwords.  thanks to discovery
 \ref{discov_key_caching}, the user will not face any delay in his daily
@@ -1015,25 +995,10 @@ the adorable normies.
 \break
 \appendix
 \section{donations}
-this work is sponsored by an unexpected nerdiness.  nothing here was
-supposed to happen.  the cause  remains unknown, so we call it
-\emph{something random with a large entropy}.
-
-not-so-ancient mythology\footnote{i made this myth up.} has it that, every
-time a donation is made for a good cause, a beautiful torch is kindled
-somewhere deep within an otherwise cold and dark space.
-
-the torch is pure with an innocent smile every time a spending is committed
-towards good.  but, she drops a tear when the spending is done in excess.
-despite her attempts to maintain a steady light, sometimes her tears force
-her light to flicker, and sometimes the flickering causes her to disappear.
-when she is gone, she is never back again, except in the memories of those
-who have once witnessed her charm\ldots
-
-so, if you opt for a donation, i'd appreciate exercising wisdom, so that
-the sensible balance is not exceeded; lest we want a beautiful torch to be
-born, only to make her disappear in her tears.
-
+no big deal, but i thought to give it a try to see how it feels to be one
+of those people who get donated to.  i have once heard bryan lunduke say,
+in a very energetic manner, that it feels like being donated to.  so i
+guess it probably feels very good.
 \subsection{bitcoin}
 \begin{center}
     \includegraphics[width=121px]{./pics/btc_wallet_address_trimmed.png}
