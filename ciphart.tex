@@ -379,21 +379,21 @@ asked so far.
 \cref{alg_irhash} shows an example of a function that uses cryptography to
 force the adversary to calculate more hashes and test them for equality.
 i.e.  effectively forcing the adversary to ask more questions.  in
-\cref{irhash_forced_hashing} the adversary is forced to calculate a hash,
-and in \cref{irhash_forced_equality} the adversary is forced to perform an
-equality test to see whether the calculated hash equals any of the
-elements in $\mathcal{H}$.
+\cref{irhash_forced_hashing_1,irhash_forced_hashing_2} the adversary is
+forced to calculate a hash, and in \cref{irhash_forced_equality} the
+adversary is forced to perform an equality test to see whether the
+calculated hash equals any of the elements in the set $\mathcal{H}$.
 
 \begin{algorithm}
 let $i=0, j=1$\;
 allocate $8V$ bits variables, $k_i$ and $k_j$\;
-$k_i \gets \hash(p, 8V)$\;
+$k_i \gets \hash(p, 8V)$\;\label{irhash_forced_hashing_1}
 let $\mathcal{H}$ be a set containing half the $8V$ hash space\;
 \For{$0, 1, \ldots, N-1$}{
-    $k_j \gets \hash(k_i, 8V)$\;\label{irhash_forced_hashing}
-    \If{$k_j \in \mathcal{H}$}{\label{irhash_forced_equality}
-        $k_j \gets k_j + 1$\;
+    \If{$k_i \in \mathcal{H}$}{\label{irhash_forced_equality}
+        $k_i \gets k_i + 1$\;
     }
+    $k_j \gets \hash(k_i, 8V)$\;\label{irhash_forced_hashing_2}
     $\hat i \gets i$\;
     $i \gets j$\;
     $j \gets \hat i$\;
