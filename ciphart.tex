@@ -432,15 +432,15 @@ which will give the following entropy:
 \end{theorem}
 
 if anyone rejects \cref{theorem_entropy_injection}, then he can consider
-this a proof by contradiction that that hashing functions, as well as
-encryption functions\footnote{because encryption functions can be used to
+this a proof by contradiction that that hashing functions, as well as any
+encryption function\footnote{because encryption functions can be used to
 create hashing functions}, do not exist.  so, which one do you choose?  
 \begin{enumerate}
     \item that i've proven that \cref{theorem_entropy_injection} is
     injecting shannon's entropy bits?
 
-    \item or that i've proven that hashing and encryption functions do not
-    exist?
+    \item or that i've proven by contradiction that hashing and encryption
+    functions do not exist?
 \end{enumerate}
 
 i personally think that i've proven (1), but if you think that i've proven
@@ -702,14 +702,14 @@ function.  using a hashing function here is a problem due to:
 uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
 \begin{itemize}
     \item easier by injecting shannon's entropy bits into its derived keys;
-    thanks to the ``perfect lie'' theorem (\cref{theorem_perfect_lie}).
+    thanks to my ``perfect lie'' theorem (\cref{theorem_perfect_lie}).
 
     \item memory-\emph{harder} by utilising space beyond the random-access
-    memory, by also utilising the hard-disk; thanks to the ``cacheable
+    memory, by also utilising the hard-disk; thanks to my ``cacheable
     keys'' discovery (discovery \ref{discov_key_caching}).
 
     \item faster by using $\hash$ only when compression takes place,
-    otherwise using $\enc$; thanks to the ``hashing is only for
+    otherwise using $\enc$; thanks to my ``hashing is only for
     compression'' law (law \ref{law_simplification}).
 \end{itemize}
 
@@ -757,6 +757,12 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                 & this is the size of the encryption key that's used to
                     solve \emph{ciphart}'s tasks.  this is different than
                     output key's size, $K$, which is $\enc$-independent.\\
+    $R$         & $V$ bytes of cryptographically secure random number.
+                    this is a temporary key for encrypting and decrypting
+                    the $F$ file, that's forgotten upon \emph{ciphart}'s
+                    completion.  why?  so that we can just delete the $F$
+                    file normally, without worrying about having its
+                    content remain in the disk.\\
     $\hat T$    & $\gets \maxf(\lceil V C^{-1}\rceil, T)$.  this
                     is to ensure that we have enough encrypted bytes for
                     new keys.\\
@@ -775,7 +781,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
     $n_l$       & $\gets \maxf(\text{nonce})L^{-1}l$.  nonce variable for
-                    $l^{th}$ lane.\\
+                    $l^{th}$ lane.  $n_0L$ is also used as a counter to
+                    measure total number of times $\enc$ was called.\\
     $f$         & $\gets 0$.  a counter indicating number of times
                     memory is filled with $\hat M$ many bytes.\\
     $d$         & $\gets 0$.  a counter indicating total number of saved
@@ -786,7 +793,7 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     updated from the hard-disk.\\
     $*v$         & $\gets *\hash(P \Vert S \Vert M \Vert D \Vert \ldots
                     \Vert K, V)$.  a pointer to the first byte where
-                    $V$-bytes key is stored.  $v$ is the key itself, and
+                    $V$ bytes key is stored.  $v$ is the key itself, and
                     $*v$ is a pointer to it.\\
     $Z$         & $\gets \hash(v \Vert 0, V)$.  file name where output key,
                     $k$, is expected to be cached, if $k$ was previously
@@ -795,8 +802,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
 
 \subsubsection{output}
 \begin{tabularx}{\columnwidth}{lX}
-$k$ & $K$-bytes key, with $H(\mathcal{O}_p) + \log_2 n_0$ many shannon's
-        entropy bits, such that $\log_2 n_0 \ge B$.\\
+$k$ & $K$ bytes key, with $H(\mathcal{O}_p) + \log_2 n_0L$ many shannon's
+        entropy bits, such that $\log_2 n_0L \ge B$.\\
 \end{tabularx}
 
 \subsubsection{steps}
@@ -840,14 +847,17 @@ need them yet.
         }
         \uIf{$d \le D$}{\label{ciphart_D_filling}
             \For{$i \gets gLT, \ldots, gLT+(T-1)$}{
-                $\fwrite(F, m_i)$\;
+                $\hat m_i \gets \enc(m_i, d, R)$\;
+                $\fwrite(F, \hat m_i)$\;
                 $d \gets d + 1$\;
                 \If{$d \ge D$}{ \textbf{break}\; }
             }
         }\Else{
             $h \gets h + L$\;
             \If{$h \ge H$}{\label{ciphart_D_using}
-                $v \gets v \oplus \fread(F, v \bmod (d - V), V)$\;
+                $\hat d \gets v \bmod (d - V)$\;
+                $\hat v \gets \fread(F, \hat d, V)$\;
+                $v \gets v \oplus \dec(\hat v, d, R)$\;
                 $u \gets u + 1$\;
                 $h \gets 0$\;
             }
@@ -872,9 +882,8 @@ $\delete(F)$\;
 
 \subsection{noteworthy features}
 \subsubsection{parallelism}
-since iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
-are fully independent of one other, they can quite happily utilise $L$ cpu
-cores, specially when segment sizes, $T$, are larger.
+iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
+are independent, so can be done in $L$ cpu cores.
 
 \subsubsection{memory-hardness}
 \begin{proof}
@@ -1038,12 +1047,11 @@ the adorable normies.
 \break
 \appendix
 \section{donations}
-no big deal, but i thought to give it a try to see how it feels to be one
-of those people who get donated to.  i have once heard bryan
-lunduke\footnote{\url{http://lunduke.com}} say, in a very energetic manner,
-that it feels like being like people who get
-donated\footnote{\url{https://youtu.be/radmjL5OIaA?t=12}}.  so i guess it
-probably feels very good.
+no big deal, but i want to see how it feels to be like those people who get
+donated to.  \emph{bryan lunduke}\footnote{\url{http://lunduke.com}} said
+once, in a very energetic manner, that it feels like being like ``people
+who get donated''\footnote{\url{https://youtu.be/radmjL5OIaA?t=12}}.  so, i
+guess it's one of those unexplainable things that need to be tried.
 
 \subsection{bitcoin}
 \begin{center}
