@@ -72,8 +72,8 @@ henceforth, i propose \emph{ciphart}, which is:
 
     \item harder --- because it can require crazy-large amounts of memory,
     beyond our random-access memory, thanks to it being able to use the
-    hard-disk as well.  this is possible thanks to my discovery ``cacheable
-    keys''.
+    hard-disk as well.  this is possible thanks to my invention ``caveman's
+    keys cache''.
 
     this is optional, but i extremely like it as it effectively gives me
     much more security while eventually becoming much faster as well, and
@@ -508,11 +508,7 @@ simple security interpretation, of their contribution to our security, in
 the unit of shannon's entropy, without needing a more complex function such
 as $\irhash$ in \cref{alg_irhash}.
 
-\subsection{``cacheable keys'' discovery}
-\begin{discovery}[cacheable keys]\label{discov_key_caching}
-    caching keys securely is easily doable, and great security utility
-    exists in doing so for expensively-derived keys.
-\end{discovery}
+\subsection{``caveman's keys cache'' invention}
 \begin{definition}[caveman's keys cache]
     a keys cache that has $O(1)$ asymptotic worst run-time complexity for
     insertion, deletion, and retrieval when the user knows the password.
@@ -527,7 +523,7 @@ as $\irhash$ in \cref{alg_irhash}.
     the adversary will find it as hard to brute force the key derivation
     function instead of caveman's keys cache.
 \end{definition}
-\begin{theorem}[caveman's keys cache]
+\begin{theorem}[caveman's keys cache]\label{theorem_cavemans_keys_cache}
    caveman's keys cache exists.
 \end{theorem}
 
@@ -788,8 +784,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
     thanks to my ``perfect lie'' theorem (\cref{theorem_perfect_lie}).
 
     \item memory-\emph{harder} by utilising space beyond the random-access
-    memory, by also utilising the hard-disk; thanks to my ``cacheable
-    keys'' discovery (discovery \ref{discov_key_caching}).
+    memory, by also utilising the hard-disk; thanks to my ``caveman's keys
+    cache'' theorem (\cref{theorem_cavemans_keys_cache}).
 
     \item faster by using $\hash$ only when compression takes place,
     otherwise using $\enc$; thanks to my ``hashing is only for
