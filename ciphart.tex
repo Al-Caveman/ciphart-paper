@@ -513,72 +513,152 @@ as $\irhash$ in \cref{alg_irhash}.
     caching keys securely is easily doable, and great security utility
     exists in doing so for expensively-derived keys.
 \end{discovery}
+\begin{definition}[caveman's keys cache]
+    a keys cache that has $O(1)$ asymptotic worst run-time complexity for
+    insertion, deletion, and retrieval when the user knows the password.
+    but, when the password is unknown, the cache has a brute forcing space
+    of, at least, $n2^{H(\mathcal{O}_p)}$ many attempts, where $n$ is the
+    size of the cache.
 
-\subsubsection{why does it work}
-\begin{itemize}
-    \item when expensively derived keys are cached, only the first key
-    derivation call will be expensive, while subsequent calls will be
-    semi-instantaneous.  this effectively allows users to tolerate much
-    more expensive, or secure, key derivation as it only happens during the
-    initial, say, login phase.  subsequent use of the extremely expensive
-    key is instantaneous.
+    i.e. by \cref{theorem_back_to_entropy}, the adversary has to suffer an
+    entropy of $H(\mathcal{O}_p) + \log_2 n$, and $n$ can be made
+    arbitrarily large by inserting fake cache entries, up to a point where
+    the adversary would find no point in stealing user's hard disk.  i.e.
+    the adversary will find it as hard to brute force the key derivation
+    function instead of caveman's keys cache.
+\end{definition}
+\begin{theorem}[caveman's keys cache]
+   caveman's keys cache exists.
+\end{theorem}
 
-    so instead of having the user use a somewhat expensive key derivation
-    by wayting say, $3$ seconds in each login, he will ---instead--- wait,
-    say $10$ seconds in his initial login in order to utilise a much more
-    expensive key derivation, and then wait near $0$ seconds for every
-    subsequent login as the expensive key is cached.
+let's say that $k$ is an expensively derived key, say, by using
+\emph{ciphart}, \emph{argon2}, \emph{scrypt}, etc.  if we can securely
+cache $k$, it would mean that we can derive $k$ with more expensive
+parameters as it will be done only once, while subsequent calls of the key
+derivation function to obtain the key $k$ would be almost instantaneous as
+it will be pulled from the cache at $O(1)$ asymptotic worst run-time
+complexity.
 
-    \item derived keys can be cached securely, without changing most users'
-    threat model.  e.g. cached keys can live in a \emph{dm-crypt} partition
-    that is encrypted with a large encryption key that is stored properly,
-    and the cache can have strict read permissions so that only the unique
-    user that runs \texttt{ciphart} executable can read it.
+it is trivial to cache key $k$ securely, by relying on file system
+permissions, or encrypted disk partitions.  but this is not nice enough, as
+it will require special system configuration.  i don't like having to deal
+with this extra complexity of double checking that the partition where the
+keys are cached is encrypted properly.  
 
-    this only requires to trust the user \texttt{root}, which is already
-    trusted by almost everyone.  so we are not introducing a new
-    threat model.
-\end{itemize}
+but i have found an even nicer approach, that does not require any special
+system configuration.  i.e. we can use a normal disk to save the cached
+keys in, and yet do it in such a way that if an adversary stole the disk,
+he will have to face the consequences of a too-large entropy, up to a point
+he wouldn't benefit from stealing user's hard disk.
 
-for most people, if \texttt{root} is compromised, then the adversary can
-break every other key derivation function anyway, including those that do
-not cache keys, by simply, say, running a keylogger.
+\subsubsection{cache's properties}
+\begin{enumerate}
+    \item each cached key is indexed by a unique $8V$ bits hash.
 
-so, practically, we are not relaxing the threat model, but we are only
-increasing the value that we can extract from the threat model that we
-already have.
+    \item each cached content is $8W$ bits encrypted by another unique $8V$
+    bits hash.  if the clear text data is less than $8W$, clear text is
+    padded until $8W$ is achieved.  clear text data cannot be larger than
+    $8W$.
 
-most importantly, utilising discovery \ref{discov_key_caching} allows us to
-achieve a memory-\emph{harder} key derivation in an extremely  usable way.
-more details on memory-harderness later.
+    \item insertion, deletion, and retrieval is $O(1)$.
+
+    \item brute forcing is $O(n + 2^{H(\mathcal{O}_p)})$, where $n$ is
+    total number of cached entries, and $H(\mathcal{O}_p))$ is password's
+    entropy.  so, if an adversary wants to figure out password $p$ which
+    gave some cached object, he needs to deal with $H(\mathcal{O}_p) +
+    \log_2 n)$ entropy bits.
+\end{enumerate}
+
+\subsubsection{cache initialisation}
+\begin{enumerate}
+    \item fill the cache with lots of fake entries.  e.g. $n=2^{30}$ many
+    fake entries.
+\end{enumerate}
+
+a fake entry is one that its key is $8V$ bits of cryptographically secure
+random number, and its content is $8W$ of the same.  from an adversary's
+point of view, there is no distinction between a real cached key entry, and
+a fake one.
+
+\subsubsection{cache insertion}
+\begin{enumerate}
+    \item derive key $k$ by using some key derivation function, such as
+    \emph{ciphart}, \emph{argon2}, etc.
+
+    \item let $j$ be the hash of all parameters that were given to the key
+    derivation function.  the parameters include user's password, salt,
+    memory requirement, etc.
+
+    \item $\hat j \gets \hash(j \Vert 0, 8V)$.
+
+    \item $\hat k \gets \enc(k, 0, j)$.
+
+    \item insert the following entry into the keys cache:
+        \begin{itemize}
+            \item entry's key is $\hat j$.
+            \item entry's content is $\hat v$.
+        \end{itemize}
+\end{enumerate}
+
+\subsubsection{cache retrieval}
+let's say that the user wants to retrieve the expensively derived key, $k$,
+from the cache.
+\begin{enumerate}
+    \item user calculates $j$ by hashing all parameters of the key
+    derivation function.
+
+    \item user calculates $\hat j \gets \hash(j \Vert 0, 8V)$.
+
+    \item user queries cache by asking for entry with key $\hat j$.
+
+    \item user obtains data associated with key $\hat j$, which is $\hat
+    k$.
+
+    \item user retrieves the key that he wanted, $k$, by calculating $k
+    \gets \dec(\hat k, 0, j)$.
+\end{enumerate}
 
 \subsubsection{potential adversary strategies}
-let's see what the adversary might try to do against a key caching system:
+say that the adversary's
 \begin{itemize}
-    \item adversary strategy 1 --- hack into user's system and execute a
-    program as that user that tries to read the password cache file to
-    obtain the memory-harder key inside it.
+    \item input: the expensively derived key $v$, knows all parameters of
+    the key derivation which gave $v$, including knowledge of the process
+    the generated the password $p$, except that he doesn't know the
+    password $p$.  also let's say that the adversary stole user's hard
+    disk, which contains user's keys cache.
 
-    \textbf{answer:} he will not be able to read the file due to strict
-    read permissions of the cached files as set earlier, since the caches
-    are readable only by \texttt{ciphart}'s user, which is a unique user
-    only used by the executable \texttt{ciphart}.
-
-    \item adversary strategy 2 --- steal user's hard disk and try to mount
-    it in his system, to login as root and chance permissions of the key
-    cache files.  i.e. users cannot read the cache entries directly.
-
-    \textbf{answer:} the partition, where the cached files are saved, is
-    properly encrypted, so he can't see the cached files, let alone
-    changing their read permissions.
-
-    \item adversary strategy 3 --- break into machine's \texttt{root}
-    account.
-
-    \textbf{answer:} he will succeed, but then he can also run a keylogger,
-    which will also break every other key derivation function, even those
-    that do not use key caching, such as \emph{scrypt}, \emph{argon2}, etc.
+    \item goal: to find $p$ which gave $v$.  let's say that the cache was
+    initialised with $2^{30}$ many fake entries.  so what can the adversary
+    do?
 \end{itemize}
+
+because the adversary knows the process that generated $p$, he knows $p$'s
+shannon's entropy $H(\mathcal{O}_p)$.  i.e. he knows that $p$ is one of
+$2^{H(\mathcal{O}_p)}$ many options.  the adversary will need to:
+\begin{enumerate}
+    \item calculate $2^{H(\mathcal{O}_p)}$ many different instances of $j$,
+    i.e.  $j_0, j_1, \ldots, j_{2^{H(\mathcal{O}_p)-1}}$, each calculated
+    with a different password candidate.
+
+    \item for any cached data $\hat v$ in the $2^{30}$ many entries, try to
+    decrypt it with each key in $j_0, j_1, \ldots,
+    j_{2^{H(\mathcal{O}_p)-1}}$ until $v$ is found.
+\end{enumerate}
+
+this means that the brute forcing space of the adversary is
+$2^{H(\mathcal{O}_p)} 2^{30} = 2^{H(\mathcal{O}_p) + 30}$, which, unless
+$\hash$ is broken, is not reducible.  therefore, by applying
+\cref{theorem_back_to_entropy}, the adversary needs to answer no less
+than $H(\mathcal{O}_p) + 30$ many theoretical binary questions.
+
+so, while password $p$'s entropy is just $H(\mathcal{O}_p)$, the adversary
+needs to suffer a higher entropy when trying to decode the keys cache.
+specially. the adversary needs to suffer $H(\mathcal{O}_p) + 30$.
+
+effectively, it is easily possible that $H(\mathcal{O}_p) + 30$ is the same
+amount of entropy that the adversary would need to suffer if he was to
+trying to find $p$ by brute forcing the key derivation function.  i.e. the
+adversary did not benefit from stealing user's hard disk!
 
 \subsection{``hashing is only for compression'' law}
 which one is simpler when, say, building a wooden house?
@@ -697,6 +777,9 @@ function.  using a hashing function here is a problem due to:
     symmetric block encryption functions.
 \end{law}
 
+
+\section{caveman's keys cache}
+
 \section{ciphart}
 \emph{ciphart} is basically a variation of \emph{argon2}, except that it
 uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
@@ -731,11 +814,14 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
 
 \subsubsection{internal variables}
 \begin{tabularx}{\columnwidth}{lX}
-    $\enc$      & encryption function.\\
+    $\enc$      & data encryption function with nonce and key.\\
+    $\dec$      & data decryption function with nonce and key.\\
     $\hash$     & hashing function.\\
     $\fread$    & hard-disk file reading function, with seeking.  e.g.
                     $\fread(x, y, z)$ reads $z$ many bytes from file $x$
                     after seeking $y$ bytes forward.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $\fwrite$   & hard-disk file writing function.\\
     $C$         & $\gets \begin{cases}
                         64 \text{ bytes} & \text{if $\enc$ is
@@ -745,8 +831,6 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                      \end{cases}$\\
                 & this to reflect the block size of the encryption
                     algorithm that implements $\enc$.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $V$ & $\gets \begin{cases}
                         32 \text{ bytes} & \text{if $\enc$ is
                                             \emph{xchacha20}}\\
@@ -763,6 +847,9 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     completion.  why?  so that we can just delete the $F$
                     file normally, without worrying about having its
                     content remain in the disk.\\
+    $J$         & $\gets \hash(P \Vert S \Vert M \Vert D \Vert \ldots
+                    \Vert K, V)$.  $V$ bytes key to encrypt and decrypt
+                    cached key objects\\
     $\hat T$    & $\gets \maxf(\lceil V C^{-1}\rceil, T)$.  this
                     is to ensure that we have enough encrypted bytes for
                     new keys.\\
@@ -791,11 +878,9 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     segments since the last hard-disk read.\\
     $u$         & $\gets 0$.  a counter indicating number of times key was
                     updated from the hard-disk.\\
-    $*v$         & $\gets *\hash(P \Vert S \Vert M \Vert D \Vert \ldots
-                    \Vert K, V)$.  a pointer to the first byte where
-                    $V$ bytes key is stored.  $v$ is the key itself, and
-                    $*v$ is a pointer to it.\\
-    $Z$         & $\gets \hash(v \Vert 0, V)$.  file name where output key,
+    $v$         & $\gets J$.  $V$ bytes key.  $v$ is the key
+                    itself, and $*v$ is a pointer to it.\\
+    $Z$         & $\gets \hash(J \Vert 0, V)$.  file name where output key,
                     $k$, is expected to be cached, if $k$ was previously
                     cached.\\
 \end{tabularx}
@@ -815,7 +900,8 @@ need them yet.
 
 \begin{algorithm}
 \If{$Y$ {\bf and} $\fexists(Z)$}{\label{ciphart_cache_hit}
-    $k \gets \fread(Z, 0, V)$\;
+    $\hat k \gets \fread(Z, 0, K)$\;
+    $k \gets \dec(\hat k, 0, J)$\;
     \Return{$k$}
 }
 \While{$1$}{
@@ -872,7 +958,8 @@ need them yet.
 $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
 \If{$Y$}{\label{ciphart_cache_miss}
-    $\fwrite(Z, k)$\;
+    $\hat k \gets \enc(k, 0, J)$\;
+    $\fwrite(Z, \hat k)$\;
 }
 $\delete(F)$\;
 \Return{$k$}
@@ -945,8 +1032,7 @@ becomes possible.  this process goes like this:
     temporary random key that's forgotten later on.
 \end{enumerate}
 
-
-\subsection{comparison}
+\section{benchmarks}
 
 \section{application scenarios}
 \subsection{a currently-useful scenario}
