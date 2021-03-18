@@ -60,9 +60,9 @@ simple enough to understand.
 henceforth, i propose \emph{ciphart}, which is:
 \begin{itemize}
     \item easier --- because its security contribution is measured in the
-    unit of shannon's entropy.  i.e. when \emph{ciphart} derives a key for
-    you, it tells you that it has \emph{injected} a specific guaranteed
-    quantity of shannon's entropy bits into your derived key.  this is
+    unit of shannon's entropy.  i.e. you don't tell \emph{ciphart} how many
+    tasks or segments to solve, but rather you tell it how much of
+    shannon's entropy bits to inject into your derived key.  this is
     possible thanks to my invention, the ``perfect lie'' theorem.
 
     this offers a great help as it gives us yet another much simpler
@@ -434,7 +434,7 @@ which will give the following entropy:
 if anyone rejects \cref{theorem_entropy_injection}, then he can consider
 this a proof by contradiction that that hashing functions, as well as any
 encryption function\footnote{because encryption functions can be used to
-create hashing functions}, do not exist.  so, which one do you choose?  
+create hashing functions.}, do not exist.  so, which one do you choose?  
 \begin{enumerate}
     \item that i've proven that \cref{theorem_entropy_injection} is
     injecting shannon's entropy bits?
@@ -976,7 +976,7 @@ are independent, so can be done in $L$ cpu cores.
 
 
 \subsubsection{memory-\emph{harder}ness}
-thanks to discovery \ref{discov_key_caching}, we can cache keys, as done in
+thanks to \cref{theorem_cavemans_keys_cache}, we can cache keys, as done in
 \cref{ciphart_cache_hit}, without increasing assumptions of the threat
 model of the vast majority of users.  then, memory-\emph{harder}ness
 becomes possible.  this process goes like this:
