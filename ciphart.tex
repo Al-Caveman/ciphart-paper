@@ -511,6 +511,31 @@ the unit of shannon's entropy, without needing a more complex function such
 as $\irhash$ in \cref{alg_irhash}.
 
 \subsection{``cacheable keys'' discovery}
+currently, the user has to choose a set of key derivation parameters that
+he can tolerate its delay at every login attempt.  if he picks less secure
+parameters, while he will suffer less delay at every login, his security
+against password brute forcing will degrade.  likewise, more secure
+parameters mean more delay at every login, while also having more security.
+
+this is sort of unpleasant, as the user is forced to either always suffer
+in order to have more security, or never suffer and have less security.
+i.e. the user is \emph{always} bitten somewhere.
+
+\begin{discovery}\label{discov_key_caching}
+    expensively derived keys can be cached securely without changing the
+    threat model of the vast majority of users.
+\end{discovery}
+
+thanks to discovery \ref{discov_key_caching} users now have a new option:
+suffer some delay only during the first login, but pretty much don't suffer
+anything during subsequent logins.  this effectively allows the users to
+choose much more secure parameters as they will suffer it only once,
+without noticing anything in future logins.
+
+this is nice as it will practically lead to more security without being
+{always} bitten somewhere.  instead, it leads into being \emph{sometimes}
+bitten, such as during the first login, and during the initial setup of the
+keys cache, but not during every future login.
 
 \subsection{``hashing is only for compression'' law}
 which one is simpler when, say, building a wooden house?
@@ -851,11 +876,11 @@ the encryption and the decryption of the derived cached keys in
 \cref{ciphart_cache_dec,ciphart_cache_enc} is done \emph{mainly} as as a
 precautionary measure should a user accidentally write into an improperly
 secured keys cache.  this encryption and decryption gives the user a
-minimum security that's worth the entropy of his password.  but this is not
-meant to be as adequate entropy to properly secure the keys cache.  e.g. it
-would be better if the keys cache, itself, is encrypted by a $256$ bits of
-entropy using a key file possibly in a removable physical hardware that is
-always with the user.
+minimum security that's worth the entropy of his password.  but this is
+probably not an adequate entropy to properly secure the keys cache.  e.g.
+it would be better if the keys cache, itself, is encrypted by a $256$ bits
+of entropy using a key file possibly in a removable physical hardware that
+is always with the user.
 
 \subsubsection{parallelism}
 iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
