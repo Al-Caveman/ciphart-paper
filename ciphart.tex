@@ -14,7 +14,9 @@
 \newtheorem{law}{law}[section]
 \newtheorem{advertisement}{advertisement}[section]
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
-\DeclareMathOperator{\fexists}{\mathtt{exists}}
+\DeclareMathOperator{\cexists}{\mathtt{cache\_exists}}
+\DeclareMathOperator{\cget}{\mathtt{cache\_get}}
+\DeclareMathOperator{\cset}{\mathtt{cache\_set}}
 \DeclareMathOperator{\fread}{\mathtt{read}}
 \DeclareMathOperator{\fwrite}{\mathtt{write}}
 \DeclareMathOperator{\sizeof}{\mathtt{sizeof}}
@@ -72,8 +74,8 @@ henceforth, i propose \emph{ciphart}, which is:
 
     \item harder --- because it can require crazy-large amounts of memory,
     beyond our random-access memory, thanks to it being able to use the
-    hard-disk as well.  this is possible thanks to my invention ``caveman's
-    keys cache''.
+    hard-disk as well.  this is possible thanks to my discovery ``cacheable
+    keys''.
 
     this is optional, but i extremely like it as it effectively gives me
     much more security while eventually becoming much faster as well, and
@@ -508,153 +510,7 @@ simple security interpretation, of their contribution to our security, in
 the unit of shannon's entropy, without needing a more complex function such
 as $\irhash$ in \cref{alg_irhash}.
 
-\subsection{``caveman's keys cache'' invention}
-\begin{definition}[caveman's keys cache]
-    a keys cache that has $O(1)$ asymptotic worst run-time complexity for
-    insertion, deletion, and retrieval when the user knows the password.
-    but, when the password is unknown, the cache has a brute forcing space
-    of, at least, $n2^{H(\mathcal{O}_p)}$ many attempts, where $n$ is the
-    size of the cache.
-
-    i.e. by \cref{theorem_back_to_entropy}, the adversary has to suffer an
-    entropy of $H(\mathcal{O}_p) + \log_2 n$, and $n$ can be made
-    arbitrarily large by inserting fake cache entries, up to a point where
-    the adversary would find no point in stealing user's hard disk.  i.e.
-    the adversary will find it as hard to brute force the key derivation
-    function instead of caveman's keys cache.
-\end{definition}
-\begin{theorem}[caveman's keys cache]\label{theorem_cavemans_keys_cache}
-   caveman's keys cache exists.
-\end{theorem}
-
-let's say that $k$ is an expensively derived key, say, by using
-\emph{ciphart}, \emph{argon2}, \emph{scrypt}, etc.  if we can securely
-cache $k$, it would mean that we can derive $k$ with more expensive
-parameters as it will be done only once, while subsequent calls of the key
-derivation function to obtain the key $k$ would be almost instantaneous as
-it will be pulled from the cache at $O(1)$ asymptotic worst run-time
-complexity.
-
-it is trivial to cache key $k$ securely, by relying on file system
-permissions, or encrypted disk partitions.  but this is not nice enough, as
-it will require special system configuration.  i don't like having to deal
-with this extra complexity of double checking that the partition where the
-keys are cached is encrypted properly.  
-
-but i have found an even nicer approach, that does not require any special
-system configuration.  i.e. we can use a normal disk to save the cached
-keys in, and yet do it in such a way that if an adversary stole the disk,
-he will have to face the consequences of a too-large entropy, up to a point
-he wouldn't benefit from stealing user's hard disk.
-
-\subsubsection{cache's properties}
-\begin{enumerate}
-    \item each cached key is indexed by a unique $8V$ bits hash.
-
-    \item each cached content is $8W$ bits encrypted by another unique $8V$
-    bits hash.  if the clear text data is less than $8W$, clear text is
-    padded until $8W$ is achieved.  clear text data cannot be larger than
-    $8W$.
-
-    \item insertion, deletion, and retrieval is $O(1)$.
-
-    \item brute forcing is $O(n + 2^{H(\mathcal{O}_p)})$, where $n$ is
-    total number of cached entries, and $H(\mathcal{O}_p))$ is password's
-    entropy.  so, if an adversary wants to figure out password $p$ which
-    gave some cached object, he needs to deal with $H(\mathcal{O}_p) +
-    \log_2 n)$ entropy bits.
-\end{enumerate}
-
-\subsubsection{cache initialisation}
-\begin{enumerate}
-    \item fill the cache with lots of fake entries.  e.g. $n=2^{30}$ many
-    fake entries.
-\end{enumerate}
-
-a fake entry is one that its key is $8V$ bits of cryptographically secure
-random number, and its content is $8W$ of the same.  from an adversary's
-point of view, there is no distinction between a real cached key entry, and
-a fake one.
-
-\subsubsection{cache insertion}
-\begin{enumerate}
-    \item derive key $k$ by using some key derivation function, such as
-    \emph{ciphart}, \emph{argon2}, etc.
-
-    \item let $j$ be the hash of all parameters that were given to the key
-    derivation function.  the parameters include user's password, salt,
-    memory requirement, etc.
-
-    \item $\hat j \gets \hash(j \Vert 0, 8V)$.
-
-    \item $\hat k \gets \enc(k, 0, j)$.
-
-    \item insert the following entry into the keys cache:
-        \begin{itemize}
-            \item entry's key is $\hat j$.
-            \item entry's content is $\hat v$.
-        \end{itemize}
-\end{enumerate}
-
-\subsubsection{cache retrieval}
-let's say that the user wants to retrieve the expensively derived key, $k$,
-from the cache.
-\begin{enumerate}
-    \item user calculates $j$ by hashing all parameters of the key
-    derivation function.
-
-    \item user calculates $\hat j \gets \hash(j \Vert 0, 8V)$.
-
-    \item user queries cache by asking for entry with key $\hat j$.
-
-    \item user obtains data associated with key $\hat j$, which is $\hat
-    k$.
-
-    \item user retrieves the key that he wanted, $k$, by calculating $k
-    \gets \dec(\hat k, 0, j)$.
-\end{enumerate}
-
-\subsubsection{potential adversary strategies}
-say that the adversary's
-\begin{itemize}
-    \item input: the expensively derived key $v$, knows all parameters of
-    the key derivation which gave $v$, including knowledge of the process
-    the generated the password $p$, except that he doesn't know the
-    password $p$.  also let's say that the adversary stole user's hard
-    disk, which contains user's keys cache.
-
-    \item goal: to find $p$ which gave $v$.  let's say that the cache was
-    initialised with $2^{30}$ many fake entries.  so what can the adversary
-    do?
-\end{itemize}
-
-because the adversary knows the process that generated $p$, he knows $p$'s
-shannon's entropy $H(\mathcal{O}_p)$.  i.e. he knows that $p$ is one of
-$2^{H(\mathcal{O}_p)}$ many options.  the adversary will need to:
-\begin{enumerate}
-    \item calculate $2^{H(\mathcal{O}_p)}$ many different instances of $j$,
-    i.e.  $j_0, j_1, \ldots, j_{2^{H(\mathcal{O}_p)-1}}$, each calculated
-    with a different password candidate.
-
-    \item for any cached data $\hat v$ in the $2^{30}$ many entries, try to
-    decrypt it with each key in $j_0, j_1, \ldots,
-    j_{2^{H(\mathcal{O}_p)-1}}$ until $v$ is found.
-\end{enumerate}
-
-this means that the brute forcing space of the adversary is
-$2^{H(\mathcal{O}_p)} 2^{30} = 2^{H(\mathcal{O}_p) + 30}$, which, unless
-$\hash$ is broken, is not reducible.  therefore, by applying
-\cref{theorem_back_to_entropy}, the adversary needs to answer no less
-than $H(\mathcal{O}_p) + 30$ many theoretical binary questions.
-
-so, while password $p$'s entropy is just $H(\mathcal{O}_p)$, the adversary
-needs to suffer a higher entropy when trying to decode the keys cache.
-specially. the adversary needs to suffer $H(\mathcal{O}_p) + 30$.
-
-effectively, it is easily possible that $H(\mathcal{O}_p) + 30$ is the same
-amount of entropy that the adversary would need to suffer if he was to
-trying to find $p$ by brute forcing the key derivation function.  i.e. the
-adversary did not benefit from stealing user's hard disk!
+\subsection{``cacheable keys'' discovery}
 
 \subsection{``hashing is only for compression'' law}
 which one is simpler when, say, building a wooden house?
@@ -773,9 +629,6 @@ function.  using a hashing function here is a problem due to:
     symmetric block encryption functions.
 \end{law}
 
-
-\section{caveman's keys cache}
-
 \section{ciphart}
 \emph{ciphart} is basically a variation of \emph{argon2}, except that it
 uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
@@ -784,8 +637,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
     thanks to my ``perfect lie'' theorem (\cref{theorem_perfect_lie}).
 
     \item memory-\emph{harder} by utilising space beyond the random-access
-    memory, by also utilising the hard-disk; thanks to my ``caveman's keys
-    cache'' theorem (\cref{theorem_cavemans_keys_cache}).
+    memory, by also utilising the hard-disk; thanks to my ``cacheable
+    keys'' discovery (\cref{theorem_cavemans_keys_cache}).
 
     \item faster by using $\hash$ only when compression takes place,
     otherwise using $\enc$; thanks to my ``hashing is only for
@@ -810,14 +663,15 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
 
 \subsubsection{internal variables}
 \begin{tabularx}{\columnwidth}{lX}
-    $\enc$      & data encryption function with nonce and key.\\
-    $\dec$      & data decryption function with nonce and key.\\
+    $\cexists$  & cache entry existence testing function.\\
+    $\cget$     & cache entry retrieval function.\\
+    $\cset$     & cache entry setting function.\\
+    $\enc$      & encryption function.\\
+    $\dec$      & decryption function.\\
     $\hash$     & hashing function.\\
     $\fread$    & hard-disk file reading function, with seeking.  e.g.
                     $\fread(x, y, z)$ reads $z$ many bytes from file $x$
                     after seeking $y$ bytes forward.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $\fwrite$   & hard-disk file writing function.\\
     $C$         & $\gets \begin{cases}
                         64 \text{ bytes} & \text{if $\enc$ is
@@ -837,6 +691,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                 & this is the size of the encryption key that's used to
                     solve \emph{ciphart}'s tasks.  this is different than
                     output key's size, $K$, which is $\enc$-independent.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $R$         & $V$ bytes of cryptographically secure random number.
                     this is a temporary key for encrypting and decrypting
                     the $F$ file, that's forgotten upon \emph{ciphart}'s
@@ -895,9 +751,9 @@ respectively, is a trivial matter; i just didn't bother because i don't
 need them yet.
 
 \begin{algorithm}
-\If{$Y$ {\bf and} $\fexists(Z)$}{\label{ciphart_cache_hit}
-    $\hat k \gets \fread(Z, 0, K)$\;
-    $k \gets \dec(\hat k, 0, J)$\;
+\If{$Y$ {\bf and} $\cexists(Z)$}{\label{ciphart_cache_hit}
+    $\hat k \gets \cget(Z)$\;
+    $k \gets \dec(\hat k, K, 0, J)$\;\label{ciphart_cache_dec}
     \Return{$k$}
 }
 \While{$1$}{
@@ -910,7 +766,7 @@ need them yet.
                 }\ElseIf{$t = T - 1$}{
                     $j \gets i - T + 1$\;
                 }
-                $m_j \gets \enc(m_i, n_l, *v)$\;
+                $m_j \gets \enc(m_i, C, n_l, *v)$\;
                 $n_l \gets n_l + 1$\;
                 \uIf{$f = 0$}{
                     $*v \gets m_j \bmod (gLTC + tC - V)$\;
@@ -929,7 +785,7 @@ need them yet.
         }
         \uIf{$d \le D$}{\label{ciphart_D_filling}
             \For{$i \gets gLT, \ldots, gLT+(T-1)$}{
-                $\hat m_i \gets \enc(m_i, d, R)$\;
+                $\hat m_i \gets \enc(m_i, C, d, R)$\;
                 $\fwrite(F, \hat m_i)$\;
                 $d \gets d + 1$\;
                 \If{$d \ge D$}{ \textbf{break}\; }
@@ -939,7 +795,7 @@ need them yet.
             \If{$h \ge H$}{\label{ciphart_D_using}
                 $\hat d \gets v \bmod (d - V)$\;
                 $\hat v \gets \fread(F, \hat d, V)$\;
-                $v \gets v \oplus \dec(\hat v, d, R)$\;
+                $v \gets v \oplus \dec(\hat v, V, d, R)$\;
                 $u \gets u + 1$\;
                 $h \gets 0$\;
             }
@@ -954,8 +810,8 @@ need them yet.
 $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
 \If{$Y$}{\label{ciphart_cache_miss}
-    $\hat k \gets \enc(k, 0, J)$\;
-    $\fwrite(Z, \hat k)$\;
+    $\hat k \gets \enc(k, K, 0, J)$\;\label{ciphart_cache_enc}
+    $\cset(Z, \hat k, K)$\;
 }
 $\delete(F)$\;
 \Return{$k$}
@@ -964,6 +820,43 @@ $\delete(F)$\;
 \end{algorithm}
 
 \subsection{noteworthy features}
+\subsubsection{key caching}
+fundamentally, key caching in \cref{ciphart_cache_hit,ciphart_cache_miss}
+assumes that the \texttt{root} system user is trusty.  since most users
+already trust \texttt{root} and since without this trust every other key
+derivation is also broken for most people, this key caching doesn't change
+the threat model, but allows us to utilise more value out of the threat
+model that we already have.
+
+the value that this key caching gives us is that it allows us to use much
+more secure key derivation parameters, while still being usable.  this
+usability comes from the fact that the expensive key derivation is done
+only once.  so the user has to only suffer once during the first login
+attempt.  subsequent logins will be almost instantaneous as the key is
+retrieved from the cache.  
+
+this approach allows users to derive much more secure keys as the suffering
+happens only once.  i.e. instead of having the user to suffer, say, $3$
+seconds of delay for each login, key caching will persuade him to suffer,
+say, $30$ seconds only once in order to get a really secure key, and then
+not suffer at all with semi-instantaneous future logins.
+
+of course, this key caching is optional, and can be disabled by $Y \gets
+0$.  but i personally really like it, and i think it is better for the vast
+majority of people to use it, specially that key caching can be done in a
+secure manner that survives even physical disk thefts, should the key cache
+be encrypted properly.
+
+the encryption and the decryption of the derived cached keys in
+\cref{ciphart_cache_dec,ciphart_cache_enc} is done \emph{mainly} as as a
+precautionary measure should a user accidentally write into an improperly
+secured keys cache.  this encryption and decryption gives the user a
+minimum security that's worth the entropy of his password.  but this is not
+meant to be as adequate entropy to properly secure the keys cache.  e.g. it
+would be better if the keys cache, itself, is encrypted by a $256$ bits of
+entropy using a key file possibly in a removable physical hardware that is
+always with the user.
+
 \subsubsection{parallelism}
 iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
 are independent, so can be done in $L$ cpu cores.
