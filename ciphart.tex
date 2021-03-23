@@ -55,7 +55,7 @@ com}.}\\
 \noindent\textbf{synopsis---}\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
 is a fast and simple memory-hard key derivation function.  compared to
 \emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
-\emph{argon2} is better.  but i claim that \emph{argon2} is not fast
+\emph{argon2} is better.  but i claim that \emph{argon2} is still not fast
 enough, not memory-hard enough, and its contribution to our security is not
 simple enough to understand.
 
@@ -73,8 +73,8 @@ henceforth, i propose \emph{ciphart}, which is:
     done in the \emph{scrypt} paper.
 
     \item harder --- because it can require crazy-large amounts of memory,
-    beyond our random-access memory, thanks to it being able to use the
-    hard-disk as well.  this is possible thanks to my discovery ``cacheable
+    beyond our random-access memory, thanks to it being able to also use
+    the hard-disk.  this is possible thanks to my discovery ``cacheable
     keys''.
 
     this is optional, but i extremely like it as it effectively gives me
@@ -451,7 +451,7 @@ i personally think that i've proven (1), but if you think that i've proven
 \subsection{``perfect lie'' theorem}
 equality testing is usually cheap.  e.g. the $\texttt{CMP}$ cpu assembly
 instruction usually takes $1$ cpu cycle per cpu core, perhaps with a few
-extra cycles to copy data around.  
+extra cycles to copy the data around.  
 
 on the other hand, each $\hash$ call may perform hundreds of cpu cycles.
 meaning the number of cpu cycles done by performing an equality test is
