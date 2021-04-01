@@ -161,7 +161,7 @@ so when is $\log_2 |\mathcal{O}_x|$ optimal?  $H(\mathcal{O}_x) = \log_2
 |\mathcal{O}_x|$ if revealing any option is equally informative to us
 compared to revealing every other option, which is the case when there is
 no redundancy in the options set.  i.e. when,  for any $o \in
-\mathcal{O}_x$, $\Pr(o=0) = |\mathcal{O}_x|^{-1}$.
+\mathcal{O}_x$, $\Pr(o=x) = |\mathcal{O}_x|^{-1}$.
 \begin{proof}
 \begin{equation}
 \begin{split}
@@ -400,7 +400,7 @@ let $\mathcal{H}$ be a set containing half the $8V$ hash space\;
     $i \gets j$\;
     $j \gets \hat i$\;
 }
-\Return{$k_j$}
+\Return{$k_i$}
 \caption{$\irhash(p, 8V, N)$}
 \label{alg_irhash}
 \end{algorithm}
@@ -663,7 +663,7 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
 
     \item memory-\emph{harder} by utilising space beyond the random-access
     memory, by also utilising the hard-disk; thanks to my ``cacheable
-    keys'' discovery (\cref{theorem_cavemans_keys_cache}).
+    keys'' discovery (discovery \ref{discov_key_caching}).
 
     \item faster by using $\hash$ only when compression takes place,
     otherwise using $\enc$; thanks to my ``hashing is only for
@@ -691,6 +691,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
     $\cexists$  & cache entry existence testing function.\\
     $\cget$     & cache entry retrieval function.\\
     $\cset$     & cache entry setting function.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $\enc$      & encryption function.\\
     $\dec$      & decryption function.\\
     $\hash$     & hashing function.\\
@@ -698,6 +700,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     $\fread(x, y, z)$ reads $z$ many bytes from file $x$
                     after seeking $y$ bytes forward.\\
     $\fwrite$   & hard-disk file writing function.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $C$         & $\gets \begin{cases}
                         64 \text{ bytes} & \text{if $\enc$ is
                                             \emph{xchacha20}}\\
@@ -716,8 +720,6 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                 & this is the size of the encryption key that's used to
                     solve \emph{ciphart}'s tasks.  this is different than
                     output key's size, $K$, which is $\enc$-independent.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $R$         & $V$ bytes of cryptographically secure random number.
                     this is a temporary key for encrypting and decrypting
                     the $F$ file, that's forgotten upon \emph{ciphart}'s
@@ -755,6 +757,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     segments since the last hard-disk read.\\
     $u$         & $\gets 0$.  a counter indicating number of times key was
                     updated from the hard-disk.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $v$         & $\gets J$.  $V$ bytes key.  $v$ is the key
                     itself, and $*v$ is a pointer to it.\\
     $Z$         & $\gets \hash(J \Vert 0, V)$.  file name where output key,
@@ -777,7 +781,7 @@ need them yet.
 
 \begin{algorithm}
 \If{$Y$ {\bf and} $\cexists(Z)$}{\label{ciphart_cache_hit}
-    $\hat k \gets \cget(Z)$\;
+    $\hat k \gets \cget(Z, V)$\;
     $k \gets \dec(\hat k, K, 0, J)$\;\label{ciphart_cache_dec}
     \Return{$k$}
 }
@@ -836,7 +840,7 @@ $i \gets g_{\text{last}}LT$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
 \If{$Y$}{\label{ciphart_cache_miss}
     $\hat k \gets \enc(k, K, 0, J)$\;\label{ciphart_cache_enc}
-    $\cset(Z, \hat k, K)$\;
+    $\cset(Z, V, \hat k, K)$\;
 }
 $\delete(F)$\;
 \Return{$k$}
@@ -894,10 +898,10 @@ are independent, so can be done in $L$ cpu cores.
 
 
 \subsubsection{memory-\emph{harder}ness}
-thanks to \cref{theorem_cavemans_keys_cache}, we can cache keys, as done in
-\cref{ciphart_cache_hit}, without increasing assumptions of the threat
-model of the vast majority of users.  then, memory-\emph{harder}ness
-becomes possible.  this process goes like this:
+thanks to discovery \ref{discov_key_caching}, we can cache keys, as done in
+\cref{ciphart_cache_hit,ciphart_cache_miss}, without increasing assumptions
+of the threat model of the vast majority of users.  then,
+memory-\emph{harder}ness becomes possible.  this process goes like this:
 \begin{enumerate}
     \item starts by running an $\enc$-based variant of \emph{argon2},
     except that, as it is going, it keeps writing the updated segments into
@@ -1020,7 +1024,7 @@ of the key derivation function in order to free more resources for other
 things that bring them money.
 
 perhaps, one day in the future, the \emph{password} field in \emph{html}
-should have an argument called \emph{kdf} that goes like \texttt{<input
+should have an argument called \texttt{kdf} that goes like \texttt{<input
 type="password" kdf="ciphart" \ldots>} which specifies the key derivation
 function that the web browser must use to derive a more secure key, and
 then send the derived key instead of sending the password.  browsers are
@@ -1047,12 +1051,6 @@ the adorable normies.
 \break
 \appendix
 \section{donations}
-no big deal, but i want to see how it feels to be like those people who get
-donated to.  \emph{bryan lunduke}\footnote{\url{http://lunduke.com}} said
-once, in a very energetic manner, that it feels like being like ``people
-who get donated''\footnote{\url{https://youtu.be/radmjL5OIaA?t=12}}.  so, i
-guess it's one of those unexplainable things that need to be tried.
-
 \subsection{bitcoin}
 \begin{center}
     \includegraphics[width=121px]{./pics/btc_wallet_address_trimmed.png}
