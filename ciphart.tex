@@ -742,6 +742,10 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     that all segments are of equal lengths in order to
                     simplify \emph{ciphart}'s logic.  e.g. it wouldn't be
                     nice if the last segments were of unequal sizes.\\
+    $\hat D$    & $\gets D - (D \bmod C\hat TLH) + C\hat TLH$.  this is to
+                    ensure that it is in multiples of $C\hat TLH$.  why?
+                    because the disk is filled by the content of $H$ many
+                    completed segments, which is $C\hat TLH$ many bytes.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
@@ -753,12 +757,12 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     memory is filled with $\hat M$ many bytes.\\
     $d$         & $\gets 0$.  a counter indicating total number of saved
                     blocks into hard-disk.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $h$         & $\gets 0$.  a counter indicating number of processed lane
                     segments since the last hard-disk read.\\
     $u$         & $\gets 0$.  a counter indicating number of times key was
                     updated from the hard-disk.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $v$         & $\gets J$.  $V$ bytes key.  $v$ is the key
                     itself, and $*v$ is a pointer to it.\\
     $Z$         & $\gets \hash(J \Vert 0, V)$.  file name where output key,
@@ -788,36 +792,35 @@ need them yet.
 \While{$1$}{
     \For{$g \gets 0, 1, \ldots, G-1$}{
         \For{$l \gets 0, 1, \ldots, L-1$}{\label{ciphart_lanes}
-            \For{$t \gets 0, 1, \ldots, T-1$}{
-                $i \gets gLT + lT + t$\;
-                \uIf{$t < T - 1$}{
+            \For{$t \gets 0, 1, \ldots, \hat T-1$}{
+                $i \gets gL\hat T + l\hat T + t$\;
+                \uIf{$t < \hat T - 1$}{
                     $j \gets i + 1$\;
-                }\ElseIf{$t = T - 1$}{
-                    $j \gets i - T + 1$\;
+                }\ElseIf{$t = \hat T - 1$}{
+                    $j \gets i - \hat T + 1$\;
                 }
                 $m_j \gets \enc(m_i, C, n_l, *v)$\;
                 $n_l \gets n_l + 1$\;
                 \uIf{$f = 0$}{
-                    $*v \gets m_j \bmod (gLTC + tC - V)$\;
-                    \If{$*v \ge gLTC - V$}{
-                        $*v \gets *v + lTC$\;
+                    $*v \gets m_j \bmod (gL\hat TC + tC - V)$\;
+                    \If{$*v \ge gL\hat TC - V$}{
+                        $*v \gets *v + l\hat TC$\;
                     }
                 }\Else{
-                    $*v \gets m_j \bmod (\hat M - LTC + tC - V)$\;
-                    \uIf{$*v \ge gLTC + tC - V$}{
-                        $*v \gets *v + LTC$\;
-                    }\ElseIf{$*v \ge gLTC - V$}{
-                        $*v \gets *v + lTC$\;
+                    $*v \gets m_j \bmod (\hat M - L\hat TC + tC - V)$\;
+                    \uIf{$*v \ge gL\hat TC + tC - V$}{
+                        $*v \gets *v + L\hat TC$\;
+                    }\ElseIf{$*v \ge gL\hat TC - V$}{
+                        $*v \gets *v + l\hat TC$\;
                     }
                 }
             }
         }
-        \uIf{$d \le D$}{\label{ciphart_D_filling}
-            \For{$i \gets gLT, \ldots, gLT+(T-1)$}{
+        \uIf{$d \ne \hat D$}{\label{ciphart_D_filling}
+            \For{$i \gets gL\hat T, \ldots, gL\hat T+(\hat T-1)$}{
                 $\hat m_i \gets \enc(m_i, C, d, R)$\;
                 $\fwrite(F, \hat m_i)$\;
-                $d \gets d + 1$\;
-                \If{$d \ge D$}{ \textbf{break}\; }
+                $d \gets d + C$\;
             }
         }\Else{
             $h \gets h + L$\;
@@ -836,8 +839,9 @@ need them yet.
     }
     $f \gets f+1$\;
 }
-$i \gets g_{\text{last}}LT$\;\label{ciphart_out}
-$k \gets \hash(m_{i+0T} \Vert m_{i+1T} \Vert \ldots \Vert m_{i+(L-1)T}, K)$\;
+$i \gets g_{\text{last}}L\hat T$\;\label{ciphart_out}
+$k \gets \hash(m_{i+0\hat T} \Vert m_{i+1\hat T} \Vert \ldots \Vert
+m_{i+(L-1)\hat T}, K)$\;
 \If{$Y$}{\label{ciphart_cache_miss}
     $\hat k \gets \enc(k, K, 0, J)$\;\label{ciphart_cache_enc}
     $\cset(Z, V, \hat k, K)$\;
@@ -847,6 +851,11 @@ $\delete(F)$\;
 \caption{ciphart-d}
 \label{alg_ciphart}
 \end{algorithm}
+
+\subsubsection{caveman's entropy of \emph{ciphart}}
+if we have $\hat M$ many random access memory bytes, and $\hat D$ many
+hard-disk bytes, then caveman's entropy of \emph{ciphart} is
+$H(\mathcal{O}_p) + \log_2 n_0L$.
 
 \subsection{noteworthy features}
 \subsubsection{key caching}
