@@ -746,29 +746,22 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     ensure that it is in multiples of $C\hat TLH$.  why?
                     because the disk is filled by the content of $H$ many
                     completed segments, which is $C\hat TLH$ many bytes.\\
-    $\hat B$    & $\gets \max\Big(
-                        B,
-                        \log_2\big(
-                            \hat DC^{-1}
-                            + \max(
-                                \hat 2MC^{-1}L^{-1}, H + 1
-                            )
-                        \big)
-                    \Big)$.  this is to ensure that requested spaces are
-                    filled, with at least one more pass over the bytes in
-                    the random-access memory, that the internal key $v$ is
-                    updated from the hard-disk at least once, thanks to
-                    $+H$, and then the updated key is used once,
-                    thanks to $+1$.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
-    $\hat B$    & $\gets \log_2\big((2^{\hat B} \bmod C\hat TL) + C\hat
-                    TL\big)$.  this is to reflect the reality that tasks
-                    are completed in batches of $L$ many lane segments.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
+    $\hat B$    & $\gets \max\{
+                        B,
+                        \log_2[\hat DC^{-1} + \max(\hat MC^{-1}, HL + \hat
+                        TL)]
+                    \}$.  this is to ensure that requested spaces are
+                    filled, and the key is updated and used for at least
+                    once.\\
+    $\hat B$    & $\gets \log_2[(2^{\hat B} \bmod \hat TGL) + \hat TGL]$.
+                    this is to reflect the reality that tasks are completed
+                    in batches of $L$ many lane segments.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $n_l$       & $\gets \maxf(\text{nonce})L^{-1}l$.  nonce variable for
                     $l^{th}$ lane.  $n_0L$ is also used as a counter to
                     measure total number of times $\enc$ was called.\\
@@ -877,7 +870,11 @@ what if the adversary has $\hat M - C$ many random-access memory bytes?
 what's caveman's entropy of the derived key?  the answer is that it depends
 on whether the adversary is lucky enough to get away with it.  adversary's
 luck here is based on the probability that the missing $C$ bytes block will
-be used in the future to update the internal key $v$.
+be used later on to update the internal key $v$.
+
+ideally, the probability that a $C$ bytes block in the random-access memory
+is going to be used later on to update the internal key $v$ is $(\hat
+MC^{-1})^{-1} = \hat M^{-1}C$.
 
 \subsection{noteworthy features}
 \subsubsection{key caching}
