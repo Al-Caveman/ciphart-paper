@@ -681,7 +681,7 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
     $Y$ & whether key caching is enabled.\\
     $L$ & number of memory lanes for concurrency.\\
     $T$ & number of tasks per lane segment.\\
-    $H$ & number of lane segments per hard-disk read.\\
+    $H$ & number of tasks per hard-disk read.\\
     $B$ & minimum shannon's entropy bits to inject into output key.\\
     $K$ & output key's size in bytes.\\
 \end{tabularx}
@@ -746,6 +746,25 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
                     ensure that it is in multiples of $C\hat TLH$.  why?
                     because the disk is filled by the content of $H$ many
                     completed segments, which is $C\hat TLH$ many bytes.\\
+    $\hat B$    & $\gets \max\Big(
+                        B,
+                        \log_2\big(
+                            \hat DC^{-1}
+                            + \max(
+                                \hat 2MC^{-1}L^{-1}, H + 1
+                            )
+                        \big)
+                    \Big)$.  this is to ensure that requested spaces are
+                    filled, with at least one more pass over the bytes in
+                    the random-access memory, that the internal key $v$ is
+                    updated from the hard-disk at least once, thanks to
+                    $+H$, and then the updated key is used once,
+                    thanks to $+1$.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
+    $\hat B$    & $\gets \log_2\big((2^{\hat B} \bmod C\hat TL) + C\hat
+                    TL\big)$.  this is to reflect the reality that tasks
+                    are completed in batches of $L$ many lane segments.\\
     $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
                     segments per lane.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
@@ -753,16 +772,12 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
     $n_l$       & $\gets \maxf(\text{nonce})L^{-1}l$.  nonce variable for
                     $l^{th}$ lane.  $n_0L$ is also used as a counter to
                     measure total number of times $\enc$ was called.\\
-    $f$         & $\gets 0$.  a counter indicating number of times
-                    memory is filled with $\hat M$ many bytes.\\
+    $f$         & $\gets 0$.  a flag indicating whether the first pass on
+                    the $\hat M$ bytes memory pad has completed.\\
     $d$         & $\gets 0$.  a counter indicating total number of saved
                     blocks into hard-disk.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
     $h$         & $\gets 0$.  a counter indicating number of processed lane
                     segments since the last hard-disk read.\\
-    $u$         & $\gets 0$.  a counter indicating number of times key was
-                    updated from the hard-disk.\\
     $v$         & $\gets J$.  $V$ bytes key.  $v$ is the key
                     itself, and $*v$ is a pointer to it.\\
     $Z$         & $\gets \hash(J \Vert 0, V)$.  file name where output key,
@@ -772,8 +787,8 @@ uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
 
 \subsubsection{output}
 \begin{tabularx}{\columnwidth}{lX}
-$k$ & $K$ bytes key, with $H(\mathcal{O}_p) + \log_2 n_0L$ many shannon's
-        entropy bits, such that $\log_2 n_0L \ge B$.\\
+$k$ & $K$ bytes key, with $H(\mathcal{O}_p) + \hat B$ many shannon's
+        entropy bits, such that $\hat B \ge B$.\\
 \end{tabularx}
 
 \subsubsection{steps}
@@ -801,6 +816,16 @@ need them yet.
                 }
                 $m_j \gets \enc(m_i, C, n_l, *v)$\;
                 $n_l \gets n_l + 1$\;
+                \If{$d = \hat D$}{
+                    $h \gets h + 1$\;
+                    \If{$h \ge H$}{\label{ciphart_D_using}
+                        $\hat d \gets m_j \bmod (\hat D - C)$\;
+                        $\hat m_j \gets \fread(F, \hat d, C)$\;
+                        $m_j \gets m_j \oplus \dec(\hat m_j, C, \hat d,
+                            R)$\;
+                        $h \gets 0$\;
+                    }
+                }
                 \uIf{$f = 0$}{
                     $*v \gets m_j \bmod (gL\hat TC + tC - V)$\;
                     \If{$*v \ge gL\hat TC - V$}{
@@ -816,28 +841,19 @@ need them yet.
                 }
             }
         }
-        \uIf{$d \ne \hat D$}{\label{ciphart_D_filling}
+        \If{$n_0L = 2^{\hat B}$}{
+            $g_{\text{last}} \gets g$\;
+            \textbf{go to} \cref{ciphart_out}\;
+        }
+        \If{$d \ne \hat D$}{\label{ciphart_D_filling}
             \For{$i \gets gL\hat T, \ldots, gL\hat T+(\hat T-1)$}{
                 $\hat m_i \gets \enc(m_i, C, d, R)$\;
                 $\fwrite(F, \hat m_i)$\;
                 $d \gets d + C$\;
             }
-        }\Else{
-            $h \gets h + L$\;
-            \If{$h \ge H$}{\label{ciphart_D_using}
-                $\hat d \gets v \bmod (d - V)$\;
-                $\hat v \gets \fread(F, \hat d, V)$\;
-                $v \gets v \oplus \dec(\hat v, V, d, R)$\;
-                $u \gets u + 1$\;
-                $h \gets 0$\;
-            }
-            \If{$f \ge 1$ \bf and $u \ge 1$ \bf and $n_0L \ge 2^B$}{
-                $g_{\text{last}} \gets g$\;
-                \textbf{go to} \cref{ciphart_out}\;
-            }
         }
     }
-    $f \gets f+1$\;
+    $f \gets 1$\;
 }
 $i \gets g_{\text{last}}L\hat T$\;\label{ciphart_out}
 $k \gets \hash(m_{i+0\hat T} \Vert m_{i+1\hat T} \Vert \ldots \Vert
@@ -853,9 +869,15 @@ $\delete(F)$\;
 \end{algorithm}
 
 \subsubsection{caveman's entropy of \emph{ciphart}}
-if we have $\hat M$ many random access memory bytes, and $\hat D$ many
-hard-disk bytes, then caveman's entropy of \emph{ciphart} is
-$H(\mathcal{O}_p) + \log_2 n_0L$.
+if the adversary has $\hat M$ many random-access memory bytes, and $\hat D$
+many hard-disk bytes, then caveman's entropy of \emph{ciphart}'s derived
+key is $H(\mathcal{O}_p) + \log_2 \hat B$.
+
+what if the adversary has $\hat M - C$ many random-access memory bytes?
+what's caveman's entropy of the derived key?  the answer is that it depends
+on whether the adversary is lucky enough to get away with it.  adversary's
+luck here is based on the probability that the missing $C$ bytes block will
+be used in the future to update the internal key $v$.
 
 \subsection{noteworthy features}
 \subsubsection{key caching}
