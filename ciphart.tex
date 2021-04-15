@@ -7,12 +7,13 @@
 \usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\newtheorem{definition}{definition}[section]
-\newtheorem{lemma}{lemma}[section]
-\newtheorem{theorem}{theorem}[section]
-\newtheorem{discovery}{discovery}[section]
-\newtheorem{law}{law}[section]
-\newtheorem{advertisement}{advertisement}[section]
+\usepackage[acronym]{glossaries}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{discovery}{Discovery}[section]
+\newtheorem{law}{Law}[section]
+\newtheorem{advertisement}{Advertisement}[section]
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \DeclareMathOperator{\cexists}{\mathtt{cache\_exists}}
 \DeclareMathOperator{\cget}{\mathtt{cache\_get}}
@@ -32,8 +33,13 @@
 \DeclareMathOperator{\argon}{\mathtt{argon2}}
 \DeclareMathOperator{\ciphart}{\mathtt{ciphart}}
 \DeclareMathOperator{\cost}{\mathtt{cost}}
-\renewcommand{\contentsname}{paper's layout}
+\renewcommand{\contentsname}{Paper's Layout}
 \DTMsetdatestyle{iso}
+\makeglossaries
+\newacronym{asic}{ASIC}{Application-Specific Integrated Circuit}
+\newacronym{cpu}{CPU}{Central Processing Unit}
+\newacronym{html}{HTML}{Hyper-Text Markup Language}
+\newacronym{ram}{RAM}{Random-Access Memory}
 \usepackage{cleveref} % must be loaded last
 \begin{document}
 \SetAlgorithmName{algorithm}{}{list of algorithms}
@@ -41,10 +47,10 @@
 
 \begin{center}
 \Huge
-ciphart\\
+Ciphart\\
 \Large
-faster memory-\emph{harder} key derivation \\
-with easier security interpretation\\
+Faster Memory-\emph{harder} Key Derivation \\
+with Easier Security Interpretation\\
 \normalsize
 caveman\footnote{mail: \texttt{toraboracaveman [at] protonmail [dot]
 com}.}\\
@@ -52,104 +58,103 @@ com}.}\\
 \DTMnow\\
 \end{center}
 
-\noindent\textbf{synopsis---}\emph{argon2}\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
-is a fast and simple memory-hard key derivation function.  compared to
-\emph{scrypt}\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}},
-\emph{argon2} is better.  but i claim that \emph{argon2} is still not fast
-enough, not memory-hard enough, and its contribution to our security is not
-simple enough to understand.
+\noindent\textbf{Synopsis---}Argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
+is a fast and simple memory-hard key derivation function.  Compared to
+Scrypt\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}}, Argon2 is
+better.  But I claim that Argon2 is still not fast enough, not memory-hard
+enough, and its contribution to our security is not simple enough to
+understand.
 
-henceforth, i propose \emph{ciphart}, which is:
+Henceforth, I propose Ciphart, which is:
 \begin{itemize}
-    \item easier --- because its security contribution is measured in the
-    unit of shannon's entropy.  i.e. you don't tell \emph{ciphart} how many
+    \item Easier --- because its security contribution is measured in the
+    unit of Shannon's entropy.  I.e. you don't tell Ciphart how many
     tasks or segments to solve, but rather you tell it how much of
-    shannon's entropy bits to inject into your derived key.  this is
+    Shannon's entropy bits to inject into your derived key.  This is
     possible thanks to my invention, the ``perfect lie'' theorem.
 
-    this offers a great help as it gives us yet another much simpler
+    This offers a great help as it gives us yet another much simpler
     approach to quantify our security gain as opposed to being limited to
-    surveying the industry of application-specific integrated circuits as
-    done in the \emph{scrypt} paper.
+    surveying the industry of \glspl{asic} as done in the Scrypt paper.
 
-    \item harder --- because it can require crazy-large amounts of memory,
-    beyond our random-access memory, thanks to it being able to also use
+    \item Harder --- because it can require crazy-large amounts of memory,
+    beyond our \gls{ram}, thanks to it being able to also use
     the hard-disk.  this is possible thanks to my discovery ``cacheable
     keys''.
 
-    this is optional, but i extremely like it as it effectively gives me
+    This is optional, but I extremely like it as it effectively gives me
     much more security while eventually becoming much faster as well, and
     the adversary cannot get my cache even if he steals my hard-disks.
 
-    \item faster --- because it does not abuse hashing functions.  it uses
+    \item Faster --- because it does not abuse hashing functions.  It uses
     hashing functions when using them is more suited, and uses symmetric
-    block encryption functions when using them is  more suited.  this is
+    block encryption functions when using them is  more suited.  This is
     thanks to my ``hashing is only for compression'' law.
 
-    \emph{argon2} incorrectly limits itself to only use a hashing function.
-    at the surface it may appear simpler, but it is actually more complex
+    Argon2 incorrectly limits itself to only use a hashing function.
+    At the surface it may appear simpler, but it is actually more complex
     as it ends up re-inventing what resembles a symmetric block encryption
     function off the hashing function, except for being slower and with
     needless potential entropy loss.
 \end{itemize}
 
 \texttt{libciphart}\footnote{\url{https://github.com/Al-Caveman/libciphart}}
-is a library that implements \emph{ciphart} very closely to this paper,
-without much fluff.  this should make integrating \emph{ciphart} into other
-systems more convenient.
+is a library that implements Siphart very closely to this paper, without
+much fluff.  This should make integrating Ciphart into other systems more
+convenient.
 
 \texttt{ciphart}\footnote{\url{https://github.com/Al-Caveman/ciphart}} is
 an application for encrypting and decrypting files that makes use of
-\texttt{libciphart}.  this application is intended for use by end-users or
+\texttt{libciphart}.  This application is intended for use by end-users or
 scripts, henceforth it has some fluff to treat mankind with dignity.
 
 \break
 \tableofcontents
 
-\section{background}
-\subsection{passwords' entropy}\label{sec_pass_entropy}
-\begin{definition}[options set]
+\section{Background}
+\subsection{Passwords' entropy}\label{sec_pass_entropy}
+\begin{definition}[Options set]
     $\mathcal{O}_x$ is the set of options that $x$ might be one of.
 \end{definition}
 
-say that $\mathcal{O}_x$ is the options set of thing $x$.  generally, a
+Say that $\mathcal{O}_x$ is the options set of thing $x$.  Generally, a
 scalable way to find which of those options is $x$, is to ask questions,
 such that each time one of them is answered, the quantity of considered
-options shrinks in half or more.  let's stick to shrinkage in half; i.e.
-balanced binary trees.  this means that the total number of such balanced
+options shrinks in half or more.  Let's stick to shrinkage in half; i.e.
+balanced binary trees.  This means that the total number of such balanced
 binary questions is $\log_2 |\mathcal{O}_x|$, where $|\mathcal{O}_x|$ is
 the quantity of total options in $\mathcal{O}_x$.
 
-but is that scalable approach, also the most efficient one in finding $x$?
-the answer is: it depends.  the reason is that a binary search tree is not
-considering the probability of a given option being $x$.  e.g. which one is
+But is that scalable approach, also the most efficient one in finding $x$?
+The answer is: it depends.  The reason is that a binary search tree is not
+considering the probability of a given option being $x$.  E.g. which one is
 better:
 \begin{itemize}
-    \item ask a question that would reveal that, say, $10$ options were not
+    \item Ask a question that would reveal that, say, $10$ options were not
     $x$, in a way that we were not surprised  as, say, $\Pr(o = x) \le
-    0.0001$ for any $o \in \{o_0, o_1, \ldots, o_{10-1}\}$?  we already
+    0.0001$ for any $o \in \{o_0, o_1, \ldots, o_{10-1}\}$?  We already
     knew this, so getting these $10$ options revealed wasn't really
     informative for us, hence asking this question was sort of a waste of
     time.
 
-    \item ask a question that would reveal that, say, $5$ options in
+    \item Ask a question that would reveal that, say, $5$ options in
     $\mathcal{O}_x$ were not $x$, in a way that would completely blow our
     minds as we thought that one of them would be $x$ as, say, $\Pr(o = x)
-    \ge 0.9999$ for any $o \in \{o_0, o_1, \ldots, o_{5-1}\}$?  we didn't
+    \ge 0.9999$ for any $o \in \{o_0, o_1, \ldots, o_{5-1}\}$?  We didn't
     expect this, so knowing that these highly likely options were not $x$
     was quite informative.
 \end{itemize}
 
-if we take such probabilities into account, we end up using a possibly
+If we take such probabilities into account, we end up using a possibly
 imbalanced binary tree in such a way that would maximise our information
-gain every time a question gets answered.  because it takes such
+gain every time a question gets answered.  Because it takes such
 probabilities into account, we usually end up knowing more about what $x$
 is, or what it is not, every time a question gets answered, than a balanced
 binary tree that doesn't take such probabilities into account.
-effectively, we will end up knowing what $x$ is with less questions,
+Effectively, we will end up knowing what $x$ is with less questions,
 asymptotically on average.
 
-shannon's entropy tells us the minimum number of questions to be asked,
+Shannon's entropy tells us the minimum number of questions to be asked,
 asymptotically in average, in order to extract all information about $x$,
 while also considering the probability of each option being $x$:
 \begin{equation}
@@ -157,10 +162,10 @@ while also considering the probability of each option being $x$:
         \Pr(o=x) \log_2 \Pr(o=x)^{-1}
 \end{equation}
 
-so when is $\log_2 |\mathcal{O}_x|$ optimal?  $H(\mathcal{O}_x) = \log_2
+So when is $\log_2 |\mathcal{O}_x|$ optimal?  $H(\mathcal{O}_x) = \log_2
 |\mathcal{O}_x|$ if revealing any option is equally informative to us
 compared to revealing every other option, which is the case when there is
-no redundancy in the options set.  i.e. when,  for any $o \in
+no redundancy in the options set.  I.e. when, for any $o \in
 \mathcal{O}_x$, $\Pr(o=x) = |\mathcal{O}_x|^{-1}$.
 \begin{proof}
 \begin{equation}
@@ -176,43 +181,43 @@ no redundancy in the options set.  i.e. when,  for any $o \in
 \end{equation}
 \end{proof}
 
-let's say that $p$ is an unknown password that the adversary got its $8V$
+Let's say that $p$ is an unknown password that the adversary got its $8V$
 bits key $k \gets \hash(p, 8V)$, and that he wants to find $p$ that gave
-$k$.  also say that the adversary knows $\mathcal{O}_p$ and the
-distribution by which $p$ was sampled according to.  what this means is
+$k$.  Also say that the adversary knows $\mathcal{O}_p$ and the
+distribution by which $p$ was sampled according to.  What this means is
 that:
 \begin{itemize}
-    \item if the distribution is uniform random, then, asymptotically on
+    \item If the distribution is uniform random, then, asymptotically on
     average, the adversary would need to ask $\log_2 |\mathcal{O}_p|$ many
-    balanced binary questions until he finds out $x$.  i.e.
+    balanced binary questions until he finds out $x$.  I.e.
     $H(\mathcal{O}_p) = \log_2 |\mathcal{O}_p|$.
 
-    \item if the distribution is not uniform random, then, asymptotically
+    \item If the distribution is not uniform random, then, asymptotically
     on average, the adversary would need to ask less questions than $\log_2
     |\mathcal{O}_p|$, as the unlikely options would be usually not asked
     about because of the fact that the binary questions are imbalanced to
-    be optimised for the non-uniform random probability distribution.  i.e.
+    be optimised for the non-uniform random probability distribution.  I.e.
     $H(\mathcal{O}_p) < \log_2 |\mathcal{O}_p|$.
 \end{itemize}
 
-if the adversary knows $p$'s entropy $H(\mathcal{O}_p)$, it means that,
+If the adversary knows $p$'s entropy $H(\mathcal{O}_p)$, it means that,
 asymptotically on average, he will need to ask $H(\mathcal{O}_p)$ binary
 questions in order to find $p$.
 
-but these binary questions are theoretical, and may not exist in reality.
-specially for password hashes, it wouldn't make sense to ask ``is $p \ge
+But these binary questions are theoretical, and may not exist in reality.
+Specially for password hashes, it wouldn't make sense to ask ``is $p \ge
 \text{password123}$?'', because passwords are non-numerical but
 categorical values, and because password hashes change completely for any
-change in the password, so ranges do not apply.  so we cannot ask a single
-binary question to test a range of hashes.  instead, we are forced to test
+change in the password, so ranges do not apply.  So we cannot ask a single
+binary question to test a range of hashes.  Instead, we are forced to test
 every candidate password $\hat p$ by hashing it individually into $\hat k
 \gets \hash(\hat p, 8V)$, and testing whether $\hat k = k$.
 
-so, if $H(\mathcal{O}_p)$ is only a theoretical number of questions, which
+So, if $H(\mathcal{O}_p)$ is only a theoretical number of questions, which
 we cannot ask in the case of passwords hashing, then why do we use this
-number?  the answer is, to obtain the total number of individual candidate
+number?  The answer is, to obtain the total number of individual candidate
 tests that we need to perform asymptotically on average, because this
-number is $2^{H(\mathcal{O}_p)}$.   i.e. the adversary would end up,
+number is $2^{H(\mathcal{O}_p)}$.   I.e. the adversary would end up,
 asymptotically on average, testing no less than $2^{H(\mathcal{O}_p)}$ many
 password candidates.
 
@@ -224,63 +229,63 @@ entropy]\label{theorem_back_to_entropy}
     target key is $\log_2 x$.
 \end{lemma}
 
-\subsection{passwords' security}
-\begin{definition}[systems' security]\label{def_system_security}
-the security of a system is the cost of the cheapest method that can break
+\subsection{Passwords' security}
+\begin{definition}[Systems' security]\label{def_system_security}
+The security of a system is the cost of the cheapest method that can break
 it.
 \end{definition}
 
 \subsubsection{$\hash$}
-say that we've got an $8V$ bit key $k \gets \hash(p, 8V)$, derived from an
-unknown password $p$.  say that the adversary has $k$ but wants to figure
+Say that we've got an $8V$ bit key $k \gets \hash(p, 8V)$, derived from an
+unknown password $p$.  Say that the adversary has $k$ but wants to figure
 out $p$.
 
-asymptotically on average, the adversary would need to hash at least
+Asymptotically on average, the adversary would need to hash at least
 $2^{H(\mathcal{O}_p)}$ many password candidates, and test each one of them
-against $k$.  each test's cost is the cost of hashing a candidate password
+against $k$.  Each test's cost is the cost of hashing a candidate password
 $\hat p$ into a candidate key $\hat k$, and the cost of testing whether
-$\hat k = k$.  his total cost is:
+$\hat k = k$.  His total cost is:
 \begin{equation}\label{eq_cost_passbruteforce}
     2^{H(\mathcal{O}_p)} \left(
         \cost(\hash) + \cost(\text{if } \hat k = k)
     \right)
 \end{equation}
 
-one way to estimate the $\cost$ function is to survey the asics industry to
-get an idea how much money it costs to get a given key space, or password
-space, brute-forced within a target time frame\footnote{see the
-\emph{scrypt} paper for an example.}.  the housekeeping of this approach is
+One way to estimate the $\cost$ function is to survey the \glspl{asic}
+industry to get an idea how much money it costs to get a given key space,
+or password space, brute-forced within a target time frame\footnote{see the
+Scrypt paper for an example.}.  The housekeeping of this approach is
 expensive, and is usually not possible to get any guarantees as we don't
 know about state-of-art manufacturing secrets that adversaries may have.
 
-another way is to ignore anything that has no cryptographic guarantee.  so,
+Another way is to ignore anything that has no cryptographic guarantee.  so,
 in (\ref{eq_cost_passbruteforce}), cryptography
-guarantees\footnote{statistically by confidence earned through peer review
+guarantees\footnote{Statistically by confidence earned through peer review
 and attempts to break encryption algorithms.} that $2^{H(\mathcal{O}_p)}$
-many $\hash$ calls must be performed and that many equality tests.  the
+many $\hash$ calls must be performed and that many equality tests.  The
 $\hash$ call needs to be done once, so let's give it a unit of time $1$.
-the equality test also needs to be called once, but since it's so cheap
-it's easier to just assume that its cost is free.  this way
+The equality test also needs to be called once, but since it's so cheap
+it's easier to just assume that its cost is free.  This way
 (\ref{eq_cost_passbruteforce}) becomes just:
 \begin{equation}\label{eq_simplecost_passbruteforce}
     2^{H(\mathcal{O}_p)} (1+0) = 2^{H(\mathcal{O}_p)}
 \end{equation}
 
-further, for convenience i guess, it seems that people report it in the
+Further, for convenience I guess, it seems that people report it in the
 $\log_2$ scale.  i.e.:
 \begin{equation}\label{eq_pass_entropy}
     \log_2 2^{H(\mathcal{O}_p)} = H(\mathcal{O}_p)
 \end{equation}
 
-i think this is why people use shannon's entropy of passwords as a measure
-of their security.  not because it is the quantity of security, but rather
+I think this is why people use Shannon's entropy of passwords as a measure
+of their security.  Not because it is the quantity of security, but rather
 because its the quantity of \emph{simplified} security.
 
-i like using shannon's entropy as a measure of simplified security
-quantity, so i'm going to build on it.
+I like using Shannon's entropy as a measure of simplified security
+quantity, so I'm going to build on it.
 
-\subsubsection{recursive $\hash$: $\rhash$}
-if the $\hash$ function is replaced by an $N$-deep recursion over $\hash$,
+\subsubsection{Recursive $\hash$: $\rhash$}
+If the $\hash$ function is replaced by an $N$-deep recursion over $\hash$,
 like:
 \[
     \begin{split}
@@ -288,7 +293,7 @@ like:
     ={} &  \hash(\hash(\ldots\hash(p, 8V), \ldots, 8V), 8V)
     \end{split}
 \]
-then, if $\hash$ is not broken,  (\ref{eq_cost_passbruteforce}) becomes:
+Then, if $\hash$ is not broken,  (\ref{eq_cost_passbruteforce}) becomes:
 \begin{equation}\label{eq_cost_passbruteforce_N}
     2^{H(\mathcal{O}_p)} N \left(
         \cost(\hash) + \cost(\text{if } \hat k = k)
@@ -306,10 +311,10 @@ and the $\log_2$ scaled version becomes:
     H(\mathcal{O}_p) + \log_2 N
 \end{equation}
 
-\subsubsection{memory-hard $\hash$: $\mhash$}
-let $\mhash$ be like $\rhash$, except that it also requires $M$ many memory
+\subsubsection{Memory-hard $\hash$: $\mhash$}
+Let $\mhash$ be like $\rhash$, except that it also requires $M$ many memory
 bytes such that, as available memory is linearly reduced from $M$, penalty
-in cpu time grows exponentially.  let $M$ be requested memory, $A$ be
+in cpu time grows exponentially.  Let $M$ be requested memory, $A$ be
 available memory, and $e(M - A)$ be the exponential penalty value for
 reduction in memory, where $e(M - A) = 1$ if $M-A \le 0$.
 \begin{equation}
@@ -319,7 +324,7 @@ reduction in memory, where $e(M - A) = 1$ if $M-A \le 0$.
     \end{split}
 \end{equation}
 
-if $\hash$ in (\ref{eq_cost_passbruteforce}) is replaced by the $M$-bytes
+If $\hash$ in (\ref{eq_cost_passbruteforce}) is replaced by the $M$-bytes
 memory-hardened $N$-deep recursion hash function $\mhash$, then
 (\ref{eq_cost_passbruteforce}) becomes:
 \begin{equation}\label{eq_cost_passbruteforce_NM}
@@ -341,13 +346,13 @@ and $\log_2$ scaled version becomes:
     H(\mathcal{O}_p) + e(M-A)\log_2 N
 \end{equation}
 
-\subsubsection{caveman's entropy}
+\subsubsection{Caveman's entropy}
 \begin{definition}[caveman's entropy]\label{def_cavemanentropy}
-it is clear that (\ref{eq_pass_entropy}) is shannon's entropy, but i didn't
+It is clear that (\ref{eq_pass_entropy}) is Shannon's entropy, but I didn't
 make it clear yet what (\ref{eq_pass_cavemanentropy_rhash}) and
-(\ref{eq_pass_cavemanentropy_mhash}) are, so i will give them a temporary
-name until i tell you what they are later on in this paper.  for now, let's
-call it \emph{caveman's entropy}, $C$, which i define as follows:
+(\ref{eq_pass_cavemanentropy_mhash}) are, so I will give them a temporary
+name until I tell you what they are later on in this paper.  For now, let's
+call it \emph{caveman's entropy}, $C$, which I define as follows:
 \[
 \begin{split}
 C\Big(p, \hash(\ldots)\Big) &= H(\mathcal{O}_p) \\
@@ -357,40 +362,40 @@ C\Big(p, \mhash(\ldots, N, M)\Big) &= H(\mathcal{O}_p) + e(M-A)\log_2 N \\
 \]
 \end{definition}
 
-\section{fundamental ideas}\label{sec_fundamental_ideas}
-\subsection{``entropy injection'' theorem}
+\section{Fundamental ideas}\label{sec_fundamental_ideas}
+\subsection{``Entropy injection'' theorem}
 \begin{definition}[option testing]\label{def_option_testing}
     an option is tested if a hash is calculated, and then checked for
     equality against a value.
 \end{definition}
 
-so, option testing is very physical.  if the adversary ended up calculating
+So, option testing is very physical.  If the adversary ended up calculating
 more hashes of things, and then checked if the hashes matched some output,
 then he has effectively tested more options.
 
-then, combining this fact with \cref{theorem_back_to_entropy}, testing more
+Then, combining this fact with \cref{theorem_back_to_entropy}, testing more
 options necessarily means that the adversary has suffered more entropy; aka
 needed to ask more questions.
 
-the adversary cannot deny asking more questions by stating that his
-intention wasn't to ask them.  his intentions are irrelevant.  when he
+The adversary cannot deny asking more questions by stating that his
+intention wasn't to ask them.  His intentions are irrelevant.  When he
 commits the physical action of hashing something and then testing it for
 equality, he has physically increased the number of questions that he has
 asked so far.
 
-\cref{alg_irhash} shows an example of a function that uses cryptography to
+\Cref{alg_irhash} shows an example of a function that uses cryptography to
 force the adversary to calculate more hashes and test them for equality.
-i.e.  effectively forcing the adversary to ask more questions.  in
+I.e. effectively forcing the adversary to ask more questions.  In
 \cref{irhash_forced_hashing_1,irhash_forced_hashing_2} the adversary is
 forced to calculate a hash, and in \cref{irhash_forced_equality} the
 adversary is forced to perform an equality test to see whether the
 calculated hash equals any of the elements in the set $\mathcal{H}$.
 
 \begin{algorithm}
-let $i=0, j=1$\;
-allocate $8V$ bits variables, $k_i$ and $k_j$\;
+Let $i=0, j=1$\;
+Allocate $8V$ bits variables, $k_i$ and $k_j$\;
 $k_i \gets \hash(p, 8V)$\;\label{irhash_forced_hashing_1}
-let $\mathcal{H}$ be a set containing half the $8V$ hash space\;
+Let $\mathcal{H}$ be a set containing half the $8V$ hash space\;
 \For{$0, 1, \ldots, N-1$}{
     \If{$k_i \in \mathcal{H}$}{\label{irhash_forced_equality}
         $k_i \gets k_i + 1$\;
@@ -405,18 +410,18 @@ let $\mathcal{H}$ be a set containing half the $8V$ hash space\;
 \label{alg_irhash}
 \end{algorithm}
 
-unless the function $\hash$ is broken, when the adversary wants to
+Unless the function $\hash$ is broken, when the adversary wants to
 brute-force to find $p$ that gave $k$, he has no choice but to perform at
 least $N$ many hash calculations and at least $N$ many equality tests,
 which, by \cref{theorem_back_to_entropy} and \cref{def_option_testing}, the
 adversary has effectively asked $\log_2 N$ many more theoretical binary
-questions in addition to $H(\mathcal{O}_p)$.  so \cref{alg_irhash}
+questions in addition to $H(\mathcal{O}_p)$.  So \cref{alg_irhash}
 effectively causes the entropy of the derived key $k$ to increase to:
 \begin{equation}
     H(\mathcal{O}_k) = H(\mathcal{O}_p) + \log_2 N
 \end{equation}
 
-in other words, $\irhash$ in \cref{alg_irhash} is a variation of $\rhash$,
+In other words, $\irhash$ in \cref{alg_irhash} is a variation of $\rhash$,
 except that the former uses cryptography to inject $\log_2 N$ many entropy
 bits into the derived key.
 
@@ -426,64 +431,64 @@ which will give the following entropy:
     H(\mathcal{O}_k) = H(\mathcal{O}_p) + e(M-A)\log_2 N
 \end{equation}
 
-\begin{theorem}[entropy injection]\label{theorem_entropy_injection}
+\begin{theorem}[Entropy injection]\label{theorem_entropy_injection}
     $\irhash$ and $\imhash$ inject $\log_2 N$ and $e(M-A)\log_2 N$
-    shannon's entropy bits into their derived keys, respectively, in
+    Shannon's entropy bits into their derived keys, respectively, in
     addition to the entropy already in the input password
     $H(\mathcal{O}_p)$.
 \end{theorem}
 
-if anyone rejects \cref{theorem_entropy_injection}, then he can consider
+If anyone rejects \cref{theorem_entropy_injection}, then he can consider
 this a proof by contradiction that that hashing functions, as well as any
-encryption function\footnote{because encryption functions can be used to
-create hashing functions.}, do not exist.  so, which one do you choose?  
+encryption function\footnote{Because encryption functions can be used to
+create hashing functions.}, do not exist.  So, which one do you choose?  
 \begin{enumerate}
-    \item that i've proven that \cref{theorem_entropy_injection} is
-    injecting shannon's entropy bits?
+    \item That I've proven that \cref{theorem_entropy_injection} is
+    injecting Shannon's entropy bits?
 
-    \item or that i've proven by contradiction that hashing and encryption
+    \item Or that I've proven by contradiction that hashing and encryption
     functions do not exist?
 \end{enumerate}
 
-i personally think that i've proven (1), but if you think that i've proven
+I personally think that I've proven (1), but if you think that I've proven
 (2), then that's nice too.
 
-\subsection{``perfect lie'' theorem}
-equality testing is usually cheap.  e.g. the $\texttt{CMP}$ cpu assembly
-instruction usually takes $1$ cpu cycle per cpu core, perhaps with a few
-extra cycles to copy the data around.  
+\subsection{``Perfect lie'' theorem}
+Equality testing is usually cheap.  E.g. the $\texttt{CMP}$ \gls{cpu}
+assembly instruction usually takes $1$ \gls{cpu} cycle per \gls{cpu} core,
+perhaps with a few extra cycles to copy the data around.  
 
-on the other hand, each $\hash$ call may perform hundreds of cpu cycles.
-meaning the number of cpu cycles done by performing an equality test is
-relatively nothing compared to what $\hash$ is doing.
+On the other hand, each $\hash$ call may perform hundreds of \gls{cpu}
+cycles.  Meaning the number of \gls{cpu} cycles done by performing an
+equality test is relatively nothing compared to what $\hash$ is doing.
 
-so, since the cycles due to the equality tests are so few, why not just
+So, since the cycles due to the equality tests are so few, why not just
 ignore them, and lie that they are already done when calling $\hash$?
 
-\begin{definition}[the lie]
-    out of the total cpu cycles that are required to be performed by
+\begin{definition}[The lie]
+    Out of the total \gls{cpu} cycles that are required to be performed by
     $\hash$, $99\%$ of them are to calculate the hash, and $1\%$ of them
-    are to test whether the calculated hash equals some desired hash.  so,
+    are to test whether the calculated hash equals some desired hash.  So,
     a single $\hash$ call is doing both: hashing and equality testing.
 \end{definition}
 
-as far as the security of a system in \cref{def_system_security} is
+As far as the security of a system in \cref{def_system_security} is
 concerned, ``the lie'' is not distinguishable from truth, because either
 way what gives us the security is the required computations by
-cryptography, not necessarily what the computations mean.  we can imagine
+cryptography, not necessarily what the computations mean.  We can imagine
 that $99\%$ of the computations done by $\hash$ mean calculating a hash,
 and imagine that $1\%$ of them mean testing an equality, in order to allow
 ourselves to realise that what $\rhash$ and $\mhash$ are giving us are
-practically equivalent to shannon's entropy bits given by $\irhash$ and
+practically equivalent to Shannon's entropy bits given by $\irhash$ and
 $\imhash$.
 
-so, if ``the lie'' is as good as not lying, except that not lying requires
+So, if ``the lie'' is as good as not lying, except that not lying requires
 a more complex code base as shown in $\irhash$ in \cref{alg_irhash}, or its
 memory-hard variant $\imhash$, then why not lie and have a simpler code
-base?  i'd say this lie is totally worth it.
+base?  I'd say this lie is totally worth it.
 
-\begin{theorem}[perfect lie] \label{theorem_perfect_lie}
-    for any password $p$, and any positive numbers $V$, $N$, $M$ and $A$,
+\begin{theorem}[Perfect lie] \label{theorem_perfect_lie}
+    For any password $p$, and any positive numbers $V$, $N$, $M$ and $A$,
     such that $M \ge A$:
     \[\begin{split}
         H(\mathcal{O}_{k_h}) 
@@ -504,291 +509,296 @@ base?  i'd say this lie is totally worth it.
     \end{split}\]
 \end{theorem}
 
-thanks to the ``perfect lie'' theorem, we can now move on and use regular
+Thanks to the ``perfect lie'' theorem, we can now move on and use regular
 $\rhash$ and $\mhash$, and ---at the same time--- dare to have a very
 simple security interpretation, of their contribution to our security, in
-the unit of shannon's entropy, without needing a more complex function such
+the unit of Shannon's entropy, without needing a more complex function such
 as $\irhash$ in \cref{alg_irhash}.
 
-\subsection{``cacheable keys'' discovery}
-currently, the user has to choose a set of key derivation parameters that
-he can tolerate its delay at every login attempt.  if he picks less secure
+\subsection{``Cacheable keys'' discovery}
+Currently, the user has to choose a set of key derivation parameters that
+he can tolerate its delay at every login attempt.  If he picks less secure
 parameters, while he will suffer less delay at every login, his security
-against password brute forcing will degrade.  likewise, more secure
+against password brute forcing will degrade.  Likewise, more secure
 parameters mean more delay at every login, while also having more security.
 
-this is sort of unpleasant, as the user is forced to either always suffer
+This is sort of unpleasant, as the user is forced to either always suffer
 in order to have more security, or never suffer and have less security.
-i.e. the user is \emph{always} bitten somewhere.
+I.e. the user is \emph{always} bitten somewhere.
 
-\begin{discovery}\label{discov_key_caching}
-    expensively derived keys can be cached securely without changing the
+\begin{discovery}[Key caching]\label{discov_key_caching}
+    Expensively derived keys can be cached securely without changing the
     threat model of the vast majority of users.
 \end{discovery}
 
-thanks to discovery \ref{discov_key_caching} users now have a new option:
+Thanks to discovery \ref{discov_key_caching} users now have a new option:
 suffer some delay only during the first login, but pretty much don't suffer
-anything during subsequent logins.  this effectively allows the users to
+anything during subsequent logins.  This effectively allows the users to
 choose much more secure parameters as they will suffer it only once,
 without noticing anything in future logins.
 
-this is nice as it will practically lead to more security without being
-{always} bitten somewhere.  instead, it leads into being \emph{sometimes}
+This is nice as it will practically lead to more security without being
+{always} bitten somewhere.  Instead, it leads into being \emph{sometimes}
 bitten, such as during the first login, and during the initial setup of the
 keys cache, but not during every future login.
 
-\subsection{``hashing is only for compression'' law}
-which one is simpler when, say, building a wooden house?
+\subsection{``Hashing is only for compression'' law}
+Which one is simpler when, say, building a wooden house?
 \begin{itemize}
-    \item option 1 --- use only nails and, when you need screws,
+    \item Option 1 --- use only nails and, when you need screws,
     modify some nails into screws.
-    \item option 2 --- use nails and screws.
+
+    \item Option 2 --- use nails and screws.
 \end{itemize}
 
-on the surface, option 1 may appear as the simpler choice as it only uses
+On the surface, option 1 may appear as the simpler choice as it only uses
 nails, while option 2 uses both nails ans crews.
 
-but a deeper look shows that option 1 is actually a lie, as it is also
+But a deeper look shows that option 1 is actually a lie, as it is also
 using screws alongside nails, except that the screws are constrained by
-being re-invented by modifying nails.  in other words, option 1 has the
+being re-invented by modifying nails.  In other words, option 1 has the
 extra assumption that its screws must be made using nails, while option 2
-does not have this extra assumption.  hence option 2 is actually simpler.
+does not have this extra assumption.  Hence option 2 is actually simpler.
 
-my answer with \emph{ciphart} is that option 2 is the simpler choice
+My answer with Ciphart is that option 2 is the simpler choice
 because it removes the re-invention aspect, specially if the re-invented
 screws were worse than screws that were made as screws from the start.
 
-on the other hand, \emph{argon2} acts as if option 1 is better, which is
+On the other hand, Argon2 acts as if option 1 is better, which is
 wrong at every level.
 
-before i write about how \emph{argon2} is an example of adopting the
-mistake in option 1, i want to define the nails and the screws of a key
+Before I write about how Argon2 is an example of adopting the
+mistake in option 1, I want to define the nails and the screws of a key
 derivation function, strictly from the perspective of key derivation
 functions.
 
-\begin{definition}[hashing functions as seen by key derivation
+\begin{definition}[Hashing functions as seen by key derivation
 functions]\label{def_kdf_hash}
-    a function that maps input to output such that:
+    A function that maps input to output such that:
     \begin{itemize}
-        \item unlimited input --- input size is an unbounded number of
+        \item Unlimited input --- input size is an unbounded number of
         concatenated data chunks.
 
-        \item compression --- input's size could be larger than output's
+        \item Compression --- input's size could be larger than output's
         size.
 
-        \item preserving entropy is tried --- output should have as much
+        \item Preserving entropy is tried --- output should have as much
         entropy bits from the input, but entropy loss is possible, as
-        shannon's entropy of the input could be more bits than output's
+        Shannon's entropy of the input could be more bits than output's
         bits.
 
-        \item walking backwards is extremely hard --- analysing the output
+        \item Walking backwards is extremely hard --- analysing the output
         to find the input is computationally too hard.
     \end{itemize}
 \end{definition}
 
-\begin{definition}[symmetric block encryption functions as seen by key
+\begin{definition}[Symmetric block encryption functions as seen by key
 derivation functions]\label{def_kdf_enc}
-    a function that maps input to output such that:
+    A function that maps input to output such that:
     \begin{itemize}
-        \item limited input --- fixed sized data and a fixed sized
+        \item Limited input --- fixed sized data and a fixed sized
         key.
-        \item preserving entropy is guaranteed --- no entropy loss is
-        possible.  the proof is that, if the encryption key is known, we
+
+        \item Preserving entropy is guaranteed --- no entropy loss is
+        possible.  The proof is that, if the encryption key is known, we
         can bring back every input bit from the output by decryption.
-        \item walking backwards is extremely hard --- analysing the output
+
+        \item Walking backwards is extremely hard --- analysing the output
         to find the input is computationally too hard.
     \end{itemize}
 \end{definition}
 
-when \emph{argon2} completes solving the tasks in its memory pad, it
-derives the output key by hashing certain chunks of bytes in the pad.  the
+When Argon2 completes solving the tasks in its memory pad, it
+derives the output key by hashing certain chunks of bytes in the pad.  The
 number of hashed chunks depends on pad's size, so it's not of a fixed size,
 and henceforth meets the properties of a hashing function shown in
-\cref{def_kdf_hash}.  therefore, \emph{argon2} using a hashing function at
+\cref{def_kdf_hash}.  Therefore, Argon2 using a hashing function at
 this stage is justified.
 
-however, when \emph{argon2} is solving tasks in the memory pad, it still
+However, when Argon2 is solving tasks in the memory pad, it still
 uses a hashing function, despite the fact that it is strictly dealing with
 inputs of a fixed size, which rather meets the properties of a symmetric
-block encryption function in \cref{def_kdf_enc}.  here, \emph{argon2}
+block encryption function in \cref{def_kdf_enc}.  Here, Argon2
 better use a symmetric block encryption function instead of a hashing
-function.  using a hashing function here is a problem due to:
+function.  Using a hashing function here is a problem due to:
 \begin{itemize}
-    \item re-invention of wheels --- having \emph{argon2} concatenate two
+    \item Re-invention of wheels --- having Argon2 concatenate two
     inputs of a fixed size in order to derive an output of the same size is
     effectively an attempt to re-invent a symmetric block encryption
-    function.  i.e. the concatenation is used to emulate the effect of
+    function.  I.e. the concatenation is used to emulate the effect of
     having a pre-shared key which already exists in symmetric block
-    encryption functions.  why re-invent keys by concatenation when there
+    encryption functions.  Why re-invent keys by concatenation when there
     exists functions that already have keys?
 
-    \item needless risk of entropy loss --- using a hashing function when
+    \item Needless risk of entropy loss --- using a hashing function when
     dealing with fixed input sizes needlessly increases the probability of
-    having potential entropy losses.  this is due to the fact that hashing
+    having potential entropy losses.  This is due to the fact that hashing
     functions \emph{try} to preserve input's entropy, but cannot guarantee
     it, while symmetric block ciphers \emph{do} guarantee it\footnote{the
     proof is that a symmetric block encryption function has a decryption
     function to bring the original input back from the output, while a
-    hashing function may not have as such.}.  so why have the possibility
+    hashing function may not have as such.}.  So why have the possibility
     of losing entropy bits when you don't have to?
 
-    \item slower memory filling rate --- generally speaking, hashing
+    \item Slower memory filling rate --- generally speaking, hashing
     functions tend to be slower than symmetric block encryption functions.
-    this is because of dealing with compression is harder than not.
+    This is because of dealing with compression is harder than not.
 
-    symmetric block encryption functions guarantee preserving input's
+    Symmetric block encryption functions guarantee preserving input's
     entropy in the output with much less effort thanks to the fact that the
     output is at least as large as the input.
 
-    but hashing functions don't have the luxury of having an output that's
+    But hashing functions don't have the luxury of having an output that's
     as large as the input, thus they need to work a lot more in order to
     ensure that no input entropy is needlessly lost.
 
-    this slowness is bad as it reduces number of passes over the memory pad in
-    a unit of time.  more passes over the memory pad are important for
+    This slowness is bad as it reduces number of passes over the memory pad
+    in a unit of time.  More passes over the memory pad are important for
     strengthening the memory hardness.
 \end{itemize}
 
-\begin{law}[hashing is only for compression]\label{law_simplification}
-    use hashing functions only when compression happens.  otherwise, use
+\begin{law}[Hashing is only for compression]\label{law_simplification}
+    Use hashing functions only when compression happens.  Otherwise, use
     symmetric block encryption functions.
 \end{law}
 
-\section{ciphart}
-\emph{ciphart} is basically a variation of \emph{argon2}, except that it
-uses the fundamental ideas in \cref{sec_fundamental_ideas} to be:
+\section{Ciphart}
+Ciphart is basically a variation of Argon2, except that it uses the
+fundamental ideas in \cref{sec_fundamental_ideas} to be:
 \begin{itemize}
-    \item easier by injecting shannon's entropy bits into its derived keys;
+    \item Easier by injecting Shannon's entropy bits into its derived keys;
     thanks to my ``perfect lie'' theorem (\cref{theorem_perfect_lie}).
 
-    \item memory-\emph{harder} by utilising space beyond the random-access
-    memory, by also utilising the hard-disk; thanks to my ``cacheable
-    keys'' discovery (discovery \ref{discov_key_caching}).
+    \item Memory-\emph{harder} by utilising space beyond the \gls{ram}, by
+    also utilising the hard-disk; thanks to my ``cacheable keys'' discovery
+    (discovery \ref{discov_key_caching}).
 
-    \item faster by using $\hash$ only when compression takes place,
-    otherwise using $\enc$; thanks to my ``hashing is only for
+    \item Faster by using $\hash$ only when compression takes place,
+    otherwise using $\enc$; Thanks to my ``hashing is only for
     compression'' law (law \ref{law_simplification}).
 \end{itemize}
 
-\subsection{the algorithm}
-\subsubsection{parameters}
+\subsection{The algorithm}
+\subsubsection{Parameters}
 \begin{tabularx}{\columnwidth}{lX}
-    $P$ & password.\\
-    $S$ & salt.\\
-    $M$ & total random-access memory in bytes.\\
-    $D$ & total hard-disk memory in bytes.\\
-    $F$ & temporary file's path.\\
-    $Y$ & whether key caching is enabled.\\
-    $L$ & number of memory lanes for concurrency.\\
-    $T$ & number of tasks per lane segment.\\
-    $H$ & number of tasks per hard-disk read.\\
-    $B$ & minimum shannon's entropy bits to inject into output key.\\
-    $K$ & output key's size in bytes.\\
+    $P$ & Password.\\
+    $S$ & Salt.\\
+    $M$ & Total \gls{ram} in bytes.\\
+    $D$ & Total hard-disk memory in bytes.\\
+    $F$ & Temporary file's path.\\
+    $Y$ & Whether key caching is enabled.\\
+    $L$ & Number of memory lanes for concurrency.\\
+    $T$ & Number of tasks per lane segment.\\
+    $H$ & Number of tasks per hard-disk read.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
+    $B$ & Minimum Shannon's entropy bits to inject into output key.\\
+    $K$ & Output key's size in bytes.\\
 \end{tabularx}
 
-\subsubsection{internal variables}
+\subsubsection{Internal variables}
 \begin{tabularx}{\columnwidth}{lX}
-    $\cexists$  & cache entry existence testing function.\\
-    $\cget$     & cache entry retrieval function.\\
-    $\cset$     & cache entry setting function.\\
+    $\cexists$  & Cache entry existence testing function.\\
+    $\cget$     & Cache entry retrieval function.\\
+    $\cset$     & Cache entry setting function.\\
 \end{tabularx}
 \begin{tabularx}{\columnwidth}{lX}
-    $\enc$      & encryption function.\\
-    $\dec$      & decryption function.\\
-    $\hash$     & hashing function.\\
-    $\fread$    & hard-disk file reading function, with seeking.  e.g.
+    $\enc$      & Encryption function.\\
+    $\dec$      & Decryption function.\\
+    $\hash$     & Hashing function.\\
+    $\fread$    & Hard-disk file reading function, with seeking.  E.g.
                     $\fread(x, y, z)$ reads $z$ many bytes from file $x$
                     after seeking $y$ bytes forward.\\
-    $\fwrite$   & hard-disk file writing function.\\
+    $\fwrite$   & Hard-disk file writing function.\\
 \end{tabularx}
 \begin{tabularx}{\columnwidth}{lX}
     $C$         & $\gets \begin{cases}
                         64 \text{ bytes} & \text{if $\enc$ is
-                                            \emph{xchacha20}}\\
-                        16 \text{ bytes} & \text{if $\enc$ is \emph{aes}}\\
+                                            Xchacha20}\\
+                        16 \text{ bytes} & \text{if $\enc$ is AES}\\
                         \vdots & \\
                      \end{cases}$\\
-                & this to reflect the block size of the encryption
+                & This to reflect the block size of the encryption
                     algorithm that implements $\enc$.\\
     $V$ & $\gets \begin{cases}
                         32 \text{ bytes} & \text{if $\enc$ is
-                                            \emph{xchacha20}}\\
+                                            Xchacha20}\\
                         16 \text{ bytes} & \text{if $\enc$ is
-                            \emph{aes-128}}\\
+                            AES-128}\\
                         \vdots & \\
                      \end{cases}$\\
-                & this is the size of the encryption key that's used to
-                    solve \emph{ciphart}'s tasks.  this is different than
+                & This is the size of the encryption key that's used to
+                    solve Ciphart's tasks.  This is different than
                     output key's size, $K$, which is $\enc$-independent.\\
     $R$         & $V$ bytes of cryptographically secure random number.
-                    this is a temporary key for encrypting and decrypting
-                    the $F$ file, that's forgotten upon \emph{ciphart}'s
-                    completion.  why?  so that we can just delete the $F$
+                    This is a temporary key for encrypting and decrypting
+                    the $F$ file, that's forgotten upon Ciphart's
+                    completion.  Why?  So that we can just delete the $F$
                     file normally, without worrying about having its
                     content remain in the disk.\\
     $J$         & $\gets \hash(P \Vert S \Vert M \Vert D \Vert \ldots
                     \Vert K, V)$.  $V$ bytes key to encrypt and decrypt
                     cached key objects\\
-    $\hat T$    & $\gets \maxf(\lceil V C^{-1}\rceil, T)$.  this
+    $\hat T$    & $\gets \maxf(\lceil V C^{-1}\rceil, T)$.  This
                     is to ensure that we have enough encrypted bytes for
                     new keys.\\
-    $\hat T$    & $\gets \hat T - (\hat T \bmod 2) + 2$.  this is to ensure
+    $\hat T$    & $\gets \hat T - (\hat T \bmod 2) + 2$.  This is to ensure
                     that there is an even number of tasks in a segment.
-                    why?  because we need a buffer for storing the
+                    Why?  Because we need a buffer for storing the
                     clear-text and another for storing the output
                     cipher-text.\\
-    $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  this is to
-                    ensure that it is in multiples of $C\hat TL$.  why?  so
+    $\hat M$    & $\gets M - (M \bmod C\hat TL) + C\hat TL$.  This is to
+                    ensure that it is in multiples of $C\hat TL$.  Why?  So
                     that all segments are of equal lengths in order to
-                    simplify \emph{ciphart}'s logic.  e.g. it wouldn't be
+                    simplify Ciphart's logic.  E.g. it wouldn't be
                     nice if the last segments were of unequal sizes.\\
-    $\hat D$    & $\gets D - (D \bmod C\hat TLH) + C\hat TLH$.  this is to
-                    ensure that it is in multiples of $C\hat TLH$.  why?
+    $\hat D$    & $\gets D - (D \bmod C\hat TLH) + C\hat TLH$.  This is to
+                    ensure that it is in multiples of $C\hat TLH$.  Why?
                     because the disk is filled by the content of $H$ many
                     completed segments, which is $C\hat TLH$ many bytes.\\
-    $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  total number of
+    $G$         & $\gets \hat MC^{-1}\hat T^{-1}L^{-1}$.  Total number of
                     segments per lane.\\
     $\hat B$    & $\gets \max\{
                         B,
                         \log_2[\hat DC^{-1} + \max(\hat MC^{-1}, HL + \hat
                         TL)]
-                    \}$.  this is to ensure that requested spaces are
+                    \}$.  This is to ensure that requested spaces are
                     filled, and the key is updated and used for at least
                     once.\\
+\end{tabularx}
+\begin{tabularx}{\columnwidth}{lX}
     $\hat B$    & $\gets \log_2[(2^{\hat B} \bmod \hat TGL) + \hat TGL]$.
-                    this is to reflect the reality that tasks are completed
+                    This is to reflect the reality that tasks are completed
                     in batches of $L$ many lane segments.\\
     $m_i$       & $C$-bytes memory for $i^{th}$ task in the $\hat M$-bytes
                     pad.\\
-\end{tabularx}
-\begin{tabularx}{\columnwidth}{lX}
-    $n_l$       & $\gets \maxf(\text{nonce})L^{-1}l$.  nonce variable for
+    $n_l$       & $\gets \maxf(\text{nonce})L^{-1}l$.  Nonce variable for
                     $l^{th}$ lane.  $n_0L$ is also used as a counter to
                     measure total number of times $\enc$ was called.\\
-    $f$         & $\gets 0$.  a flag indicating whether the first pass on
+    $f$         & $\gets 0$.  A flag indicating whether the first pass on
                     the $\hat M$ bytes memory pad has completed.\\
-    $d$         & $\gets 0$.  a counter indicating total number of saved
+    $d$         & $\gets 0$.  A counter indicating total number of saved
                     blocks into hard-disk.\\
-    $h$         & $\gets 0$.  a counter indicating number of processed lane
+    $h$         & $\gets 0$.  A counter indicating number of processed lane
                     segments since the last hard-disk read.\\
     $v$         & $\gets J$.  $V$ bytes key.  $v$ is the key
                     itself, and $*v$ is a pointer to it.\\
-    $Z$         & $\gets \hash(J \Vert 0, V)$.  file name where output key,
+    $Z$         & $\gets \hash(J \Vert 0, V)$.  File name where output key,
                     $k$, is expected to be cached, if $k$ was previously
                     cached.\\
 \end{tabularx}
 
-\subsubsection{output}
+\subsubsection{Output}
 \begin{tabularx}{\columnwidth}{lX}
-$k$ & $K$ bytes key, with $H(\mathcal{O}_p) + \hat B$ many shannon's
+$k$ & $K$ bytes key, with $H(\mathcal{O}_p) + \hat B$ many Shannon's
         entropy bits, such that $\hat B \ge B$.\\
 \end{tabularx}
 
-\subsubsection{steps}
-steps of \emph{ciphart-d} is shown in \cref{alg_ciphart}, which corresponds
-to \emph{argon2d}.  defining \emph{ciphart-i} or \emph{ciphart-di}
-variants, which correspond to \emph{argon2i} or \emph{argon2id},
-respectively, is a trivial matter; i just didn't bother because i don't
+\subsubsection{Steps}
+Steps of Ciphart-d is shown in \cref{alg_ciphart}, which corresponds
+to Argon2d.  Defining Ciphart-i or Ciphart-di
+variants, which correspond to Argon2i or Argon2id,
+respectively, is a trivial matter; I just didn't bother because I don't
 need them yet.
 
 \begin{algorithm}
@@ -857,232 +867,301 @@ m_{i+(L-1)\hat T}, K)$\;
 }
 $\delete(F)$\;
 \Return{$k$}
-\caption{ciphart-d}
+\caption{Ciphart-d}
 \label{alg_ciphart}
 \end{algorithm}
 
-\subsubsection{caveman's entropy of \emph{ciphart}}
-if the adversary has $\hat M$ many random-access memory bytes, and $\hat D$
-many hard-disk bytes, then caveman's entropy of \emph{ciphart}'s derived
+\subsubsection{Caveman's entropy of Ciphart}
+If the adversary has $\hat M$ many \gls{ram} bytes, and $\hat D$
+many hard-disk bytes, then caveman's entropy of Ciphart's derived
 key is $H(\mathcal{O}_p) + \log_2 \hat B$.
 
-what if the adversary has $\hat M - C$ many random-access memory bytes?
-what's caveman's entropy of the derived key?  the answer is that it depends
-on whether the adversary is lucky enough to get away with it.  adversary's
+What if the adversary has $\hat M - C$ many \gls{ram} bytes?
+What's caveman's entropy of the derived key?  The answer is that it depends
+on whether the adversary is lucky enough to get away with it.  Adversary's
 luck here is based on the probability that the missing $C$ bytes block will
 be used later on to update the internal key $v$.
 
-ideally, the probability that a $C$ bytes block in the random-access memory
-is going to be used later on to update the internal key $v$ is $(\hat
-MC^{-1})^{-1} = \hat M^{-1}C$.
+Ideally, the probability that a $C$ bytes block in the \gls{ram} is going
+to be used later on to update the internal key $v$ is $(\hat MC^{-1})^{-1}
+= \hat M^{-1}C$.
 
-\subsection{noteworthy features}
-\subsubsection{key caching}
-fundamentally, key caching in \cref{ciphart_cache_hit,ciphart_cache_miss}
-assumes that the \texttt{root} system user is trusty.  since most users
+\subsection{Noteworthy features}
+\subsubsection{Key caching}
+Fundamentally, key caching in \cref{ciphart_cache_hit,ciphart_cache_miss}
+assumes that the \texttt{root} system user is trusty.  Since most users
 already trust \texttt{root} and since without this trust every other key
 derivation is also broken for most people, this key caching doesn't change
 the threat model, but allows us to utilise more value out of the threat
 model that we already have.
 
-the value that this key caching gives us is that it allows us to use much
-more secure key derivation parameters, while still being usable.  this
+The value that this key caching gives us is that it allows us to use much
+more secure key derivation parameters, while still being usable.  This
 usability comes from the fact that the expensive key derivation is done
-only once.  so the user has to only suffer once during the first login
-attempt.  subsequent logins will be almost instantaneous as the key is
+only once.  So the user has to only suffer once during the first login
+attempt.  Subsequent logins will be almost instantaneous as the key is
 retrieved from the cache.  
 
-this approach allows users to derive much more secure keys as the suffering
-happens only once.  i.e. instead of having the user to suffer, say, $3$
+This approach allows users to derive much more secure keys as the suffering
+happens only once.  I.e. instead of having the user to suffer, say, $3$
 seconds of delay for each login, key caching will persuade him to suffer,
 say, $30$ seconds only once in order to get a really secure key, and then
 not suffer at all with semi-instantaneous future logins.
 
-of course, this key caching is optional, and can be disabled by $Y \gets
-0$.  but i personally really like it, and i think it is better for the vast
+Of course, this key caching is optional, and can be disabled by $Y \gets
+0$.  But I personally really like it, and I think it is better for the vast
 majority of people to use it, specially that key caching can be done in a
 secure manner that survives even physical disk thefts, should the key cache
 be encrypted properly.
 
-the encryption and the decryption of the derived cached keys in
+The encryption and the decryption of the derived cached keys in
 \cref{ciphart_cache_dec,ciphart_cache_enc} is done \emph{mainly} as as a
 precautionary measure should a user accidentally write into an improperly
-secured keys cache.  this encryption and decryption gives the user a
-minimum security that's worth the entropy of his password.  but this is
-probably not an adequate entropy to properly secure the keys cache.  e.g.
+secured keys cache.  This encryption and decryption gives the user a
+minimum security that's worth the entropy of his password.  But this is
+probably not an adequate entropy to properly secure the keys cache.  E.g.
 it would be better if the keys cache, itself, is encrypted by a $256$ bits
 of entropy using a key file possibly in a removable physical hardware that
 is always with the user.
 
-\subsubsection{parallelism}
-iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
+\subsubsection{Parallelism}
+Iterations of the loop in \cref{ciphart_lanes} in \cref{alg_ciphart}
 are independent, so can be done in $L$ cpu cores.
 
-\subsubsection{memory-hardness}
+\subsubsection{Memory-hardness}
 \begin{proof}
-    \cref{alg_ciphart} is just a variation of \emph{argon2d}.  so if
-    \emph{argon2d} is memory-hard, then so is \emph{ciphart}.
+    \cref{alg_ciphart} is just a variation of Argon2d.  So if
+    Argon2d is memory-hard, then so is Ciphart.
 \end{proof}
 
 
-\subsubsection{memory-\emph{harder}ness}
-thanks to discovery \ref{discov_key_caching}, we can cache keys, as done in
+\subsubsection{Memory-\emph{harder}ness}
+Thanks to discovery \ref{discov_key_caching}, we can cache keys, as done in
 \cref{ciphart_cache_hit,ciphart_cache_miss}, without increasing assumptions
-of the threat model of the vast majority of users.  then,
-memory-\emph{harder}ness becomes possible.  this process goes like this:
+of the threat model of the vast majority of users.  Then,
+memory-\emph{harder}ness becomes possible.  This process goes like this:
 \begin{enumerate}
-    \item starts by running an $\enc$-based variant of \emph{argon2},
+    \item Starts by running an $\enc$-based variant of Argon2,
     except that, as it is going, it keeps writing the updated segments into
-    the hard-disk until the size of it satisfies the $D$ bytes limit.  this
+    the hard-disk until the size of it satisfies the $D$ bytes limit.  This
     is shown in \cref{ciphart_D_filling} in \cref{alg_ciphart}.
 
-    optimising this hard-disk filling with $D$ bytes is not a big deal,
+    Optimising this hard-disk filling with $D$ bytes is not a big deal,
     since this feature is probably going to be used only once; thanks to
-    key caching.  that said:
+    key caching.  That said:
     \begin{itemize}
-        \item this feature is optional.  i.e. in case someone doesn't like
-        the hard-disk caching, he can set $D \gets 0$ to disable it.  but,
-        for most people, i don't understand why you would want to disable
-        it.  e.g. if you're already trusting \texttt{root}, then i think
+        \item This feature is optional.  I.e. in case someone doesn't like
+        the hard-disk caching, he can set $D \gets 0$ to disable it.  But,
+        for most people, I don't understand why you would want to disable
+        it.  E.g. if you're already trusting \texttt{root}, then I think
         that you can use this feature without changing your threat model.
 
-        i personally like it a lot as it allows me to achieve
-        memory-\emph{harder}ness way beyond my random-access memory.  just
-        imagine the look on the face of those asics crackers once they hear
-        that your \emph{ciphart} requires, say, $50$ giga bytes!
+        I personally like it a lot as it allows me to achieve
+        memory-\emph{harder}ness way beyond my \gls{ram}.  Just imagine the
+        look on the face of those \glspl{asic} crackers once they hear that
+        your Ciphart requires, say, $50$ giga bytes!
 
-        \item when key caching is enabled, i.e. $Y \gets 1$, this hard-disk
+        \item When key caching is enabled, i.e. $Y \gets 1$, this hard-disk
         writing is done only initially, and subsequent uses appear as
         almost instantaneous.
 
-        \item this hard-disk writing can be slightly optimised by using a
-        non-blocking write operation.  but i think that the trivial
-        reduction in this time may not justify increasing  code's
-        complexity, so i don't plan to implement non-blocking writes in
+        \item This hard-disk writing can be slightly optimised by using a
+        non-blocking write operation.  But I think that the trivial
+        reduction in this time may not justify increasing code's
+        complexity, so I don't plan to implement non-blocking writes in
         \texttt{libciphart}.
     \end{itemize}
 
-    \item then, once the $D$ bytes hard-disk requirement is satisfied, the
+    \item Then, once the $D$ bytes hard-disk requirement is satisfied, the
     process continues to run the modified $\enc$-based variant of
-    \emph{argon2} except that it updates the key $v$ from those $D$ bytes
-    every time $S$ many segments are solved.  this step makes
-    \emph{ciphart} require $D+M$ bytes.  this is shown in
+    Argon2 except that it updates the key $v$ from those $D$ bytes
+    every time $S$ many segments are solved.  This step makes
+    Ciphart require $D+M$ bytes.  This is shown in
     \cref{ciphart_D_using} in \cref{alg_ciphart}.
 
-    if $S$ is large enough, this can be done efficiently without blocking
+    If $S$ is large enough, this can be done efficiently without blocking
     the cpu noticeably, as the randomly obtained $V$ bytes can be read by
     using the $O(1)$ operation, \texttt{seek}, over the $D$ bytes.
 
-    \item delete the $D$ bytes, just to free up the disk space.  no need to
+    \item Delete the $D$ bytes, just to free up the disk space.  No need to
     securely delete those $D$ bytes since we can save them using a
     temporary random key that's forgotten later on.
 \end{enumerate}
 
-\section{benchmarks}
+\section{Benchmarks}
 
-\section{application scenarios}
-\subsection{a currently-useful scenario}
-user has a password manager which generates unique $256$ bit entropy keys for
-each online service that he uses.  the user also renews keys for his online
-services every now and then.   so his online accounts generally have high
+\section{Application scenarios}
+\subsection{A currently-useful scenario}
+User has a password manager which generates unique $256$ bit entropy keys for
+each online service that he uses.  The user also renews keys for his online
+services every now and then.   So his online accounts generally have high
 security.
 
-but user's problem is how to lock and unlock his password manager's
-passwords database.  should he use a physical usb-stick key that types a
-high-entropy key that encrypts and decrypts the database?   the user
+But user's problem is how to lock and unlock his password manager's
+passwords database.  Should he use a physical usb-stick key that types a
+high-entropy key that encrypts and decrypts the database?   The user
 doesn't want this physical key because of several reasons:
 \begin{itemize}
-    \item he tends to lose his keys a lot, and, for certain tasks, the risk
+    \item He tends to lose his keys a lot, and, for certain tasks, the risk
     of needing to wait for until he gets a backup usb-stick key is too
     much.
 
-    \item he doesn't want to be caught having cryptographic usb-stick keys,
-    because as such is an evidence that he has encrypted content.  the user
-    wants to have the choice to lie that he has no clue.  so not having
+    \item He doesn't want to be caught having cryptographic usb-stick keys,
+    because as such is an evidence that he has encrypted content.  The user
+    wants to have the choice to lie that he has no clue.  So not having
     usb-stick keys with him helps his case to lie.
 
-    \item he wants to be torture-resistant so that an adversary cannot
+    \item He wants to be torture-resistant so that an adversary cannot
     forcefully take his keys from him in order to login into his services.
-    he may rather want to die than to give the password to the adversary.
-    this works because, so far, the brain is a pretty private information
+    He may rather want to die than to give the password to the adversary.
+    This works because, so far, the brain is a pretty private information
     store.
 \end{itemize}
 
-in this scenario, the user memorises a sensible password that he can
-remember, with enough initial entropy, and then uses \emph{ciphart},
+In this scenario, the user memorises a sensible password that he can
+remember, with enough initial entropy, and then uses Ciphart,
 preferably with disk caching, to inject large amounts of entropy bits into
-his derived keys, way beyond the reach of pre-\emph{ciphart} key derivation
+his derived keys, way beyond the reach of pre-Ciphart key derivation
 functions; thanks to \cref{theorem_perfect_lie} and discovery
 \ref{discov_key_caching}.
 
-here, the expensively derived key is only used to unlock a local password
+Here, the expensively derived key is only used to unlock a local password
 manager, which offers a protection against situations where a backup copy
-of the passwords database is stolen.  this may enable the user to store his
+of the passwords database is stolen.  This may enable the user to store his
 passwords manager in an online file synchronisation service for more
 convenient system migrations to further reduce his login delays should he
 face the need to migrate to a new, say, personal computer.
 
 \begin{advertisement}
-    in case you're interested in such a passwords manager, i've also made
-    \emph{nsapass}\footnote{\url{https://github.com/Al-Caveman/nsapass}}
-    --- a flexible and a simple passwords manager in a few hundreds of
-    python lines of code, that uses \emph{ciphart} by default.  i think
+    In case you're interested in such a passwords manager, I've also made
+    NSA-Pass\footnote{\url{https://github.com/Al-Caveman/nsapass}}
+    --- A flexible and a simple passwords manager in a few hundreds of
+    python lines of code, that uses Ciphart by default.  I think
     this is the best command-line interfacing passwords manager by far, for
     its usability, and for the fact that auditing it is easy, thanks for it
     being only in a few hundreds of python lines.
 \end{advertisement}
 
-\subsection{a later-useful scenario}
-all input password fields will internally call \texttt{libciphart} to
-derive more expensive keys.  this way, applications, such as
-\emph{firefox}, \emph{mutt}, \ldots, will never send actual passwords, but
-will only send \emph{ciphart}-derived keys with increased shannon's entropy
+\subsection{A later-useful scenario}
+All input password fields will internally call \texttt{libciphart} to
+derive more expensive keys.  This way, applications, such as
+Firefox, Mutt, \ldots, will never send actual passwords, but
+will only send Ciphart-derived keys with increased Shannon's entropy
 content.
 
 thanks to \cref{theorem_perfect_lie}, this will automatically
-increase shannon's entropy of all users' passwords without requiring users
-to memorise harder passwords.  thanks to discovery
+increase Shannon's entropy of all users' passwords without requiring users
+to memorise harder passwords.  Thanks to discovery
 \ref{discov_key_caching}, the user will not face any delay in his daily
 use, except only an initial delay to create the cache entry.
 
-i also think that it is \emph{generally} better to have expensive key
+I also think that it is \emph{generally} better to have expensive key
 derivation functions in the client side as opposed to the server side.
-because remote servers always have the incentive to reduce the complexity
+Because remote servers always have the incentive to reduce the complexity
 of the key derivation function in order to free more resources for other
 things that bring them money.
 
-perhaps, one day in the future, the \emph{password} field in \emph{html}
+Perhaps, one day in the future, the \texttt{password} field in \gls{html}
 should have an argument called \texttt{kdf} that goes like \texttt{<input
 type="password" kdf="ciphart" \ldots>} which specifies the key derivation
 function that the web browser must use to derive a more secure key, and
-then send the derived key instead of sending the password.  browsers are
+then send the derived key instead of sending the password.  Browsers are
 already kind enough to \emph{manage} our passwords for us, so this will be
-just a matter of making them send more secure key as opposed to the less
-secure passwords.  
+just a matter of making them send more secure keys as opposed to the less
+secure passwords.
 
-i personally don't let browsers manage my passwords, because i don't trust
-them, and because i don't need them, as i use my own passwords manager
-\emph{nsapass}.  so i don't care about this.  i just wrote it in case it
+I personally don't let browsers manage my passwords, because I don't trust
+them, and because I don't need them, as I use my own passwords manager
+NSA-Pass.  So I don't care about this.  I just wrote it in case it
 helps the cute normal people more securely syndicate videos of their happy
 puppies across the interwebs, without requiring them to become better
-people.  why?  i guess i'm too kind, and i think these people are sort of
-adorable the way they are, so i don't mind to preserve their innocence.
+people.  Why?  Because I'm a caring person, and I think these people are
+sort of adorable the way they are, so I don't mind to preserve their
+innocence.
 
-either  way, \emph{ciphart} is perfectly usable on the server side.  it is
-just that i think \emph{ciphart}, \emph{argon2}, \emph{scrypt}, \ldots make
-better sense when placed on the client side.  ideally implemented in a
-passwords manager like \emph{nsapass} as i said earlier, or integrated into
+Either  way, Ciphart is perfectly usable on the server side.  It is
+just that I think Ciphart, Argon2, Scrypt, \ldots make
+better sense when placed on the client side.  Ideally implemented in a
+passwords manager like NSA-Pass as I said earlier, or integrated into
 the password fields of web browsers in order to preserve the innocence of
 the adorable normies.
 
 \vfill
 \break
 \appendix
-\section{donations}
-\subsection{bitcoin}
+\section{Donations}
+My Bitcoin address for this paper:
 \begin{center}
     \includegraphics[width=121px]{./pics/btc_wallet_address_trimmed.png}
     \texttt{bc1qtylzjtgd0yu4v7f8hyfzufn7nu692v9fc88jln}
 \end{center}
+
+\section{Discussion}
+\subsection{Answering silly arguments}
+\begin{enumerate}
+    \item \textbf{Argument:} Are you a troll?  Because your language is
+    sort of funny, you have an advertisement block announcing one of your
+    apps (NSA-Pass), and ask for donations in your paper.
+
+    \textbf{Answer:} Not sure what does it mean to be a troll.  Does it
+    mean being \emph{always} a troll?  Or only \emph{sometimes}?  I'm not
+    the former, but I'm the latter.
+
+    Papers actually usually do have advertisement blocks inside them,
+    except that they get silently stashed in between the paragraphs
+    alongside other cited resources.  What I did with the advertisement
+    block is that I just made it explicit that I advertised.  I find using
+    explicit advertisement blocks the honest way of doing it.  I wish if
+    other authors who try to advertise their previous works, to do so in
+    advertisement blocks like I did.
+
+    Authors of papers usually don't put their Bitcoin addresses for
+    receiving donations.  But I think they are wrong.  I think it is a good
+    idea for researchers, or research institutions, to announce means by
+    which they can get donations, right in every paper they publish.  In
+    fact, I think, counting the amounts of Bitcoin donations that papers
+    receive is a better metric to rank papers than other commonly used
+    measures, such as citation counts.
+
+    About the funny language, it is in part because of being myself, and in
+    part because of technical correctness.  E.g. when I say ``\emph{I
+    think\ldots}'' or ``\emph{I guess\ldots}'' is because that is what
+    describes reality most accurately.  I could weasel around and use
+    longer sentences to say the same thing such as ``\emph{a possible
+    reason for\ldots\ could be \ldots}'', but I find it immoral to do so,
+    because it wastes reader's time for the vanity of guarding my ego;
+    hence I choose to cut the chase and say ``\emph{I think\ldots}''.
+
+    About the name of the advertised app, NSA-Pass, it is so because it is
+    humorous and promotes the user to be suspicious.  The humorous part is
+    good because playfulness is good for creativity and openness towards
+    progress.  The suspicious part is good because it reduces blind trust
+    by users as it gives them more reasons to audit the app before using
+    it.
+
+    \item \textbf{Argument:} If you're sometimes a troll, therefore you're
+    trying to troll us by writing this paper!
+
+    \textbf{Answer:} Irrelevant.
+
+    \item \textbf{Argument:} You being a troll is relevant, because it
+    means that the idea in your paper is wrong!
+
+    \textbf{Answer:} Nope.  What makes an idea right, or wrong, is not who
+    the author is, but rather the idea itself.
+\end{enumerate}
+
+\subsection{Answering normal arguments}
+\begin{enumerate}
+    \item \textbf{Argument:} Who cares about making Argon2 faster?  Isn't
+    it supposed to be slower to make it harder for the attacker?
+
+    \textbf{Answer:} Ciphart can be as slow as we want, but its increased
+    speed over Argon2 effectively allows Ciphart to run more passes over
+    the memory pad in a given unit of time.  More passes over the memory
+    means that the adversary will be less likely to get lucky to get away
+    with less \gls{ram}.  This effectively means that Ciphart offers
+    stronger memory-hardness per wall-clock second over Argon2.
+\end{enumerate}
 
 \end{document}
