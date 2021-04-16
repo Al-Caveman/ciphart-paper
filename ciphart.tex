@@ -36,6 +36,7 @@
 \renewcommand{\contentsname}{Paper's Layout}
 \DTMsetdatestyle{iso}
 \makeglossaries
+\newacronym{kdf}{KDF}{Key Derivation Function}
 \newacronym{asic}{ASIC}{Application-Specific Integrated Circuit}
 \newacronym{cpu}{CPU}{Central Processing Unit}
 \newacronym{html}{HTML}{Hyper-Text Markup Language}
@@ -59,7 +60,7 @@ com}.}\\
 \end{center}
 
 \noindent\textbf{Synopsis---}Argon2\footnote{\url{https://github.com/P-H-C/phc-winner-argon2}}
-is a fast and simple memory-hard key derivation function.  Compared to
+is a fast and simple memory-hard \gls{kdf}.  Compared to
 Scrypt\footnote{\url{http://www.tarsnap.com/scrypt/scrypt.pdf}}, Argon2 is
 better.  But I claim that Argon2 is still not fast enough, not memory-hard
 enough, and its contribution to our security is not simple enough to
@@ -568,12 +569,11 @@ On the other hand, Argon2 acts as if option 1 is better, which is
 wrong at every level.
 
 Before I write about how Argon2 is an example of adopting the
-mistake in option 1, I want to define the nails and the screws of a key
-derivation function, strictly from the perspective of key derivation
-functions.
+mistake in option 1, I want to define the nails and the screws of a
+\gls{kdf}, strictly from the perspective of \glspl{kdf}.
 
-\begin{definition}[Hashing functions as seen by key derivation
-functions]\label{def_kdf_hash}
+\begin{definition}[Hashing functions as seen by
+\glspl{kdf}]\label{def_kdf_hash}
     A function that maps input to output such that:
     \begin{itemize}
         \item Unlimited input --- input size is an unbounded number of
@@ -592,8 +592,8 @@ functions]\label{def_kdf_hash}
     \end{itemize}
 \end{definition}
 
-\begin{definition}[Symmetric block encryption functions as seen by key
-derivation functions]\label{def_kdf_enc}
+\begin{definition}[Symmetric block encryption functions as seen by
+\glspl{kdf}]\label{def_kdf_enc}
     A function that maps input to output such that:
     \begin{itemize}
         \item Limited input --- fixed sized data and a fixed sized
@@ -890,8 +890,8 @@ to be used later on to update the internal key $v$ is $(\hat MC^{-1})^{-1}
 \subsubsection{Key caching}
 Fundamentally, key caching in \cref{ciphart_cache_hit,ciphart_cache_miss}
 assumes that the \texttt{root} system user is trusty.  Since most users
-already trust \texttt{root} and since without this trust every other key
-derivation is also broken for most people, this key caching doesn't change
+already trust \texttt{root} and since without this trusting every other
+\gls{kdf} is also broken for most people, this key caching doesn't change
 the threat model, but allows us to utilise more value out of the threat
 model that we already have.
 
@@ -1021,9 +1021,8 @@ doesn't want this physical key because of several reasons:
 In this scenario, the user memorises a sensible password that he can
 remember, with enough initial entropy, and then uses Ciphart,
 preferably with disk caching, to inject large amounts of entropy bits into
-his derived keys, way beyond the reach of pre-Ciphart key derivation
-functions; thanks to \cref{theorem_perfect_lie} and discovery
-\ref{discov_key_caching}.
+his derived keys, way beyond the reach of pre-Ciphart \glspl{kdf}; thanks
+to \cref{theorem_perfect_lie} and discovery \ref{discov_key_caching}.
 
 Here, the expensively derived key is only used to unlock a local password
 manager, which offers a protection against situations where a backup copy
@@ -1055,20 +1054,20 @@ to memorise harder passwords.  Thanks to discovery
 \ref{discov_key_caching}, the user will not face any delay in his daily
 use, except only an initial delay to create the cache entry.
 
-I also think that it is \emph{generally} better to have expensive key
-derivation functions in the client side as opposed to the server side.
+I also think that it is \emph{generally} better to have expensive
+\glspl{kdf} in the client side as opposed to the server side.
 Because remote servers always have the incentive to reduce the complexity
-of the key derivation function in order to free more resources for other
+of the \gls{kdf} in order to free more resources for other
 things that bring them money.
 
 Perhaps, one day in the future, the \texttt{password} field in \gls{html}
 should have an argument called \texttt{kdf} that goes like \texttt{<input
-type="password" kdf="ciphart" \ldots>} which specifies the key derivation
-function that the web browser must use to derive a more secure key, and
-then send the derived key instead of sending the password.  Browsers are
-already kind enough to \emph{manage} our passwords for us, so this will be
-just a matter of making them send more secure keys as opposed to the less
-secure passwords.
+type="password" kdf="ciphart" \ldots>} which specifies the \gls{kdf} that
+the web browser must use to derive a more secure key, and then send the
+derived key instead of sending the password.  Browsers are already kind
+enough to \emph{manage} our passwords for us, so this will be just a matter
+of making them send more secure keys as opposed to the less secure
+passwords.
 
 I personally don't let browsers manage my passwords, because I don't trust
 them, and because I don't need them, as I use my own passwords manager
@@ -1097,61 +1096,58 @@ My Bitcoin address for this paper:
 \end{center}
 
 \section{Discussion}
-\subsection{Answering silly arguments}
+\subsection*{Answering silly arguments}
 \begin{enumerate}
-    \item \textbf{Argument:} Are you a troll?  Because your language is
-    sort of funny, you have an advertisement block announcing one of your
-    apps (NSA-Pass), and ask for donations in your paper.
+    \item \textbf{Argument:} Are you a troll?
 
-    \textbf{Answer:} Not sure what does it mean to be a troll.  Does it
-    mean being \emph{always} a troll?  Or only \emph{sometimes}?  I'm not
-    the former, but I'm the latter.
+    \textbf{Answer:} Maybe, but irrelevant.
 
-    Papers actually usually do have advertisement blocks inside them,
-    except that they get silently stashed in between the paragraphs
-    alongside other cited resources.  What I did with the advertisement
-    block is that I just made it explicit that I advertised.  I find using
-    explicit advertisement blocks the honest way of doing it.  I wish if
-    other authors who try to advertise their previous works, to do so in
-    advertisement blocks like I did.
+    \item \textbf{Argument:} But if you're a troll, then your idea is
+    probably false!
 
-    Authors of papers usually don't put their Bitcoin addresses for
-    receiving donations.  But I think they are wrong.  I think it is a good
-    idea for researchers, or research institutions, to announce means by
-    which they can get donations, right in every paper they publish.  In
-    fact, I think, counting the amounts of Bitcoin donations that papers
-    receive is a better metric to rank papers than other commonly used
-    measures, such as citation counts.
+    \textbf{Answer:} Maybe.  Everything is probably false, and probably
+    true.  That said, what determines an idea's correctness is the idea
+    itself, not who the person that put the idea is.
 
-    About the funny language, it is in part because of being myself, and in
-    part because of technical correctness.  E.g. when I say ``\emph{I
-    think\ldots}'' or ``\emph{I guess\ldots}'' is because that is what
-    describes reality most accurately.  I could weasel around and use
-    longer sentences to say the same thing such as ``\emph{a possible
-    reason for\ldots\ could be \ldots}'', but I find it immoral to do so,
-    because it wastes reader's time for the vanity of guarding my ego;
-    hence I choose to cut the chase and say ``\emph{I think\ldots}''.
+    \item \textbf{Argument:} But you write like a jerk!
 
-    About the name of the advertised app, NSA-Pass, it is so because it is
-    humorous and promotes the user to be suspicious.  The humorous part is
-    good because playfulness is good for creativity and openness towards
-    progress.  The suspicious part is good because it reduces blind trust
-    by users as it gives them more reasons to audit the app before using
-    it.
+    \textbf{Answer:} Irrelevant.  If it's correct then it's good.  When I
+    wrote things like ``\emph{I guess\ldots}'', ``\emph{I feel\ldots}''
+    ,``\emph{my invention\ldots}'', ``\emph{my discovery\ldots}'', etc, I
+    did so because it reflects reality.  I did share my guesses, feelings,
+    inventions and discoveries.  I find sharing my guesses and feelings
+    useful, specially when discussing user scenarios.  If you disagree with
+    my inventions and discoveries being my inventions and discoveries, or
+    being inventions or discoveries at all, then tell me your reasoning.
+    If you make sense, I'll update the paper accordingly.
 
-    \item \textbf{Argument:} If you're sometimes a troll, therefore you're
-    trying to troll us by writing this paper!
+    \item \textbf{Argument:} But you have an advertisement block in your
+    paper!
 
-    \textbf{Answer:} Irrelevant.
+    \textbf{Answer:} Yes, but so do many authors in many papers, except
+    that they stash their advertisement citations alongside other
+    citations.  Practically, many do it.  It is just that I chose to be
+    more honest about it.  Nothing is wrong with advertisements.
 
-    \item \textbf{Argument:} You being a troll is relevant, because it
-    means that the idea in your paper is wrong!
+    \item \textbf{Argument:} Your advertised app is named ``NSA-Pass''!
+    Who will use it with such a name?
 
-    \textbf{Answer:} Nope.  What makes an idea right, or wrong, is not who
-    the author is, but rather the idea itself.
+    \textbf{Answer:} That's by design for several advantages.  First, the
+    name seems suspicious, which is good at triggering the suspicion of
+    users, which is healthy as it will promote more rigorous auditing.
+    This is very healthy, specially for a sensitive app such as one that
+    manages passwords.  In fact, I used to have a scary error message
+    saying ``\emph{error:  failed to connect to
+    \url{https://nsa.gov/passwords.asp}}'', or something like it, but
+    some contributor removed it.
+
+    Second, picking playful names is good to make working on the app more
+    creative and less restrictive, while increasing the diversity of
+    thoughts while exploring the future of the app.  People tend to feel
+    less constrained when talking with an app that has a funny name.
 \end{enumerate}
 
-\subsection{Answering normal arguments}
+\subsection*{Answering normal arguments}
 \begin{enumerate}
     \item \textbf{Argument:} Who cares about making Argon2 faster?  Isn't
     it supposed to be slower to make it harder for the attacker?
@@ -1159,9 +1155,12 @@ My Bitcoin address for this paper:
     \textbf{Answer:} Ciphart can be as slow as we want, but its increased
     speed over Argon2 effectively allows Ciphart to run more passes over
     the memory pad in a given unit of time.  More passes over the memory
-    means that the adversary will be less likely to get lucky to get away
-    with less \gls{ram}.  This effectively means that Ciphart offers
-    stronger memory-hardness per wall-clock second over Argon2.
+    means that the adversary will be less likely to get away with less
+    \gls{ram}.  This effectively means that Ciphart offers stronger
+    memory-hardness per wall-clock second over Argon2.
+
+    Not that it matters, but Argon2 also markets itself as a faster
+    \gls{kdf} than, say, Scrypt.  My point is that this concept is not new.
 \end{enumerate}
 
 \end{document}
